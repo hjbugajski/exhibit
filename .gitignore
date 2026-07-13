@@ -1,0 +1,29 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# Dependencies
+node_modules/
+
+# TanStack (router/devtools temp files)
+/.tanstack/
+
+# Build outputs (nitro)
+/.output/
+/.nitro/
+
+# SQLite dev database
+/data/
+
+# Tool reports (vitest coverage + reporter output; see vitest.config.ts)
+/.reports/
+
+# Local files
+.env
+.env.*
+!.env.example
+# local planning notes, intentionally untracked (root only — src/components/docs is app code)
+/docs/
+
+# Misc
+.DS_Store
+*.pem
+*.log

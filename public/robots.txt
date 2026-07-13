@@ -1,0 +1,3 @@
+# Private, session-authed gallery — nothing here is crawlable anyway.
+User-agent: *
+Disallow: /
