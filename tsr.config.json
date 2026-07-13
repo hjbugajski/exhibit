@@ -1,0 +1,5 @@
+{
+  "target": "react",
+  "routeFileIgnorePattern": "\\.test\\.(ts|tsx)$",
+  "autoCodeSplitting": true
+}

@@ -1,0 +1,65 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "options": { "typeAware": true, "reportUnusedDisableDirectives": "warn" },
+  "plugins": [
+    "eslint",
+    "import",
+    "jsx-a11y",
+    "oxc",
+    "promise",
+    "react",
+    "react-perf",
+    "typescript",
+    "unicorn"
+  ],
+  "env": { "browser": true },
+  "ignorePatterns": [
+    "dist/**",
+    ".output/**",
+    ".nitro/**",
+    ".tanstack/**",
+    ".claude/**",
+    "src/routeTree.gen.ts"
+  ],
+  "settings": { "react": { "version": "19.2.0" } },
+  "rules": {
+    "eslint/curly": ["error", "all"],
+    "eslint/eqeqeq": ["error", "always", { "null": "ignore" }],
+    "eslint/no-alert": "error",
+    "eslint/no-console": ["warn", { "allow": ["warn", "error"] }],
+    "eslint/no-else-return": ["error", { "allowElseIf": false }],
+    "eslint/no-var": "error",
+    "eslint/prefer-const": "error",
+    "import/no-cycle": "error",
+    "import/no-duplicates": "error",
+    "import/no-self-import": "error",
+    "promise/no-new-statics": "error",
+    "react/exhaustive-deps": "error",
+    "react/no-danger": "error",
+    "react/react-in-jsx-scope": "off",
+    "typescript/consistent-type-definitions": ["error", "interface"],
+    "typescript/consistent-type-imports": "error",
+    "typescript/no-deprecated": "error",
+    "typescript/no-explicit-any": "warn",
+    "typescript/no-misused-promises": "error",
+    "typescript/no-non-null-assertion": "warn",
+    "typescript/only-throw-error": [
+      "error",
+      {
+        "allow": [
+          { "from": "package", "package": "@tanstack/router-core", "name": "Redirect" },
+          { "from": "package", "package": "@tanstack/router-core", "name": "NotFoundError" }
+        ]
+      }
+    ],
+    "typescript/return-await": ["error", "in-try-catch"],
+    "typescript/use-unknown-in-catch-callback-variable": "error",
+    "unicorn/prefer-node-protocol": "error"
+  },
+  "overrides": [
+    {
+      "files": ["scripts/**", "src/lib/seed-plugin.ts"],
+      "rules": { "eslint/no-console": "off" }
+    }
+  ]
+}

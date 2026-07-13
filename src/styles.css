@@ -1,0 +1,707 @@
+@import 'tailwindcss';
+@plugin '@tailwindcss/typography';
+
+/*
+ * Inter 4 variable fonts, self-hosted from public/fonts (upstream release,
+ * full glyph set, wght + opsz axes — optical sizing applies automatically).
+ * SIL OFL 1.1 — https://rsms.me/inter
+ */
+@font-face {
+  font-family: InterVariable;
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/InterVariable.woff2') format('woff2');
+}
+@font-face {
+  font-family: InterVariable;
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/InterVariable-Italic.woff2') format('woff2');
+}
+
+/*
+ * Named aliases for Inter's OpenType features (upstream table, verbatim).
+ * The ones the app turns on are referenced from the base layer's
+ * font-variant-alternates; the rest are here so trying others is a
+ * one-line change.
+ */
+@font-feature-values InterVariable {
+  @character-variant {
+    alt-1: 1; /* Alternate one */
+    alt-3: 9; /* Flat-top three */
+    open-4: 2; /* Open four */
+    open-6: 3; /* Open six */
+    open-9: 4; /* Open nine */
+    lc-l-with-tail: 5; /* Lower-case L with tail */
+    simplified-u: 6; /* Simplified u */
+    alt-double-s: 7; /* Alternate German double s */
+    uc-i-with-serif: 8; /* Upper-case i with serif */
+    uc-g-with-spur: 10; /* Capital G with spur */
+    single-story-a: 11; /* Single-story a */
+    compact-lc-f: 12; /* Compact f */
+    compact-lc-t: 13; /* Compact t */
+  }
+  @styleset {
+    open-digits: 1; /* Open digits */
+    disambiguation: 2; /* Disambiguation (with zero) */
+    round-quotes-and-commas: 3; /* Round quotes & commas */
+    disambiguation-except-zero: 4; /* Disambiguation (no zero) */
+    circled-characters: 5; /* Circled characters */
+    squared-characters: 6; /* Squared characters */
+    square-punctuation: 7; /* Square punctuation */
+    square-quotes: 8; /* Square quotes */
+  }
+}
+
+/*
+ * House design system. All color comes from the 12-step OKLCH scales below —
+ * Tailwind's default palette is purged (`--color-*: initial`), so the only
+ * color utilities that exist are the semantic tokens and the spectrum hues.
+ *
+ * Scales: gray (pure neutral, zero chroma) plus ten spectrum hues, each with
+ * separate light and dark 12-step sets (Radix-style roles: 1-2 app/subtle
+ * backgrounds, 3-5 component tints, 6-8 borders/halos, 9-10 solids, 11 text —
+ * the hand-tuned anchor each scale is built around, 12 high-contrast text).
+ * Steps climb linearly within each scheme, and a given step plays the same
+ * role in both, so every semantic token is defined exactly once — the scheme
+ * swap happens purely at the scale level (dark redeclares only tokens whose
+ * value shape differs: the alpha scrim and danger-strong).
+ *
+ * Every state a component needs (hover, active, disabled, tint) is its own
+ * token that swaps per scheme — components use one class, no `dark:` color
+ * variants and no `/NN` alpha steps.
+ *
+ * Semantic tiers:
+ *   backgrounds  background → surface / surface-raised (cards, dialogs,
+ *                popovers, table headers — shadow and border carry
+ *                elevation) → surface-subtle (passive washes) →
+ *                surface-active (control hover/pressed fill) →
+ *                surface-muted (selected, code blocks, skeletons) →
+ *                surface-muted-hover · field (input/track fill, recessed)
+ *   foregrounds  foreground → foreground-muted → foreground-subtle →
+ *                foreground-faint (empty-state glyphs)
+ *   lines        border → border-strong (inputs) → border-active (selected) ·
+ *                ring (focused border) · focus / focus-danger (3px halo)
+ *   accent       inverted gray (soft black on light, soft white on dark);
+ *                accent-hover, accent-subtle tint
+ *   status       danger / info / success / warning as text on the matching
+ *                <hue>-subtle tint; danger adds -muted (hover), -line
+ *                (borders), and the focus-danger halo
+ *   charts       chart-1..8, drawn from the spectrum in contrast order
+ *
+ * Dark mode has no toggle — it follows the OS, so it is pure CSS: dark tokens
+ * live under `@media (prefers-color-scheme: dark)` instead of a `.dark` class
+ * (no theme script, nothing to hydrate), and `dark:` utilities use Tailwind's
+ * default media-based variant.
+ */
+/*
+ * `static` forces every token to emit even without a utility-class usage —
+ * chart-inner.tsx and the map bridge read `--color-chart-*`/`--color-accent`
+ * from JS strings, which Tailwind's on-use emission cannot see.
+ */
+@theme inline static {
+  --font-heading: var(--font-sans);
+  --font-sans: 'InterVariable', sans-serif;
+  /* Inter needs slightly looser heading tracking than Tailwind's default. */
+  --tracking-tight: -0.01em;
+  /*
+   * Spacing tiers. Icon-side pads are one notch tighter than the text side
+   * so inline icons (data-icon="inline-start|end") sit optically aligned.
+   */
+  --spacing-control: 0.625rem; /* 10px — h-8 control horizontal padding */
+  --spacing-control-icon: 0.5rem; /* 8px — control icon-side padding */
+  --spacing-compact: 0.375rem; /* 6px — compact control padding (menu items, tab triggers) */
+  --spacing-compact-icon: 0.25rem; /* 4px — compact icon-side padding */
+  --spacing-icon-label: 0.375rem; /* 6px — inline icon ↔ label gap */
+  --spacing-popup: 0.25rem; /* 4px — popup inset; also menu-item vertical padding */
+  --spacing-card: 0.875rem; /* 14px — card padding + internal gap */
+  --spacing-card-icon: 0.75rem; /* 12px — card icon-side padding */
+  --spacing-card-sm: 0.75rem; /* 12px */
+  --spacing-dialog: 1rem; /* 16px — dialog padding + section gap */
+  --color-*: initial;
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-muted: var(--surface-muted);
+  --color-surface-muted-hover: var(--surface-muted-hover);
+  --color-surface-subtle: var(--surface-subtle);
+  --color-surface-active: var(--surface-active);
+  --color-field: var(--field);
+  --color-foreground: var(--foreground);
+  --color-foreground-muted: var(--foreground-muted);
+  --color-foreground-subtle: var(--foreground-subtle);
+  --color-foreground-faint: var(--foreground-faint);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-border-active: var(--border-active);
+  --color-ring: var(--ring);
+  --color-focus: var(--focus);
+  --color-focus-danger: var(--focus-danger);
+  --color-overlay: var(--overlay);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-subtle: var(--accent-subtle);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-danger: var(--danger);
+  --color-danger-subtle: var(--danger-subtle);
+  --color-danger-muted: var(--danger-muted);
+  --color-danger-body: var(--danger-body);
+  --color-danger-line: var(--danger-line);
+  --color-danger-strong: var(--danger-strong);
+  --color-info: var(--info);
+  --color-info-subtle: var(--info-subtle);
+  --color-info-muted: var(--info-muted);
+  --color-info-body: var(--info-body);
+  --color-info-line: var(--info-line);
+  --color-success: var(--success);
+  --color-success-subtle: var(--success-subtle);
+  --color-success-muted: var(--success-muted);
+  --color-success-body: var(--success-body);
+  --color-success-line: var(--success-line);
+  --color-warning: var(--warning);
+  --color-warning-subtle: var(--warning-subtle);
+  --color-warning-muted: var(--warning-muted);
+  --color-warning-body: var(--warning-body);
+  --color-warning-line: var(--warning-line);
+  --color-red: var(--red);
+  --color-orange: var(--orange);
+  --color-amber: var(--amber);
+  --color-green: var(--green);
+  --color-teal: var(--teal);
+  --color-cyan: var(--cyan);
+  --color-blue: var(--blue);
+  --color-indigo: var(--indigo);
+  --color-violet: var(--violet);
+  --color-pink: var(--pink);
+  --color-chart-1: var(--blue);
+  --color-chart-2: var(--violet);
+  --color-chart-3: var(--teal);
+  --color-chart-4: var(--amber);
+  --color-chart-5: var(--pink);
+  --color-chart-6: var(--green);
+  --color-chart-7: var(--orange);
+  --color-chart-8: var(--cyan);
+  --animate-fade-in: fade-in 100ms ease-out;
+  --animate-fade-out: fade-out 100ms ease-in;
+  --animate-scale-in: scale-in 100ms ease-out;
+  --animate-scale-out: scale-out 100ms ease-in;
+  --animate-pop-in: scale-in 200ms ease-out;
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  /* gray scale — pure neutral (zero chroma); even 0.02 steps through 1-6 */
+  --gray-1: oklch(1 0 0);
+  --gray-2: oklch(0.98 0 0);
+  --gray-3: oklch(0.96 0 0);
+  --gray-4: oklch(0.94 0 0);
+  --gray-5: oklch(0.92 0 0);
+  --gray-6: oklch(0.9 0 0);
+  --gray-7: oklch(0.87 0 0);
+  --gray-8: oklch(0.705 0 0);
+  --gray-9: oklch(0.62 0 0);
+  --gray-10: oklch(0.56 0 0);
+  --gray-11: oklch(0.34 0 0);
+  --gray-12: oklch(0.14 0 0);
+  /* spectrum scales — step 11 is the text/chart anchor per hue */
+  --red-1: oklch(0.995 0.006 25);
+  --red-2: oklch(0.982 0.017 25);
+  --red-3: oklch(0.96 0.034 25);
+  --red-4: oklch(0.935 0.05 25);
+  --red-5: oklch(0.905 0.067 25);
+  --red-6: oklch(0.87 0.084 25);
+  --red-7: oklch(0.82 0.116 25);
+  --red-8: oklch(0.74 0.158 25);
+  --red-9: oklch(0.64 0.21 25);
+  --red-10: oklch(0.61 0.21 25);
+  --red-11: oklch(0.58 0.21 25);
+  --red-12: oklch(0.3 0.116 25);
+  --orange-1: oklch(0.995 0.006 45);
+  --orange-2: oklch(0.982 0.015 45);
+  --orange-3: oklch(0.96 0.03 45);
+  --orange-4: oklch(0.935 0.046 45);
+  --orange-5: oklch(0.905 0.061 45);
+  --orange-6: oklch(0.87 0.076 45);
+  --orange-7: oklch(0.82 0.105 45);
+  --orange-8: oklch(0.74 0.143 45);
+  --orange-9: oklch(0.66 0.19 45);
+  --orange-10: oklch(0.63 0.19 45);
+  --orange-11: oklch(0.6 0.19 45);
+  --orange-12: oklch(0.3 0.105 45);
+  --amber-1: oklch(0.995 0.005 60);
+  --amber-2: oklch(0.982 0.013 60);
+  --amber-3: oklch(0.96 0.026 60);
+  --amber-4: oklch(0.935 0.038 60);
+  --amber-5: oklch(0.905 0.051 60);
+  --amber-6: oklch(0.87 0.064 60);
+  --amber-7: oklch(0.82 0.088 60);
+  --amber-8: oklch(0.74 0.12 60);
+  --amber-9: oklch(0.65 0.16 60);
+  --amber-10: oklch(0.62 0.16 60);
+  --amber-11: oklch(0.59 0.16 60);
+  --amber-12: oklch(0.3 0.088 60);
+  --green-1: oklch(0.995 0.005 150);
+  --green-2: oklch(0.982 0.014 150);
+  --green-3: oklch(0.96 0.027 150);
+  --green-4: oklch(0.935 0.041 150);
+  --green-5: oklch(0.905 0.054 150);
+  --green-6: oklch(0.87 0.068 150);
+  --green-7: oklch(0.82 0.094 150);
+  --green-8: oklch(0.74 0.128 150);
+  --green-9: oklch(0.63 0.17 150);
+  --green-10: oklch(0.6 0.17 150);
+  --green-11: oklch(0.57 0.17 150);
+  --green-12: oklch(0.3 0.094 150);
+  --teal-1: oklch(0.995 0.004 185);
+  --teal-2: oklch(0.982 0.01 185);
+  --teal-3: oklch(0.96 0.021 185);
+  --teal-4: oklch(0.935 0.031 185);
+  --teal-5: oklch(0.905 0.042 185);
+  --teal-6: oklch(0.87 0.052 185);
+  --teal-7: oklch(0.82 0.072 185);
+  --teal-8: oklch(0.74 0.098 185);
+  --teal-9: oklch(0.63 0.13 185);
+  --teal-10: oklch(0.6 0.13 185);
+  --teal-11: oklch(0.57 0.13 185);
+  --teal-12: oklch(0.3 0.072 185);
+  --cyan-1: oklch(0.995 0.004 220);
+  --cyan-2: oklch(0.982 0.01 220);
+  --cyan-3: oklch(0.96 0.021 220);
+  --cyan-4: oklch(0.935 0.031 220);
+  --cyan-5: oklch(0.905 0.042 220);
+  --cyan-6: oklch(0.87 0.052 220);
+  --cyan-7: oklch(0.82 0.072 220);
+  --cyan-8: oklch(0.74 0.098 220);
+  --cyan-9: oklch(0.64 0.13 220);
+  --cyan-10: oklch(0.61 0.13 220);
+  --cyan-11: oklch(0.58 0.13 220);
+  --cyan-12: oklch(0.3 0.072 220);
+  --blue-1: oklch(0.995 0.006 255);
+  --blue-2: oklch(0.982 0.016 255);
+  --blue-3: oklch(0.96 0.032 255);
+  --blue-4: oklch(0.935 0.048 255);
+  --blue-5: oklch(0.905 0.064 255);
+  --blue-6: oklch(0.87 0.08 255);
+  --blue-7: oklch(0.82 0.11 255);
+  --blue-8: oklch(0.74 0.15 255);
+  --blue-9: oklch(0.61 0.2 255);
+  --blue-10: oklch(0.58 0.2 255);
+  --blue-11: oklch(0.55 0.2 255);
+  --blue-12: oklch(0.3 0.11 255);
+  --indigo-1: oklch(0.995 0.006 275);
+  --indigo-2: oklch(0.982 0.017 275);
+  --indigo-3: oklch(0.96 0.034 275);
+  --indigo-4: oklch(0.935 0.05 275);
+  --indigo-5: oklch(0.905 0.067 275);
+  --indigo-6: oklch(0.87 0.084 275);
+  --indigo-7: oklch(0.82 0.116 275);
+  --indigo-8: oklch(0.74 0.158 275);
+  --indigo-9: oklch(0.59 0.21 275);
+  --indigo-10: oklch(0.56 0.21 275);
+  --indigo-11: oklch(0.53 0.21 275);
+  --indigo-12: oklch(0.3 0.116 275);
+  --violet-1: oklch(0.995 0.007 295);
+  --violet-2: oklch(0.982 0.018 295);
+  --violet-3: oklch(0.96 0.037 295);
+  --violet-4: oklch(0.935 0.055 295);
+  --violet-5: oklch(0.905 0.074 295);
+  --violet-6: oklch(0.87 0.092 295);
+  --violet-7: oklch(0.82 0.127 295);
+  --violet-8: oklch(0.74 0.173 295);
+  --violet-9: oklch(0.61 0.23 295);
+  --violet-10: oklch(0.58 0.23 295);
+  --violet-11: oklch(0.55 0.23 295);
+  --violet-12: oklch(0.3 0.127 295);
+  --pink-1: oklch(0.995 0.007 350);
+  --pink-2: oklch(0.982 0.018 350);
+  --pink-3: oklch(0.96 0.035 350);
+  --pink-4: oklch(0.935 0.053 350);
+  --pink-5: oklch(0.905 0.07 350);
+  --pink-6: oklch(0.87 0.088 350);
+  --pink-7: oklch(0.82 0.121 350);
+  --pink-8: oklch(0.74 0.165 350);
+  --pink-9: oklch(0.66 0.22 350);
+  --pink-10: oklch(0.63 0.22 350);
+  --pink-11: oklch(0.6 0.22 350);
+  --pink-12: oklch(0.3 0.121 350);
+  /* hue aliases — the text/chart-grade step */
+  --red: var(--red-11);
+  --orange: var(--orange-11);
+  --amber: var(--amber-11);
+  --green: var(--green-11);
+  --teal: var(--teal-11);
+  --cyan: var(--cyan-11);
+  --blue: var(--blue-11);
+  --indigo: var(--indigo-11);
+  --violet: var(--violet-11);
+  --pink: var(--pink-11);
+  /*
+   * Semantics — defined once; the same step number plays the same role in
+   * both schemes, so the dark block below only swaps the primitive scales.
+   * Ladder: 1 bg/field · 2 surface/raised · 3 subtle · 4 active · 5 muted ·
+   * 6 muted-hover/border · 7 strong/focus/faint · 8 active-border/ring ·
+   * 9-10 subtle/muted text · 11 anchor · 12 foreground.
+   */
+  --background: var(--gray-1);
+  --surface: var(--gray-2);
+  --surface-raised: var(--gray-2);
+  --surface-muted: var(--gray-5);
+  --surface-muted-hover: var(--gray-6);
+  --surface-subtle: var(--gray-3);
+  --surface-active: var(--gray-4);
+  --field: var(--gray-1);
+  --foreground: var(--gray-12);
+  --foreground-muted: var(--gray-10);
+  --foreground-subtle: var(--gray-9);
+  --foreground-faint: var(--gray-7);
+  --border: var(--gray-6);
+  --border-strong: var(--gray-7);
+  --border-active: var(--gray-8);
+  --ring: var(--gray-8);
+  --focus: var(--gray-7);
+  --focus-danger: var(--red-6);
+  /* dialog scrim — always darkens, so it cannot key off foreground */
+  --overlay: oklch(0 0 0 / 10%);
+  --accent: var(--gray-12);
+  --accent-hover: var(--gray-11);
+  --accent-subtle: var(--gray-5);
+  --accent-foreground: var(--gray-2);
+  --danger: var(--red);
+  --danger-subtle: var(--red-3);
+  --danger-muted: var(--red-4);
+  --danger-body: var(--red-12);
+  --danger-line: var(--red-6);
+  --danger-strong: var(--red-11);
+  --info: var(--blue);
+  --info-subtle: var(--blue-3);
+  --info-muted: var(--blue-4);
+  --info-body: var(--blue-12);
+  --info-line: var(--blue-6);
+  --success: var(--green);
+  --success-subtle: var(--green-3);
+  --success-muted: var(--green-4);
+  --success-body: var(--green-12);
+  --success-line: var(--green-6);
+  --warning: var(--amber);
+  --warning-subtle: var(--amber-3);
+  --warning-muted: var(--amber-4);
+  --warning-body: var(--amber-12);
+  --warning-line: var(--amber-6);
+  --radius: 0.375rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* gray scale — pure neutral; even 0.035 steps through 1-6 */
+    --gray-1: oklch(0.15 0 0);
+    --gray-2: oklch(0.185 0 0);
+    --gray-3: oklch(0.22 0 0);
+    --gray-4: oklch(0.255 0 0);
+    --gray-5: oklch(0.29 0 0);
+    --gray-6: oklch(0.325 0 0);
+    --gray-7: oklch(0.37 0 0);
+    --gray-8: oklch(0.47 0 0);
+    --gray-9: oklch(0.56 0 0);
+    --gray-10: oklch(0.705 0 0);
+    --gray-11: oklch(0.88 0 0);
+    --gray-12: oklch(0.985 0 0);
+    /* spectrum scales — dark values */
+    --red-1: oklch(0.19 0.027 25);
+    --red-2: oklch(0.215 0.04 25);
+    --red-3: oklch(0.26 0.068 25);
+    --red-4: oklch(0.29 0.081 25);
+    --red-5: oklch(0.32 0.094 25);
+    --red-6: oklch(0.36 0.104 25);
+    --red-7: oklch(0.42 0.122 25);
+    --red-8: oklch(0.5 0.144 25);
+    --red-9: oklch(0.61 0.18 25);
+    --red-10: oklch(0.65 0.18 25);
+    --red-11: oklch(0.72 0.18 25);
+    --red-12: oklch(0.9 0.045 25);
+    --orange-1: oklch(0.19 0.024 50);
+    --orange-2: oklch(0.215 0.035 50);
+    --orange-3: oklch(0.26 0.061 50);
+    --orange-4: oklch(0.29 0.072 50);
+    --orange-5: oklch(0.32 0.083 50);
+    --orange-6: oklch(0.36 0.093 50);
+    --orange-7: oklch(0.42 0.109 50);
+    --orange-8: oklch(0.5 0.128 50);
+    --orange-9: oklch(0.64 0.16 50);
+    --orange-10: oklch(0.68 0.16 50);
+    --orange-11: oklch(0.75 0.16 50);
+    --orange-12: oklch(0.9 0.04 50);
+    --amber-1: oklch(0.19 0.022 70);
+    --amber-2: oklch(0.215 0.033 70);
+    --amber-3: oklch(0.26 0.057 70);
+    --amber-4: oklch(0.29 0.068 70);
+    --amber-5: oklch(0.32 0.078 70);
+    --amber-6: oklch(0.36 0.087 70);
+    --amber-7: oklch(0.42 0.102 70);
+    --amber-8: oklch(0.5 0.12 70);
+    --amber-9: oklch(0.67 0.15 70);
+    --amber-10: oklch(0.71 0.15 70);
+    --amber-11: oklch(0.78 0.15 70);
+    --amber-12: oklch(0.9 0.037 70);
+    --green-1: oklch(0.19 0.026 152);
+    --green-2: oklch(0.215 0.037 152);
+    --green-3: oklch(0.26 0.065 152);
+    --green-4: oklch(0.29 0.077 152);
+    --green-5: oklch(0.32 0.088 152);
+    --green-6: oklch(0.36 0.099 152);
+    --green-7: oklch(0.42 0.116 152);
+    --green-8: oklch(0.5 0.136 152);
+    --green-9: oklch(0.65 0.17 152);
+    --green-10: oklch(0.69 0.17 152);
+    --green-11: oklch(0.76 0.17 152);
+    --green-12: oklch(0.9 0.043 152);
+    --teal-1: oklch(0.19 0.019 185);
+    --teal-2: oklch(0.215 0.029 185);
+    --teal-3: oklch(0.26 0.049 185);
+    --teal-4: oklch(0.29 0.059 185);
+    --teal-5: oklch(0.32 0.068 185);
+    --teal-6: oklch(0.36 0.075 185);
+    --teal-7: oklch(0.42 0.088 185);
+    --teal-8: oklch(0.5 0.104 185);
+    --teal-9: oklch(0.67 0.13 185);
+    --teal-10: oklch(0.71 0.13 185);
+    --teal-11: oklch(0.78 0.13 185);
+    --teal-12: oklch(0.9 0.033 185);
+    --cyan-1: oklch(0.19 0.018 220);
+    --cyan-2: oklch(0.215 0.026 220);
+    --cyan-3: oklch(0.26 0.046 220);
+    --cyan-4: oklch(0.29 0.054 220);
+    --cyan-5: oklch(0.32 0.062 220);
+    --cyan-6: oklch(0.36 0.07 220);
+    --cyan-7: oklch(0.42 0.082 220);
+    --cyan-8: oklch(0.5 0.096 220);
+    --cyan-9: oklch(0.67 0.12 220);
+    --cyan-10: oklch(0.71 0.12 220);
+    --cyan-11: oklch(0.78 0.12 220);
+    --cyan-12: oklch(0.9 0.03 220);
+    --blue-1: oklch(0.19 0.024 255);
+    --blue-2: oklch(0.215 0.035 255);
+    --blue-3: oklch(0.26 0.061 255);
+    --blue-4: oklch(0.29 0.072 255);
+    --blue-5: oklch(0.32 0.083 255);
+    --blue-6: oklch(0.36 0.093 255);
+    --blue-7: oklch(0.42 0.109 255);
+    --blue-8: oklch(0.5 0.128 255);
+    --blue-9: oklch(0.59 0.16 255);
+    --blue-10: oklch(0.63 0.16 255);
+    --blue-11: oklch(0.7 0.16 255);
+    --blue-12: oklch(0.9 0.04 255);
+    --indigo-1: oklch(0.19 0.026 275);
+    --indigo-2: oklch(0.215 0.037 275);
+    --indigo-3: oklch(0.26 0.065 275);
+    --indigo-4: oklch(0.29 0.077 275);
+    --indigo-5: oklch(0.32 0.088 275);
+    --indigo-6: oklch(0.36 0.099 275);
+    --indigo-7: oklch(0.42 0.116 275);
+    --indigo-8: oklch(0.5 0.136 275);
+    --indigo-9: oklch(0.57 0.17 275);
+    --indigo-10: oklch(0.61 0.17 275);
+    --indigo-11: oklch(0.68 0.17 275);
+    --indigo-12: oklch(0.9 0.043 275);
+    --violet-1: oklch(0.19 0.027 295);
+    --violet-2: oklch(0.215 0.04 295);
+    --violet-3: oklch(0.26 0.068 295);
+    --violet-4: oklch(0.29 0.081 295);
+    --violet-5: oklch(0.32 0.094 295);
+    --violet-6: oklch(0.36 0.104 295);
+    --violet-7: oklch(0.42 0.122 295);
+    --violet-8: oklch(0.5 0.144 295);
+    --violet-9: oklch(0.59 0.18 295);
+    --violet-10: oklch(0.63 0.18 295);
+    --violet-11: oklch(0.7 0.18 295);
+    --violet-12: oklch(0.9 0.045 295);
+    --pink-1: oklch(0.19 0.027 350);
+    --pink-2: oklch(0.215 0.04 350);
+    --pink-3: oklch(0.26 0.068 350);
+    --pink-4: oklch(0.29 0.081 350);
+    --pink-5: oklch(0.32 0.094 350);
+    --pink-6: oklch(0.36 0.104 350);
+    --pink-7: oklch(0.42 0.122 350);
+    --pink-8: oklch(0.5 0.144 350);
+    --pink-9: oklch(0.63 0.18 350);
+    --pink-10: oklch(0.67 0.18 350);
+    --pink-11: oklch(0.74 0.18 350);
+    --pink-12: oklch(0.9 0.045 350);
+    /*
+     * Semantics swap through the primitives above — same step, same role.
+     * Only tokens whose *value shape* differs per scheme live here.
+     */
+    --overlay: oklch(0 0 0 / 45%);
+    --danger-strong: var(--red-8);
+  }
+}
+
+/*
+ * Overlay animations (Dialog/AlertDialog/Select/DropdownMenu enter/exit, map
+ * marker/popup mount). scale-in doubles as the directional popup entrance:
+ * the slide-from-* utilities only set the offset vars it starts from, so a
+ * bare animate-scale-in (dialogs) zooms in place.
+ */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: translate(var(--slide-x, 0), var(--slide-y, 0)) scale(0.95);
+  }
+}
+@keyframes scale-out {
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+@utility slide-from-top {
+  --slide-y: calc(var(--spacing) * -2);
+}
+@utility slide-from-bottom {
+  --slide-y: calc(var(--spacing) * 2);
+}
+@utility slide-from-left {
+  --slide-x: calc(var(--spacing) * -2);
+}
+@utility slide-from-right {
+  --slide-x: calc(var(--spacing) * 2);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-focus;
+    /* Thin token-colored scrollbars on a transparent track; declaring the webkit
+       parts below also opts out of macOS overlay scrollbars, so a thumb never
+       draws on top of content. */
+    scrollbar-color: var(--color-border-strong) transparent;
+    scrollbar-width: thin;
+  }
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-border-strong);
+    border-radius: 9999px;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+    /* Inter alternates (see @font-feature-values): disambiguated l, and
+       round quotes/commas to match the theme's soft radii. */
+    font-variant-alternates: character-variant(lc-l-with-tail) styleset(round-quotes-and-commas);
+    /* Inter tracks a touch tight at UI sizes; tracking-* utilities still
+       override locally (headings keep their tracking-tight). */
+    letter-spacing: 0.01em;
+    /* Native form controls follow the OS like the tokens do (scrollbars are
+       themed below). */
+    color-scheme: light dark;
+  }
+  html,
+  body,
+  #app {
+    min-height: 100%;
+  }
+  .maplibregl-popup-content {
+    @apply rounded-none! bg-transparent! p-0! shadow-none!;
+  }
+  .maplibregl-popup-tip {
+    @apply hidden!;
+  }
+}
+
+/*
+ * Prose (markdown) styling: map @tailwindcss/typography's vars onto the app
+ * tokens instead of its own light/dark palette, so markdown content follows
+ * the design system (including dark mode, since the tokens flip with the
+ * media query). Links stay legible under the monochrome accent because the
+ * plugin underlines them independently of color. Full width — composition
+ * blocks always fill their container.
+ */
+.prose {
+  --tw-prose-body: var(--color-foreground);
+  --tw-prose-headings: var(--color-foreground);
+  --tw-prose-bold: var(--color-foreground);
+  --tw-prose-links: var(--color-accent);
+  --tw-prose-bullets: var(--color-foreground-muted);
+  --tw-prose-counters: var(--color-foreground-muted);
+  --tw-prose-hr: var(--color-border);
+  --tw-prose-quotes: var(--color-foreground);
+  --tw-prose-quote-borders: var(--color-accent);
+  --tw-prose-captions: var(--color-foreground-muted);
+  --tw-prose-code: var(--color-foreground);
+  --tw-prose-pre-code: var(--color-foreground);
+  --tw-prose-pre-bg: var(--color-surface-muted);
+  --tw-prose-th-borders: var(--color-border);
+  --tw-prose-td-borders: var(--color-border);
+  max-width: none;
+}
+
+/*
+ * Markdown heading scale, overriding typography's oversized defaults (h1 at
+ * 2.25em/800 outranks the page chrome, whose artifact title is text-3xl).
+ * Matches the catalog components: h1 = Section/Heading-1 tier (1.5em ≙
+ * text-2xl), stepping down from there; weight/tracking match the app's
+ * semibold tracking-tight headings. Sizes are em so prose-sm/prose-lg
+ * contexts (Callout, Quote, Stop…) scale proportionally.
+ */
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4 {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.prose h1 {
+  font-size: 1.5em;
+}
+
+.prose h2 {
+  font-size: 1.25em;
+}
+
+.prose h3 {
+  font-size: 1.125em;
+}
+
+.prose h4 {
+  font-size: 1em;
+}
+
+/*
+ * Composition rhythm: markdown blocks sit as flex/grid items inside
+ * Stack/Grid/Columns/Section, where child margins cannot collapse into the
+ * parent's gap — without this reset, typography's own first/last margins
+ * stack on top of the gap and read as double-spacing next to non-prose
+ * siblings.
+ */
+.prose > :first-child {
+  margin-top: 0;
+}
+
+.prose > :last-child {
+  margin-bottom: 0;
+}

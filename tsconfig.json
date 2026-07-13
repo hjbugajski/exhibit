@@ -1,0 +1,30 @@
+{
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules", "dist", ".output", ".nitro", ".tanstack"],
+  "compilerOptions": {
+    "target": "es2025",
+    "jsx": "react-jsx",
+    "module": "preserve",
+    "moduleDetection": "force",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@testing/*": ["./testing/*"]
+    },
+    "lib": ["es2025", "dom", "dom.iterable"],
+    "types": ["vite/client"],
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "erasableSyntaxOnly": true,
+    "resolveJsonModule": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true
+  }
+}

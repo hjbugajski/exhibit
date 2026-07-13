@@ -1,0 +1,24 @@
+services:
+  exhibit:
+    build: .
+    # Node as PID 1 ignores SIGTERM; init forwards it so `compose stop` is
+    # instant instead of waiting out the 10s kill timeout.
+    init: true
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./data:/data
+    environment:
+      - DATABASE_PATH=/data/app.db
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
+      - BASE_URL=${BASE_URL}
+      # Owner account, created at first boot (no-op once any user exists).
+      - OWNER_EMAIL=${OWNER_EMAIL}
+      - OWNER_PASSWORD=${OWNER_PASSWORD}
+      # Optional outbound email via Resend (password reset, email-change
+      # verification). Leave empty to run without email.
+      - RESEND_API_KEY=${RESEND_API_KEY:-}
+      - EMAIL_FROM=${EMAIL_FROM:-}
+      # Reverse proxies to trust for client-IP resolution (rate limiting).
+      - TRUSTED_PROXIES=${TRUSTED_PROXIES:-}
+    restart: unless-stopped

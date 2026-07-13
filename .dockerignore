@@ -1,0 +1,16 @@
+node_modules
+.output
+.nitro
+.tanstack
+.reports
+data
+.git
+.github
+.vscode
+Dockerfile
+compose.yaml
+README.md
+LICENSE
+.env*
+.claude
+docs
