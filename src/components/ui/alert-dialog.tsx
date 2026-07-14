@@ -38,12 +38,16 @@ function Overlay({ className, ...props }: AlertDialogOverlayProps) {
   );
 }
 
-export type AlertDialogPopupProps = AlertDialogPrimitive.Popup.Props;
+export type AlertDialogPopupProps = AlertDialogPrimitive.Popup.Props & {
+  /** `destructive` renders the title in the danger text color. */
+  variant?: 'default' | 'destructive';
+};
 
-function Popup({ className, ...props }: AlertDialogPopupProps) {
+function Popup({ className, variant = 'default', ...props }: AlertDialogPopupProps) {
   return (
     <AlertDialogPrimitive.Popup
       data-slot="alert-dialog-content"
+      data-variant={variant}
       className={cn(
         'group/alert-dialog-content bg-surface text-foreground data-open:animate-scale-in data-closed:animate-scale-out focus-visible:ring-focus gap-dialog p-dialog fixed top-1/2 left-1/2 z-50 grid w-full max-w-xs -translate-x-1/2 -translate-y-1/2 rounded-xl border shadow-lg outline-none focus-visible:ring-3 sm:max-w-sm',
         className,
@@ -102,7 +106,7 @@ function Title({ className, ...props }: AlertDialogTitleProps) {
     <AlertDialogPrimitive.Title
       data-slot="alert-dialog-title"
       className={cn(
-        'font-heading text-base font-medium sm:group-has-data-[slot=alert-dialog-media]/alert-dialog-content:col-start-2',
+        'font-heading group-data-[variant=destructive]/alert-dialog-content:text-danger text-base font-medium sm:group-has-data-[slot=alert-dialog-media]/alert-dialog-content:col-start-2',
         className,
       )}
       {...props}

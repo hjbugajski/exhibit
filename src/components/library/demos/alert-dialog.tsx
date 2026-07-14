@@ -11,7 +11,7 @@ function AlertDialogDemo() {
       controls={{
         variant: {
           kind: 'select',
-          label: 'Action variant',
+          label: 'Variant',
           options: actionVariants,
           defaultValue: 'destructive',
         },
@@ -29,7 +29,7 @@ function AlertDialogDemo() {
           </AlertDialog.Trigger>
           <AlertDialog.Portal>
             <AlertDialog.Overlay />
-            <AlertDialog.Popup>
+            <AlertDialog.Popup variant={values.variant}>
               <AlertDialog.Header>
                 <AlertDialog.Title>{values.title}</AlertDialog.Title>
                 <AlertDialog.Description>{values.description}</AlertDialog.Description>

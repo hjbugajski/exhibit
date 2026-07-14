@@ -68,7 +68,7 @@ export function ConfirmDestructiveAction({
       ) : null}
       <AlertDialog.Portal>
         <AlertDialog.Overlay />
-        <AlertDialog.Popup>
+        <AlertDialog.Popup variant="destructive">
           <AlertDialog.Header>
             <AlertDialog.Title>{title}</AlertDialog.Title>
             <AlertDialog.Description>{description}</AlertDialog.Description>
