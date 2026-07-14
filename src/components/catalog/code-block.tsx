@@ -1,8 +1,10 @@
 import { Check, Copy, X } from 'lucide-react';
 
 import type { CatalogComponentProps } from '@/catalog/catalog';
+import { flowBlock } from '@/components/catalog/flow';
 import { Button } from '@/components/ui/button';
 import { useCopyToClipboard } from '@/lib/use-copy-to-clipboard';
+import { cn } from '@/lib/utils';
 
 type Props = CatalogComponentProps<'CodeBlock'>;
 
@@ -10,7 +12,7 @@ export function CodeBlock({ props }: { props: Props }) {
   const { copyStatus, copy } = useCopyToClipboard();
 
   return (
-    <div className="border-border overflow-hidden rounded-lg border">
+    <div className={cn('border-border overflow-hidden rounded-lg border', flowBlock)}>
       <div className="border-border flex items-center justify-between gap-2 border-b px-4 py-1.5">
         <span className="text-foreground-muted font-mono text-xs">
           {props.filename ?? props.language ?? 'code'}

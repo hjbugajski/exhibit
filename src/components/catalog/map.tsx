@@ -1,7 +1,9 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 
 import type { CatalogComponentProps } from '@/catalog/catalog';
+import { flowBlock } from '@/components/catalog/flow';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 type Props = CatalogComponentProps<'Map'>;
 
@@ -22,7 +24,7 @@ export function Map({ props }: { props: Props }) {
   const fallback = <Skeleton className="h-full w-full rounded-none" />;
 
   return (
-    <div className="h-80 overflow-hidden rounded-lg border">
+    <div className={cn('h-80 overflow-hidden rounded-lg border', flowBlock)}>
       {mounted ? (
         <Suspense fallback={fallback}>
           <MapInner props={props} />

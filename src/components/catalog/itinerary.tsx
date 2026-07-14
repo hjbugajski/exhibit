@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 
 import type { CatalogComponentProps } from '@/catalog/catalog';
+import { flowSection } from '@/components/catalog/flow';
 import { cn } from '@/lib/utils';
 
 type Props = CatalogComponentProps<'Itinerary'>;
@@ -9,7 +10,7 @@ export function Itinerary({ props, children }: { props: Props; children?: ReactN
   const hasHeader = Boolean(props.title || props.dateRange);
 
   return (
-    <div>
+    <div className={flowSection}>
       {hasHeader ? (
         <div>
           {props.title ? (
@@ -20,7 +21,7 @@ export function Itinerary({ props, children }: { props: Props; children?: ReactN
           ) : null}
         </div>
       ) : null}
-      <div className={cn('space-y-10', hasHeader && 'mt-8')}>{children}</div>
+      <div className={cn(hasHeader && 'mt-8')}>{children}</div>
     </div>
   );
 }

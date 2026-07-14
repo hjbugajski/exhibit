@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 
 import type { CatalogComponentProps } from '@/catalog/catalog';
+import { flowGroup } from '@/components/catalog/flow';
 import { Tabs as TabsPrimitive } from '@/components/ui/tabs';
 
 type Props = CatalogComponentProps<'Tabs'>;
@@ -13,7 +14,7 @@ export function Tabs({ props, children }: { props: Props; children?: ReactNode }
   const panels = Array.isArray(children) ? children : children === undefined ? [] : [children];
 
   return (
-    <TabsPrimitive.Root defaultValue="0">
+    <TabsPrimitive.Root className={flowGroup} defaultValue="0">
       <TabsPrimitive.List>
         {props.items.map((label, index) => (
           <TabsPrimitive.Trigger key={label} value={String(index)}>
@@ -22,11 +23,7 @@ export function Tabs({ props, children }: { props: Props; children?: ReactNode }
         ))}
       </TabsPrimitive.List>
       {props.items.map((label, index) => (
-        <TabsPrimitive.Content
-          className="mt-4 flex flex-col gap-6"
-          key={label}
-          value={String(index)}
-        >
+        <TabsPrimitive.Content className="mt-4" key={label} value={String(index)}>
           {panels[index]}
         </TabsPrimitive.Content>
       ))}

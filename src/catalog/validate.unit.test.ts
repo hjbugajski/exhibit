@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { comparisonFixture } from '@/catalog/fixtures/comparison';
 import { explainerFixture } from '@/catalog/fixtures/explainer';
+import { flowFixture } from '@/catalog/fixtures/flow';
 import { itineraryFixture } from '@/catalog/fixtures/itinerary';
 import { kitchenSinkFixture } from '@/catalog/fixtures/kitchen-sink';
 import { validateArtifactSpec } from '@/catalog/validate';
@@ -13,6 +14,7 @@ describe('validateArtifactSpec', () => {
     ['explainer', explainerFixture],
     ['comparison', comparisonFixture],
     ['kitchen-sink', kitchenSinkFixture],
+    ['flow', flowFixture],
   ])('accepts the %s fixture', (_name, fixture) => {
     const result = validateArtifactSpec(fixture);
 

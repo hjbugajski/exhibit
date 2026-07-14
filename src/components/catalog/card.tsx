@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { Minus, TrendingDown, TrendingUp } from 'lucide-react';
 
 import type { CatalogComponentProps } from '@/catalog/catalog';
+import { flowGroup } from '@/components/catalog/flow';
 import { Badge } from '@/components/ui/badge';
 import { Card as UiCard } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -45,7 +46,7 @@ export function Card({ props, children }: { props: Props; children?: ReactNode }
   const hasHeader = Boolean(props.title || props.subtitle || props.badge);
 
   return (
-    <UiCard.Root>
+    <UiCard.Root className={flowGroup}>
       {hasHeader ? (
         <UiCard.Header>
           {props.title ? <UiCard.Title>{props.title}</UiCard.Title> : null}
@@ -57,11 +58,9 @@ export function Card({ props, children }: { props: Props; children?: ReactNode }
           ) : null}
         </UiCard.Header>
       ) : null}
-      {/* Card-scoped block rhythm (space-y-4) for a heterogeneous children
-          list — tighter than Section's space-y-6, since a Card's content is
-          already visually contained by the border, so a Card with several
-          children (e.g. Badge + Table) never crams. */}
-      <UiCard.Content className="space-y-4">
+      {/* Content children space themselves with their own collapsing flow margins (see flow.ts);
+          first/last resets keep them flush against the card padding. */}
+      <UiCard.Content>
         {props.value ? <Metric props={props} /> : null}
         {children}
       </UiCard.Content>

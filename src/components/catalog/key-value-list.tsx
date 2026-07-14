@@ -1,4 +1,5 @@
 import type { CatalogComponentProps } from '@/catalog/catalog';
+import { flowBlock } from '@/components/catalog/flow';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 
@@ -8,7 +9,9 @@ const colsClass = { 1: 'grid-cols-1', 2: 'sm:grid-cols-2' } as const;
 
 export function KeyValueList({ props }: { props: Props }) {
   return (
-    <dl className={cn('grid grid-cols-1 gap-x-8 gap-y-3', colsClass[props.columns ?? 1])}>
+    <dl
+      className={cn('grid grid-cols-1 gap-x-8 gap-y-3', colsClass[props.columns ?? 1], flowBlock)}
+    >
       {props.items.map((item) => (
         <div
           // In two-column mode a trailing odd row would fill only half the

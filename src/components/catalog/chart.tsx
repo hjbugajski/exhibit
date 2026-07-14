@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 
 import type { CatalogComponentProps } from '@/catalog/catalog';
+import { flowBlock } from '@/components/catalog/flow';
 import { Skeleton } from '@/components/ui/skeleton';
 
 type Props = CatalogComponentProps<'Chart'>;
@@ -13,8 +14,10 @@ const ChartInner = lazy(() => import('./chart-inner'));
 
 export function Chart({ props }: { props: Props }) {
   return (
-    <Suspense fallback={<Skeleton className="h-64 w-full" />}>
-      <ChartInner props={props} />
-    </Suspense>
+    <div className={flowBlock}>
+      <Suspense fallback={<Skeleton className="h-64 w-full" />}>
+        <ChartInner props={props} />
+      </Suspense>
+    </div>
   );
 }

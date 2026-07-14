@@ -1,6 +1,7 @@
-import type { ReactNode } from 'react';
+import { Children, type ReactNode } from 'react';
 
 import type { CatalogComponentProps } from '@/catalog/catalog';
+import { flowCell, flowGroup } from '@/components/catalog/flow';
 import { cn } from '@/lib/utils';
 
 type Props = CatalogComponentProps<'Columns'>;
@@ -13,6 +14,10 @@ const ratioClass = {
 
 export function Columns({ props, children }: { props: Props; children?: ReactNode }) {
   return (
-    <div className={cn('grid grid-cols-1 gap-8', ratioClass[props.ratio ?? '1:1'])}>{children}</div>
+    <div className={cn('grid grid-cols-1 gap-8', ratioClass[props.ratio ?? '1:1'], flowGroup)}>
+      {Children.map(children, (child) => (
+        <div className={flowCell}>{child}</div>
+      ))}
+    </div>
   );
 }

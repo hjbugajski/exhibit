@@ -1,8 +1,10 @@
 import { useStateStore, useStateValue } from '@json-render/react';
 
 import type { CatalogComponentProps } from '@/catalog/catalog';
+import { flowBlock } from '@/components/catalog/flow';
 import { QuestionCard } from '@/components/catalog/question-card';
 import { RadioGroup } from '@/components/ui/radio-group';
+import { cn } from '@/lib/utils';
 
 type Props = CatalogComponentProps<'Choice'>;
 
@@ -15,7 +17,11 @@ export function Choice({ props }: { props: Props }) {
   const selected = useStateValue<string>(props.statePath);
 
   return (
-    <QuestionCard cardClassName="px-4" contentClassName="flex flex-col gap-3" label={props.label}>
+    <QuestionCard
+      cardClassName={cn('px-4', flowBlock)}
+      contentClassName="flex flex-col gap-3"
+      label={props.label}
+    >
       <RadioGroup.Root
         onValueChange={(value) => set(props.statePath, String(value))}
         value={selected ?? null}

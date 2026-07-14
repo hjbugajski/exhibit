@@ -1,6 +1,7 @@
 import { useStateStore, useStateValue } from '@json-render/react';
 
 import type { CatalogComponentProps } from '@/catalog/catalog';
+import { flowBlock } from '@/components/catalog/flow';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 
@@ -22,8 +23,14 @@ function StatefulItem({ item, statePath }: { item: Item; statePath: string }) {
 
   return (
     <li>
-      <label className="flex cursor-pointer items-center gap-3">
-        <Checkbox checked={checked} onCheckedChange={(value) => set(statePath, value === true)} />
+      {/* items-start + box offset: keeps the box on the first line when the text wraps (mt-1
+          centers the 16px box in the 24px base line). */}
+      <label className="flex cursor-pointer items-start gap-3">
+        <Checkbox
+          checked={checked}
+          className="mt-1"
+          onCheckedChange={(value) => set(statePath, value === true)}
+        />
         {itemBody(item.text, checked)}
       </label>
     </li>
@@ -32,13 +39,13 @@ function StatefulItem({ item, statePath }: { item: Item; statePath: string }) {
 
 export function Checklist({ props }: { props: Props }) {
   return (
-    <ul className="flex flex-col gap-2">
+    <ul className={cn('flex flex-col gap-2', flowBlock)}>
       {props.items.map((item) =>
         item.statePath ? (
           <StatefulItem item={item} key={item.id} statePath={item.statePath} />
         ) : (
-          <li className="flex items-center gap-3" key={item.id}>
-            <Checkbox checked={Boolean(item.checked)} disabled />
+          <li className="flex items-start gap-3" key={item.id}>
+            <Checkbox checked={Boolean(item.checked)} className="mt-1" disabled />
             {itemBody(item.text, Boolean(item.checked))}
           </li>
         ),
