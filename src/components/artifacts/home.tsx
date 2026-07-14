@@ -119,9 +119,12 @@ export function Home() {
       >
         <Gallery.Toolbar>
           <Gallery.Search />
-          <Gallery.Filters availableTags={tags} />
-          <Gallery.Sort />
-          <Gallery.ViewToggle />
+          {/* Second toolbar row on mobile, right-aligned; trails the search inline from md up. */}
+          <div className="flex items-center justify-end gap-3">
+            <Gallery.Filters availableTags={tags} />
+            <Gallery.Sort />
+            <Gallery.ViewToggle />
+          </div>
         </Gallery.Toolbar>
         {items.length === 0 ? (
           <Gallery.Empty />

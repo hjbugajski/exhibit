@@ -1,5 +1,7 @@
 import { useMemo } from 'react';
 
+import { cn } from '@/lib/utils';
+
 /** 32-bit FNV-1a — cheap, stable hash of the seed string. */
 function fnv1a(input: string): number {
   let hash = 0x811c9dc5;
@@ -79,7 +81,14 @@ export function Identicon({ seed, className }: { seed: string; className?: strin
   const { cells, color, viewBox } = useMemo(() => generate(seed), [seed]);
 
   return (
-    <svg aria-hidden className={className} shapeRendering="crispEdges" viewBox={viewBox}>
+    // h-full/w-full is load-bearing: with only a viewBox, iOS Safari gives the svg no intrinsic
+    // size inside the fixed-size avatar containers and renders it collapsed.
+    <svg
+      aria-hidden
+      className={cn('h-full w-full', className)}
+      shapeRendering="crispEdges"
+      viewBox={viewBox}
+    >
       {cells.map(({ x, y }) => (
         <rect fill={color} height="1" key={`${x}-${y}`} width="1" x={x} y={y} />
       ))}

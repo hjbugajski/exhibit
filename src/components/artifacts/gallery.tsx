@@ -94,8 +94,9 @@ export interface GalleryToolbarProps {
   children: ReactNode;
 }
 
+/** Stacks on mobile (search row, then controls); a single flex row from md up. */
 function Toolbar({ children }: GalleryToolbarProps) {
-  return <div className="flex flex-wrap items-center gap-3">{children}</div>;
+  return <div className="grid grid-cols-1 gap-3 md:flex md:items-center">{children}</div>;
 }
 
 function Search() {
@@ -189,8 +190,11 @@ function Filters({ availableTags }: GalleryFiltersProps) {
                 value={type}
               >
                 {typeOptions.map((option) => (
-                  <label className="flex cursor-pointer items-center gap-2" key={option}>
-                    <RadioGroup.Item value={option} />
+                  <label
+                    className="flex cursor-pointer items-start gap-2 pointer-coarse:py-1"
+                    key={option}
+                  >
+                    <RadioGroup.Item className="mt-0.5" value={option} />
                     {typeLabels[option]}
                   </label>
                 ))}
@@ -201,9 +205,13 @@ function Filters({ availableTags }: GalleryFiltersProps) {
                 <p className="text-foreground-muted text-xs font-medium">Tags</p>
                 <div className="flex flex-col gap-2">
                   {availableTags.map((tag) => (
-                    <label className="flex cursor-pointer items-center gap-2" key={tag}>
+                    <label
+                      className="flex cursor-pointer items-start gap-2 pointer-coarse:py-1"
+                      key={tag}
+                    >
                       <Checkbox
                         checked={tags.includes(tag)}
+                        className="mt-0.5"
                         onCheckedChange={(checked) => toggleTag(tag, checked === true)}
                       />
                       {tag}
@@ -214,9 +222,10 @@ function Filters({ availableTags }: GalleryFiltersProps) {
             ) : null}
             <div className="space-y-2">
               <p className="text-foreground-muted text-xs font-medium">Show</p>
-              <label className="flex cursor-pointer items-center gap-2">
+              <label className="flex cursor-pointer items-start gap-2 pointer-coarse:py-1">
                 <Checkbox
                   checked={archived}
+                  className="mt-0.5"
                   onCheckedChange={(checked) => setArchived(checked === true)}
                 />
                 Archived only
@@ -236,11 +245,7 @@ function ViewToggle() {
   } = useGalleryContext();
 
   return (
-    <Tabs.Root
-      className="ml-auto"
-      onValueChange={(value) => setView(value as GalleryView)}
-      value={view}
-    >
+    <Tabs.Root onValueChange={(value) => setView(value as GalleryView)} value={view}>
       <Tabs.List>
         <Tabs.Trigger aria-label="Grid view" className="w-8" value="grid">
           <LayoutGrid />
