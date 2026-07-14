@@ -711,3 +711,25 @@
 .prose > :last-child {
   margin-bottom: 0;
 }
+
+/*
+ * Shiki syntax colors (see src/lib/shiki-theme.ts, the strato port): the
+ * highlighter emits `var(--shiki-*)` references, resolved here onto the house
+ * scales. Defined once — the step-11 hue tokens are redeclared per scheme, so
+ * code recolors with data-theme without re-tokenizing. Backgrounds stay the
+ * app's own (bg-background on the <pre>), never the theme's.
+ */
+:root {
+  --shiki-foreground: var(--color-foreground);
+  --shiki-token-comment: var(--color-foreground-muted);
+  --shiki-token-punctuation: var(--color-foreground-muted);
+  --shiki-token-string: var(--green-11);
+  --shiki-token-constant: var(--orange-11);
+  --shiki-token-keyword: var(--pink-11);
+  --shiki-token-function: var(--blue-11);
+  --shiki-token-operator: var(--violet-11);
+  --shiki-token-heading: var(--amber-11);
+  --shiki-token-inserted: var(--green-11);
+  --shiki-token-deleted: var(--red-11);
+  --shiki-token-changed: var(--orange-11);
+}

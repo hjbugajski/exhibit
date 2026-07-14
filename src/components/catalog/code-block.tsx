@@ -1,6 +1,7 @@
 import { Check, Copy, X } from 'lucide-react';
 
 import type { CatalogComponentProps } from '@/catalog/catalog';
+import { HighlightedCode } from '@/components/blocks/highlighted-code';
 import { flowBlock } from '@/components/catalog/flow';
 import { Button } from '@/components/ui/button';
 import { useCopyToClipboard } from '@/lib/use-copy-to-clipboard';
@@ -38,9 +39,11 @@ export function CodeBlock({ props }: { props: Props }) {
           </Button>
         </div>
       </div>
-      <pre className="bg-surface-muted overflow-x-auto p-4 text-sm">
-        <code>{props.code}</code>
-      </pre>
+      <HighlightedCode
+        className="bg-background overflow-x-auto p-4 text-sm"
+        code={props.code}
+        language={props.language}
+      />
     </div>
   );
 }
