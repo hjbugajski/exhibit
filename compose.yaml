@@ -19,6 +19,9 @@ services:
       # verification). Leave empty to run without email.
       - RESEND_API_KEY=${RESEND_API_KEY:-}
       - EMAIL_FROM=${EMAIL_FROM:-}
+      # Optional Protomaps API key for the house-styled basemap; empty falls
+      # back to Carto's stock styles.
+      - PROTOMAPS_API_KEY=${PROTOMAPS_API_KEY:-}
       # Reverse proxies to trust for client-IP resolution (rate limiting).
       - TRUSTED_PROXIES=${TRUSTED_PROXIES:-}
     restart: unless-stopped

@@ -64,6 +64,7 @@ Connected clients appear in **/settings → MCP connections**, where you can rev
 | `DATABASE_PATH`      | no         | SQLite file. Defaults to `./data/app.db`; the Docker image pins it to `/data/app.db` inside its volume.             |
 | `RESEND_API_KEY`     | no         | Enables outbound email via [Resend](https://resend.com): password reset and email-change verification.              |
 | `EMAIL_FROM`         | no         | Sender for Resend mail, e.g. `Exhibit <exhibit@your-domain.com>`; the domain must be verified in Resend.            |
+| `PROTOMAPS_API_KEY`  | no         | [Protomaps](https://protomaps.com) key: Map blocks render the house-styled basemap; unset falls back to Carto.      |
 | `MIGRATIONS_PATH`    | no         | Only if you relocate the drizzle migrations.                                                                        |
 | `TRUSTED_PROXIES`    | no         | Comma-separated IPs/CIDRs of reverse proxies in front of the app; scopes which forwarded hops rate limiting trusts. |
 
