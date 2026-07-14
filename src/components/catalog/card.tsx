@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { Minus, TrendingDown, TrendingUp } from 'lucide-react';
 
 import type { CatalogComponentProps } from '@/catalog/catalog';
-import { flowGroup } from '@/components/catalog/flow';
+import { flowBlock } from '@/components/catalog/flow';
 import { Badge } from '@/components/ui/badge';
 import { Card as UiCard } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -46,7 +46,7 @@ export function Card({ props, children }: { props: Props; children?: ReactNode }
   const hasHeader = Boolean(props.title || props.subtitle || props.badge);
 
   return (
-    <UiCard.Root className={flowGroup}>
+    <UiCard.Root className={flowBlock}>
       {hasHeader ? (
         <UiCard.Header>
           {props.title ? <UiCard.Title>{props.title}</UiCard.Title> : null}

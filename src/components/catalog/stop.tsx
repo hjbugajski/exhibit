@@ -20,7 +20,7 @@ export function Stop({ props }: { props: Props }) {
   return (
     /* Icon-side (left) padding one notch tighter so the icon sits optically
        aligned with the card edge — same rule as icon-leading buttons. */
-    <Card.Root className="pr-card pl-card-icon my-3 flex-row gap-3 first:mt-0 last:mb-0">
+    <Card.Root className="pr-card pl-card-icon my-4 flex-row gap-3 first:mt-0 last:mb-0">
       <Icon aria-hidden className="text-foreground-muted mt-0.5 size-4 shrink-0" />
       <div className="min-w-0">
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">

@@ -4,14 +4,18 @@
  * y-margins and adjacent margins collapse like prose. `first:mt-0 last:mb-0`
  * makes a block sit flush when it opens or closes any flow context (the spec
  * root, a Section body, Card content, a Tabs panel, a Grid/Columns cell).
- * One-off tiers (Heading, Divider, Day, Stop) stay inline in their components.
+ *
+ * Big spacing is reserved for document structure; everything inside a section
+ * shares one uniform base rhythm. Headings are asymmetric: big top margin to
+ * open a run, small bottom to hug the content they title. Four tiers:
+ *   4  (16px) — tight offsets (heading mb, tab panel, Day body, Stop rhythm)
+ *   6  (24px) — base rhythm between sibling blocks (flowBlock, column gaps)
+ *   8  (32px) — standouts: h3 mt, Section/Itinerary header-to-body, Divider, Day
+ *   12 (48px) — chapters: flowSection, h1/h2 mt
  */
 
-/** Default rhythm for leaf blocks (Prose, Table, Callout, …). */
-export const flowBlock = 'my-5 first:mt-0 last:mb-0';
-
-/** Slightly wider rhythm for grouping containers (Grid, Columns, Card, Tabs). */
-export const flowGroup = 'my-6 first:mt-0 last:mb-0';
+/** Rhythm between sibling blocks — leaves and grouping containers alike. */
+export const flowBlock = 'my-6 first:mt-0 last:mb-0';
 
 /** Widest rhythm for document-level chapters (Section, Itinerary). */
 export const flowSection = 'my-12 first:mt-0 last:mb-0';

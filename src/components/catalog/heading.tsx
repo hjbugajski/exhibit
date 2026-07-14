@@ -9,9 +9,9 @@ type Props = CatalogComponentProps<'Heading'>;
  * rendered spec exceeds text-2xl.
  */
 const levelClass = {
-  1: 'text-2xl mt-10 mb-4',
-  2: 'text-xl mt-10 mb-4',
-  3: 'text-lg mt-8 mb-3',
+  1: 'text-2xl mt-12 mb-4',
+  2: 'text-xl mt-12 mb-4',
+  3: 'text-lg mt-8 mb-4',
 } as const;
 
 export function Heading({ props }: { props: Props }) {
