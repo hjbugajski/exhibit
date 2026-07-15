@@ -57,6 +57,7 @@ describe('THEME_INIT_SCRIPT', () => {
   it('is executable and stamps the stored scheme', () => {
     localStorage.setItem(THEME_STORAGE_KEY, 'dark');
 
+    // oxlint-disable-next-line typescript/no-implied-eval
     new Function(THEME_INIT_SCRIPT)();
 
     expect(document.documentElement.dataset.theme).toBe('dark');
