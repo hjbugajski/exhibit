@@ -91,10 +91,11 @@
  *                (borders), and the focus-danger halo
  *   charts       chart-1..8, drawn from the spectrum in contrast order
  *
- * Dark mode has no toggle — it follows the OS, so it is pure CSS: dark tokens
- * live under `@media (prefers-color-scheme: dark)` instead of a `.dark` class
- * (no theme script, nothing to hydrate), and `dark:` utilities use Tailwind's
- * default media-based variant.
+ * Scheme switching: an inline pre-paint script (see src/lib/theme.ts) stamps
+ * the resolved preference — System / Light / Dark, picked in the avatar menu —
+ * as `data-theme="light|dark"` on <html>, so dark tokens live under
+ * `:root[data-theme='dark']` and that attribute is the single dark trigger
+ * (components still never use `dark:` variants).
  */
 /*
  * `static` forces every token to emit even without a utility-class usage —
@@ -398,149 +399,151 @@
   --radius: 0.375rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    /* gray scale — pure neutral; even 0.035 steps through 1-6 */
-    --gray-1: oklch(0.15 0 0);
-    --gray-2: oklch(0.185 0 0);
-    --gray-3: oklch(0.22 0 0);
-    --gray-4: oklch(0.255 0 0);
-    --gray-5: oklch(0.29 0 0);
-    --gray-6: oklch(0.325 0 0);
-    --gray-7: oklch(0.37 0 0);
-    --gray-8: oklch(0.47 0 0);
-    --gray-9: oklch(0.56 0 0);
-    --gray-10: oklch(0.705 0 0);
-    --gray-11: oklch(0.88 0 0);
-    --gray-12: oklch(0.985 0 0);
-    /* spectrum scales — dark values */
-    --red-1: oklch(0.19 0.027 25);
-    --red-2: oklch(0.215 0.04 25);
-    --red-3: oklch(0.26 0.068 25);
-    --red-4: oklch(0.29 0.081 25);
-    --red-5: oklch(0.32 0.094 25);
-    --red-6: oklch(0.36 0.104 25);
-    --red-7: oklch(0.42 0.122 25);
-    --red-8: oklch(0.5 0.144 25);
-    --red-9: oklch(0.61 0.18 25);
-    --red-10: oklch(0.65 0.18 25);
-    --red-11: oklch(0.72 0.18 25);
-    --red-12: oklch(0.9 0.045 25);
-    --orange-1: oklch(0.19 0.024 50);
-    --orange-2: oklch(0.215 0.035 50);
-    --orange-3: oklch(0.26 0.061 50);
-    --orange-4: oklch(0.29 0.072 50);
-    --orange-5: oklch(0.32 0.083 50);
-    --orange-6: oklch(0.36 0.093 50);
-    --orange-7: oklch(0.42 0.109 50);
-    --orange-8: oklch(0.5 0.128 50);
-    --orange-9: oklch(0.64 0.16 50);
-    --orange-10: oklch(0.68 0.16 50);
-    --orange-11: oklch(0.75 0.16 50);
-    --orange-12: oklch(0.9 0.04 50);
-    --amber-1: oklch(0.19 0.022 70);
-    --amber-2: oklch(0.215 0.033 70);
-    --amber-3: oklch(0.26 0.057 70);
-    --amber-4: oklch(0.29 0.068 70);
-    --amber-5: oklch(0.32 0.078 70);
-    --amber-6: oklch(0.36 0.087 70);
-    --amber-7: oklch(0.42 0.102 70);
-    --amber-8: oklch(0.5 0.12 70);
-    --amber-9: oklch(0.67 0.15 70);
-    --amber-10: oklch(0.71 0.15 70);
-    --amber-11: oklch(0.78 0.15 70);
-    --amber-12: oklch(0.9 0.037 70);
-    --green-1: oklch(0.19 0.026 152);
-    --green-2: oklch(0.215 0.037 152);
-    --green-3: oklch(0.26 0.065 152);
-    --green-4: oklch(0.29 0.077 152);
-    --green-5: oklch(0.32 0.088 152);
-    --green-6: oklch(0.36 0.099 152);
-    --green-7: oklch(0.42 0.116 152);
-    --green-8: oklch(0.5 0.136 152);
-    --green-9: oklch(0.65 0.17 152);
-    --green-10: oklch(0.69 0.17 152);
-    --green-11: oklch(0.76 0.17 152);
-    --green-12: oklch(0.9 0.043 152);
-    --teal-1: oklch(0.19 0.019 185);
-    --teal-2: oklch(0.215 0.029 185);
-    --teal-3: oklch(0.26 0.049 185);
-    --teal-4: oklch(0.29 0.059 185);
-    --teal-5: oklch(0.32 0.068 185);
-    --teal-6: oklch(0.36 0.075 185);
-    --teal-7: oklch(0.42 0.088 185);
-    --teal-8: oklch(0.5 0.104 185);
-    --teal-9: oklch(0.67 0.13 185);
-    --teal-10: oklch(0.71 0.13 185);
-    --teal-11: oklch(0.78 0.13 185);
-    --teal-12: oklch(0.9 0.033 185);
-    --cyan-1: oklch(0.19 0.018 220);
-    --cyan-2: oklch(0.215 0.026 220);
-    --cyan-3: oklch(0.26 0.046 220);
-    --cyan-4: oklch(0.29 0.054 220);
-    --cyan-5: oklch(0.32 0.062 220);
-    --cyan-6: oklch(0.36 0.07 220);
-    --cyan-7: oklch(0.42 0.082 220);
-    --cyan-8: oklch(0.5 0.096 220);
-    --cyan-9: oklch(0.67 0.12 220);
-    --cyan-10: oklch(0.71 0.12 220);
-    --cyan-11: oklch(0.78 0.12 220);
-    --cyan-12: oklch(0.9 0.03 220);
-    --blue-1: oklch(0.19 0.024 255);
-    --blue-2: oklch(0.215 0.035 255);
-    --blue-3: oklch(0.26 0.061 255);
-    --blue-4: oklch(0.29 0.072 255);
-    --blue-5: oklch(0.32 0.083 255);
-    --blue-6: oklch(0.36 0.093 255);
-    --blue-7: oklch(0.42 0.109 255);
-    --blue-8: oklch(0.5 0.128 255);
-    --blue-9: oklch(0.59 0.16 255);
-    --blue-10: oklch(0.63 0.16 255);
-    --blue-11: oklch(0.7 0.16 255);
-    --blue-12: oklch(0.9 0.04 255);
-    --indigo-1: oklch(0.19 0.026 275);
-    --indigo-2: oklch(0.215 0.037 275);
-    --indigo-3: oklch(0.26 0.065 275);
-    --indigo-4: oklch(0.29 0.077 275);
-    --indigo-5: oklch(0.32 0.088 275);
-    --indigo-6: oklch(0.36 0.099 275);
-    --indigo-7: oklch(0.42 0.116 275);
-    --indigo-8: oklch(0.5 0.136 275);
-    --indigo-9: oklch(0.57 0.17 275);
-    --indigo-10: oklch(0.61 0.17 275);
-    --indigo-11: oklch(0.68 0.17 275);
-    --indigo-12: oklch(0.9 0.043 275);
-    --violet-1: oklch(0.19 0.027 295);
-    --violet-2: oklch(0.215 0.04 295);
-    --violet-3: oklch(0.26 0.068 295);
-    --violet-4: oklch(0.29 0.081 295);
-    --violet-5: oklch(0.32 0.094 295);
-    --violet-6: oklch(0.36 0.104 295);
-    --violet-7: oklch(0.42 0.122 295);
-    --violet-8: oklch(0.5 0.144 295);
-    --violet-9: oklch(0.59 0.18 295);
-    --violet-10: oklch(0.63 0.18 295);
-    --violet-11: oklch(0.7 0.18 295);
-    --violet-12: oklch(0.9 0.045 295);
-    --pink-1: oklch(0.19 0.027 350);
-    --pink-2: oklch(0.215 0.04 350);
-    --pink-3: oklch(0.26 0.068 350);
-    --pink-4: oklch(0.29 0.081 350);
-    --pink-5: oklch(0.32 0.094 350);
-    --pink-6: oklch(0.36 0.104 350);
-    --pink-7: oklch(0.42 0.122 350);
-    --pink-8: oklch(0.5 0.144 350);
-    --pink-9: oklch(0.63 0.18 350);
-    --pink-10: oklch(0.67 0.18 350);
-    --pink-11: oklch(0.74 0.18 350);
-    --pink-12: oklch(0.9 0.045 350);
-    /*
-     * Semantics swap through the primitives above — same step, same role.
-     * Only tokens whose *value shape* differs per scheme live here.
-     */
-    --overlay: oklch(0 0 0 / 45%);
-    --danger-strong: var(--red-8);
-  }
+:root[data-theme='dark'] {
+  /*
+   * gray scale — cool charcoal: floor raised off the darkest step with a faint blue cast
+   * (hue 255) in the depths that fades to neutral by the text end; ink capped at 0.94 to
+   * soften the old near-white foreground
+   */
+  --gray-1: oklch(0.195 0.006 255);
+  --gray-2: oklch(0.225 0.006 255);
+  --gray-3: oklch(0.255 0.006 255);
+  --gray-4: oklch(0.285 0.005 255);
+  --gray-5: oklch(0.315 0.005 255);
+  --gray-6: oklch(0.35 0.004 255);
+  --gray-7: oklch(0.39 0.003 255);
+  --gray-8: oklch(0.48 0.002 255);
+  --gray-9: oklch(0.56 0 0);
+  --gray-10: oklch(0.7 0 0);
+  --gray-11: oklch(0.84 0 0);
+  --gray-12: oklch(0.94 0 0);
+  /* spectrum scales — dark values */
+  --red-1: oklch(0.235 0.027 25);
+  --red-2: oklch(0.255 0.04 25);
+  --red-3: oklch(0.295 0.068 25);
+  --red-4: oklch(0.32 0.081 25);
+  --red-5: oklch(0.345 0.094 25);
+  --red-6: oklch(0.385 0.104 25);
+  --red-7: oklch(0.44 0.122 25);
+  --red-8: oklch(0.51 0.144 25);
+  --red-9: oklch(0.61 0.18 25);
+  --red-10: oklch(0.65 0.18 25);
+  --red-11: oklch(0.72 0.18 25);
+  --red-12: oklch(0.9 0.045 25);
+  --orange-1: oklch(0.235 0.024 50);
+  --orange-2: oklch(0.255 0.035 50);
+  --orange-3: oklch(0.295 0.061 50);
+  --orange-4: oklch(0.32 0.072 50);
+  --orange-5: oklch(0.345 0.083 50);
+  --orange-6: oklch(0.385 0.093 50);
+  --orange-7: oklch(0.44 0.109 50);
+  --orange-8: oklch(0.51 0.128 50);
+  --orange-9: oklch(0.64 0.16 50);
+  --orange-10: oklch(0.68 0.16 50);
+  --orange-11: oklch(0.75 0.16 50);
+  --orange-12: oklch(0.9 0.04 50);
+  --amber-1: oklch(0.235 0.022 70);
+  --amber-2: oklch(0.255 0.033 70);
+  --amber-3: oklch(0.295 0.057 70);
+  --amber-4: oklch(0.32 0.068 70);
+  --amber-5: oklch(0.345 0.078 70);
+  --amber-6: oklch(0.385 0.087 70);
+  --amber-7: oklch(0.44 0.102 70);
+  --amber-8: oklch(0.51 0.12 70);
+  --amber-9: oklch(0.67 0.15 70);
+  --amber-10: oklch(0.71 0.15 70);
+  --amber-11: oklch(0.78 0.15 70);
+  --amber-12: oklch(0.9 0.037 70);
+  --green-1: oklch(0.235 0.026 152);
+  --green-2: oklch(0.255 0.037 152);
+  --green-3: oklch(0.295 0.065 152);
+  --green-4: oklch(0.32 0.077 152);
+  --green-5: oklch(0.345 0.088 152);
+  --green-6: oklch(0.385 0.099 152);
+  --green-7: oklch(0.44 0.116 152);
+  --green-8: oklch(0.51 0.136 152);
+  --green-9: oklch(0.65 0.17 152);
+  --green-10: oklch(0.69 0.17 152);
+  --green-11: oklch(0.76 0.17 152);
+  --green-12: oklch(0.9 0.043 152);
+  --teal-1: oklch(0.235 0.019 185);
+  --teal-2: oklch(0.255 0.029 185);
+  --teal-3: oklch(0.295 0.049 185);
+  --teal-4: oklch(0.32 0.059 185);
+  --teal-5: oklch(0.345 0.068 185);
+  --teal-6: oklch(0.385 0.075 185);
+  --teal-7: oklch(0.44 0.088 185);
+  --teal-8: oklch(0.51 0.104 185);
+  --teal-9: oklch(0.67 0.13 185);
+  --teal-10: oklch(0.71 0.13 185);
+  --teal-11: oklch(0.78 0.13 185);
+  --teal-12: oklch(0.9 0.033 185);
+  --cyan-1: oklch(0.235 0.018 220);
+  --cyan-2: oklch(0.255 0.026 220);
+  --cyan-3: oklch(0.295 0.046 220);
+  --cyan-4: oklch(0.32 0.054 220);
+  --cyan-5: oklch(0.345 0.062 220);
+  --cyan-6: oklch(0.385 0.07 220);
+  --cyan-7: oklch(0.44 0.082 220);
+  --cyan-8: oklch(0.51 0.096 220);
+  --cyan-9: oklch(0.67 0.12 220);
+  --cyan-10: oklch(0.71 0.12 220);
+  --cyan-11: oklch(0.78 0.12 220);
+  --cyan-12: oklch(0.9 0.03 220);
+  --blue-1: oklch(0.235 0.024 255);
+  --blue-2: oklch(0.255 0.035 255);
+  --blue-3: oklch(0.295 0.061 255);
+  --blue-4: oklch(0.32 0.072 255);
+  --blue-5: oklch(0.345 0.083 255);
+  --blue-6: oklch(0.385 0.093 255);
+  --blue-7: oklch(0.44 0.109 255);
+  --blue-8: oklch(0.51 0.128 255);
+  --blue-9: oklch(0.59 0.16 255);
+  --blue-10: oklch(0.63 0.16 255);
+  --blue-11: oklch(0.7 0.16 255);
+  --blue-12: oklch(0.9 0.04 255);
+  --indigo-1: oklch(0.235 0.026 275);
+  --indigo-2: oklch(0.255 0.037 275);
+  --indigo-3: oklch(0.295 0.065 275);
+  --indigo-4: oklch(0.32 0.077 275);
+  --indigo-5: oklch(0.345 0.088 275);
+  --indigo-6: oklch(0.385 0.099 275);
+  --indigo-7: oklch(0.44 0.116 275);
+  --indigo-8: oklch(0.51 0.136 275);
+  --indigo-9: oklch(0.57 0.17 275);
+  --indigo-10: oklch(0.61 0.17 275);
+  --indigo-11: oklch(0.68 0.17 275);
+  --indigo-12: oklch(0.9 0.043 275);
+  --violet-1: oklch(0.235 0.027 295);
+  --violet-2: oklch(0.255 0.04 295);
+  --violet-3: oklch(0.295 0.068 295);
+  --violet-4: oklch(0.32 0.081 295);
+  --violet-5: oklch(0.345 0.094 295);
+  --violet-6: oklch(0.385 0.104 295);
+  --violet-7: oklch(0.44 0.122 295);
+  --violet-8: oklch(0.51 0.144 295);
+  --violet-9: oklch(0.59 0.18 295);
+  --violet-10: oklch(0.63 0.18 295);
+  --violet-11: oklch(0.7 0.18 295);
+  --violet-12: oklch(0.9 0.045 295);
+  --pink-1: oklch(0.235 0.027 350);
+  --pink-2: oklch(0.255 0.04 350);
+  --pink-3: oklch(0.295 0.068 350);
+  --pink-4: oklch(0.32 0.081 350);
+  --pink-5: oklch(0.345 0.094 350);
+  --pink-6: oklch(0.385 0.104 350);
+  --pink-7: oklch(0.44 0.122 350);
+  --pink-8: oklch(0.51 0.144 350);
+  --pink-9: oklch(0.63 0.18 350);
+  --pink-10: oklch(0.67 0.18 350);
+  --pink-11: oklch(0.74 0.18 350);
+  --pink-12: oklch(0.9 0.045 350);
+  /*
+   * Semantics swap through the primitives above — same step, same role.
+   * Only tokens whose *value shape* differs per scheme live here.
+   */
+  --overlay: oklch(0 0 0 / 45%);
+  --danger-strong: var(--red-8);
 }
 
 /*
@@ -615,9 +618,12 @@
     /* Inter tracks a touch tight at UI sizes; tracking-* utilities still
        override locally (headings keep their tracking-tight). */
     letter-spacing: 0.01em;
-    /* Native form controls follow the OS like the tokens do (scrollbars are
-       themed below). */
-    color-scheme: light dark;
+    /* Native form controls follow the resolved theme like the tokens do
+       (scrollbars are themed below). */
+    color-scheme: light;
+  }
+  html[data-theme='dark'] {
+    color-scheme: dark;
   }
   html,
   body,
@@ -704,4 +710,26 @@
 
 .prose > :last-child {
   margin-bottom: 0;
+}
+
+/*
+ * Shiki syntax colors (see src/lib/shiki-theme.ts, the strato port): the
+ * highlighter emits `var(--shiki-*)` references, resolved here onto the house
+ * scales. Defined once — the step-11 hue tokens are redeclared per scheme, so
+ * code recolors with data-theme without re-tokenizing. Backgrounds stay the
+ * app's own (bg-background on the <pre>), never the theme's.
+ */
+:root {
+  --shiki-foreground: var(--color-foreground);
+  --shiki-token-comment: var(--color-foreground-muted);
+  --shiki-token-punctuation: var(--color-foreground-muted);
+  --shiki-token-string: var(--green-11);
+  --shiki-token-constant: var(--orange-11);
+  --shiki-token-keyword: var(--pink-11);
+  --shiki-token-function: var(--blue-11);
+  --shiki-token-operator: var(--violet-11);
+  --shiki-token-heading: var(--amber-11);
+  --shiki-token-inserted: var(--green-11);
+  --shiki-token-deleted: var(--red-11);
+  --shiki-token-changed: var(--orange-11);
 }

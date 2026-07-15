@@ -28,7 +28,7 @@ function Group({ className, ...props }: SelectGroupProps) {
   return (
     <SelectPrimitive.Group
       data-slot="select-group"
-      className={cn('p-popup scroll-my-1', className)}
+      className={cn('p-popup scroll-my-1 pointer-coarse:p-1.5', className)}
       {...props}
     />
   );
@@ -40,7 +40,10 @@ function GroupLabel({ className, ...props }: SelectGroupLabelProps) {
   return (
     <SelectPrimitive.GroupLabel
       data-slot="select-label"
-      className={cn('text-foreground-muted px-compact py-popup text-xs', className)}
+      className={cn(
+        'text-foreground-muted px-compact py-popup text-xs pointer-coarse:py-1.5',
+        className,
+      )}
       {...props}
     />
   );
@@ -171,7 +174,7 @@ function Item({ className, children, ...props }: SelectItemProps) {
     <SelectPrimitive.Item
       data-slot="select-item"
       className={cn(
-        "focus:bg-surface-muted focus:text-foreground [&_svg]:text-foreground-muted gap-icon-label py-popup pl-compact has-data-[icon=inline-start]:pl-compact-icon relative flex w-full cursor-default items-center rounded-md pr-8 text-sm outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
+        "focus:bg-surface-muted focus:text-foreground [&_svg]:text-foreground-muted gap-icon-label py-popup pl-compact has-data-[icon=inline-start]:pl-compact-icon relative flex w-full cursor-default items-center rounded-md pr-8 text-sm outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 pointer-coarse:py-2 pointer-coarse:text-base [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
         className,
       )}
       {...props}

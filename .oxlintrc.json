@@ -31,6 +31,7 @@
     "eslint/no-var": "error",
     "eslint/prefer-const": "error",
     "import/no-cycle": "error",
+    "jsx-a11y/label-has-associated-control": ["warn", { "controlComponents": ["Checkbox"] }],
     "import/no-duplicates": "error",
     "import/no-self-import": "error",
     "promise/no-new-statics": "error",

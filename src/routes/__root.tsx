@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 
 import { TanStackDevtools } from '@tanstack/react-devtools';
 import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router';
@@ -6,6 +6,7 @@ import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools';
 import { createMiddleware } from '@tanstack/react-start';
 import { evlogErrorHandler } from 'evlog/nitro/v3';
 
+import { applyStoredTheme, THEME_INIT_SCRIPT } from '@/lib/theme';
 import appCss from '@/styles.css?url';
 
 export const Route = createRootRoute({
@@ -48,13 +49,31 @@ export const Route = createRootRoute({
         href: '/apple-touch-icon.png',
       },
     ],
+    scripts: [
+      // Stamps data-theme on <html> before first paint — see THEME_INIT_SCRIPT.
+      {
+        children: THEME_INIT_SCRIPT,
+      },
+    ],
   }),
   shellComponent: RootDocument,
 });
 
 function RootDocument({ children }: { children: ReactNode }) {
+  // A 'system' preference must track live OS scheme changes; explicit preferences ignore them
+  // (applyStoredTheme re-resolves from storage each time).
+  useEffect(() => {
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+
+    media.addEventListener('change', applyStoredTheme);
+
+    return () => media.removeEventListener('change', applyStoredTheme);
+  }, []);
+
   return (
-    <html lang="en">
+    // suppressHydrationWarning: the pre-paint theme script stamps data-theme on <html> before
+    // React hydrates, which is an expected server/client attribute difference.
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>

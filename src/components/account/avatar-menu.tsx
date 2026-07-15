@@ -1,9 +1,19 @@
+import { useEffect, useState } from 'react';
+
 import { Link, useRouter } from '@tanstack/react-router';
-import { BookOpen, LogOut, Settings } from 'lucide-react';
+import { BookOpen, LogOut, Settings, SunMoon } from 'lucide-react';
 
 import { Identicon } from '@/components/account/identicon';
 import { DropdownMenu } from '@/components/ui/dropdown-menu';
 import { authClient } from '@/lib/auth-client';
+import type { ThemePreference } from '@/lib/theme';
+import { getStoredThemePreference, setThemePreference } from '@/lib/theme';
+
+const themeOptions: { value: ThemePreference; label: string }[] = [
+  { value: 'system', label: 'System' },
+  { value: 'light', label: 'Light' },
+  { value: 'dark', label: 'Dark' },
+];
 
 /**
  * Sign-out always lands on /sign-in, even if the request fails — forcing a fresh sign-in beats
@@ -11,6 +21,18 @@ import { authClient } from '@/lib/auth-client';
  */
 export function AvatarMenu({ email, seed }: { email: string; seed: string }) {
   const router = useRouter();
+  // Starts at the default and syncs from localStorage after mount, so the SSR and first client
+  // render agree.
+  const [theme, setTheme] = useState<ThemePreference>('system');
+
+  useEffect(() => {
+    setTheme(getStoredThemePreference());
+  }, []);
+
+  function handleThemeChange(value: ThemePreference) {
+    setTheme(value);
+    setThemePreference(value);
+  }
 
   async function handleSignOut() {
     try {
@@ -51,6 +73,28 @@ export function AvatarMenu({ email, seed }: { email: string; seed: string }) {
                 </Link>
               }
             />
+            <DropdownMenu.SubmenuRoot>
+              <DropdownMenu.SubmenuTrigger>
+                <SunMoon data-icon="inline-start" />
+                Appearance
+              </DropdownMenu.SubmenuTrigger>
+              <DropdownMenu.Portal>
+                <DropdownMenu.Positioner>
+                  <DropdownMenu.Popup className="w-32">
+                    <DropdownMenu.RadioGroup
+                      onValueChange={(value) => handleThemeChange(value as ThemePreference)}
+                      value={theme}
+                    >
+                      {themeOptions.map((option) => (
+                        <DropdownMenu.RadioItem key={option.value} value={option.value}>
+                          {option.label}
+                        </DropdownMenu.RadioItem>
+                      ))}
+                    </DropdownMenu.RadioGroup>
+                  </DropdownMenu.Popup>
+                </DropdownMenu.Positioner>
+              </DropdownMenu.Portal>
+            </DropdownMenu.SubmenuRoot>
             <DropdownMenu.Item
               onClick={() => {
                 void handleSignOut();

@@ -22,7 +22,7 @@ function Item({ className, ...props }: RadioGroupItemProps) {
     <RadioPrimitive.Root
       data-slot="radio-group-item"
       className={cn(
-        'group/radio-group-item peer border-border-strong focus-visible:border-ring focus-visible:ring-focus aria-invalid:border-danger-strong aria-invalid:ring-focus-danger aria-invalid:aria-checked:border-accent bg-field data-checked:border-accent data-checked:bg-accent data-checked:text-accent-foreground data-disabled:bg-surface-subtle relative flex aspect-square size-4 shrink-0 rounded-full border outline-none after:absolute after:-inset-x-3 after:-inset-y-2 focus-visible:ring-3 aria-invalid:ring-3 data-disabled:cursor-not-allowed data-disabled:opacity-50',
+        'group/radio-group-item peer border-border-strong focus-visible:border-ring focus-visible:ring-focus aria-invalid:border-danger-strong aria-invalid:ring-focus-danger aria-invalid:aria-checked:border-accent bg-field data-checked:border-accent data-checked:bg-accent data-checked:text-accent-foreground data-disabled:data-unchecked:bg-surface-subtle relative flex aspect-square size-4 shrink-0 rounded-full border outline-none after:absolute after:-inset-x-3 after:-inset-y-2 focus-visible:ring-3 aria-invalid:ring-3 data-disabled:cursor-not-allowed data-disabled:opacity-50',
         className,
       )}
       {...props}

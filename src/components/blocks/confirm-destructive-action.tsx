@@ -68,15 +68,16 @@ export function ConfirmDestructiveAction({
       ) : null}
       <AlertDialog.Portal>
         <AlertDialog.Overlay />
-        <AlertDialog.Popup>
+        <AlertDialog.Popup variant="destructive">
           <AlertDialog.Header>
             <AlertDialog.Title>{title}</AlertDialog.Title>
             <AlertDialog.Description>{description}</AlertDialog.Description>
           </AlertDialog.Header>
           {confirmation != null ? (
-            <label className="flex items-center gap-2 text-sm">
+            <label className="flex items-start gap-2 text-sm">
               <Checkbox
                 checked={confirmed}
+                className="mt-0.5"
                 onCheckedChange={(checked) => setConfirmed(checked === true)}
               />
               {confirmation}

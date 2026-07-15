@@ -35,6 +35,7 @@ import { collapsibleDemo } from '@/components/library/demos/collapsible';
 import { dialogDemo } from '@/components/library/demos/dialog';
 import { dropdownMenuDemo } from '@/components/library/demos/dropdown-menu';
 import { emptyDemo } from '@/components/library/demos/empty';
+import { flowDemo } from '@/components/library/demos/flow';
 import { formsDemo } from '@/components/library/demos/forms';
 import { itemDemo } from '@/components/library/demos/item';
 import { kitchenSinkDemo } from '@/components/library/demos/kitchen-sink';
@@ -45,6 +46,7 @@ import { radioGroupDemo } from '@/components/library/demos/radio-group';
 import { selectDemo } from '@/components/library/demos/select';
 import { separatorDemo } from '@/components/library/demos/separator';
 import { skeletonDemo } from '@/components/library/demos/skeleton';
+import { specSandboxDemo } from '@/components/library/demos/spec-sandbox';
 import { spinnerDemo } from '@/components/library/demos/spinner';
 import { tableDemo } from '@/components/library/demos/table';
 import { tabsDemo } from '@/components/library/demos/tabs';
@@ -105,6 +107,8 @@ export const libraryDemos: LibraryDemo[] = [
   catalogTimelineDemo,
   // Examples
   kitchenSinkDemo,
+  flowDemo,
+  specSandboxDemo,
 ];
 
 /** Demos bucketed by sidebar group, computed once — the sidebar nav and overview page share it. */

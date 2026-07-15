@@ -17,6 +17,8 @@ const envSchema = z
     EMAIL_FROM: z.string().min(1).optional(),
     OWNER_EMAIL: z.string().min(1).optional(),
     OWNER_PASSWORD: z.string().min(1).optional(),
+    /** Enables the house-styled Protomaps basemap; unset falls back to Carto's stock styles. */
+    PROTOMAPS_API_KEY: z.string().min(1).optional(),
     /** Comma-separated IPs/CIDRs; unset trusts single-value X-Forwarded-For verbatim. */
     TRUSTED_PROXIES: z
       .string()

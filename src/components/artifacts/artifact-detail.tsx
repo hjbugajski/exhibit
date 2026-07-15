@@ -21,6 +21,7 @@ import { EditArtifactDialog } from '@/components/artifacts/edit-artifact-dialog'
 import { TypeBadge } from '@/components/artifacts/type-badge';
 import { ConfirmDestructiveAction } from '@/components/blocks/confirm-destructive-action';
 import { FormStatus } from '@/components/blocks/form-status';
+import { HighlightedCode } from '@/components/blocks/highlighted-code';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu } from '@/components/ui/dropdown-menu';
@@ -322,9 +323,11 @@ export function ArtifactDetailView({ id, detail }: { id: string; detail: Artifac
               <Copy data-icon="only" />
             )}
           </Button>
-          <pre className="bg-surface-muted overflow-x-auto rounded-lg p-4 text-sm">
-            <code>{sourceText}</code>
-          </pre>
+          <HighlightedCode
+            className="bg-background overflow-x-auto rounded-lg border p-4 text-sm"
+            code={sourceText}
+            language={artifact.type === 'spec' ? 'json' : 'html'}
+          />
         </div>
       )}
     </div>

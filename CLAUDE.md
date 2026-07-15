@@ -26,6 +26,8 @@ Node/pnpm via mise (`mise.toml`).
 ## Design system
 
 - Semantic tokens only, defined once per scheme in `src/styles.css` (12-step OKLCH scales; Tailwind's default palette is purged). Never `dark:` color variants or `/NN` alpha steps in components — if a state's color is missing, add a token in both schemes.
+- Dark mode is `data-theme="dark"` on `<html>`, stamped pre-paint by `src/lib/theme.ts` from the System/Light/Dark preference — never `prefers-color-scheme` in components (it only backstops detection before the stamp).
+- Catalog blocks space themselves: `my-*` + `first:mt-0 last:mb-0` (`src/components/catalog/flow.ts`), collapsing in normal flow; flow containers add no `space-y`/`gap`, and multi-column Grid/Columns wrap children in cells to neutralize the margins.
 - Every interactive control is 32px (`h-8`); no size props. Icons tag `data-icon="only" | "inline-start" | "inline-end"` at the call site. Spacing via semantic tokens (`px-control`, `p-dialog`, `gap-card`, …), never one-off pads.
 - Compounds export namespace objects with bare internal part names; `render`/`useRender`, never `asChild`; disabled styling keys off Base UI's `data-disabled`.
 - Browse every component and catalog demo at `/dev/library` (dev only).

@@ -1,4 +1,5 @@
 import type { CatalogComponentProps } from '@/catalog/catalog';
+import { flowBlock } from '@/components/catalog/flow';
 
 type Props = CatalogComponentProps<'Figure'>;
 
@@ -10,7 +11,7 @@ export function Figure({ props }: { props: Props }) {
   }
 
   return (
-    <figure>
+    <figure className={flowBlock}>
       <img
         alt={props.alt}
         className="border-border w-full rounded-lg border"

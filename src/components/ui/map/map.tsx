@@ -15,12 +15,43 @@ import MapLibreGL from 'maplibre-gl';
 
 import { MapContext, type Theme } from '@/components/ui/map/map-context';
 import { useLatest } from '@/components/ui/map/map-utils';
+import { buildProtomapsStyle } from '@/components/ui/map/protomaps-style';
+import { getProtomapsApiKeyFn } from '@/lib/map-config';
 import { cn } from '@/lib/utils';
 
+/** Fallback basemaps when no PROTOMAPS_API_KEY is configured. */
 const defaultStyles = {
   dark: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
   light: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
 };
+
+let protomapsApiKeyPromise: Promise<string | null> | undefined;
+
+/** `undefined` while the fetch is in flight; `null` when the deployment has no key configured. */
+function useProtomapsApiKey(): string | null | undefined {
+  const [apiKey, setApiKey] = useState<string | null | undefined>(undefined);
+
+  useEffect(() => {
+    protomapsApiKeyPromise ??= getProtomapsApiKeyFn().catch(() => {
+      // Don't cache transient failures: this mount falls back to Carto, the next retries.
+      protomapsApiKeyPromise = undefined;
+      return null;
+    });
+
+    let cancelled = false;
+    void protomapsApiKeyPromise.then((value) => {
+      if (!cancelled) {
+        setApiKey(value);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return apiKey;
+}
 
 /**
  * A tile-less, dependency-free style with a transparent background. Use it for data visualizations
@@ -42,20 +73,16 @@ const blankMapStyle: MapLibreGL.StyleSpecification = {
 };
 
 /**
- * A 'dark'/'light' document class (next-themes-style) wins over the media query; this app sets
- * neither, so detection falls through to getSystemTheme.
+ * The app's theme script stamps the resolved scheme as `data-theme` on <html> (see
+ * src/lib/theme.ts); that wins over the media query, which only backstops the pre-stamp window.
  */
 function getDocumentTheme(): Theme | null {
   if (typeof document === 'undefined') {
     return null;
   }
-  if (document.documentElement.classList.contains('dark')) {
-    return 'dark';
-  }
-  if (document.documentElement.classList.contains('light')) {
-    return 'light';
-  }
-  return null;
+  const theme = document.documentElement.dataset.theme;
+
+  return theme === 'dark' || theme === 'light' ? theme : null;
 }
 
 function getSystemTheme(): Theme {
@@ -75,7 +102,7 @@ function useResolvedTheme(themeProp?: 'light' | 'dark'): Theme {
       return;
     }
 
-    // Watch for document class changes (e.g. next-themes toggling the dark class).
+    // Watch the theme script (and appearance menu) re-stamping data-theme on <html>.
     const observer = new MutationObserver(() => {
       const docTheme = getDocumentTheme();
       if (docTheme) {
@@ -84,7 +111,7 @@ function useResolvedTheme(themeProp?: 'light' | 'dark'): Theme {
     });
     observer.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ['class'],
+      attributeFilter: ['data-theme'],
     });
 
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -200,6 +227,10 @@ export function Map({
   const styleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const internalUpdateRef = useRef(false);
   const resolvedTheme = useResolvedTheme(themeProp);
+  const apiKey = useProtomapsApiKey();
+  // Explicit styles and blank don't involve the default basemap, so they never wait on the key
+  // fetch; the default path defers map creation until it settles to avoid a double style load.
+  const styleReady = Boolean(styles) || blank || apiKey !== undefined;
 
   const isControlled = viewport !== undefined && onViewportChange !== undefined;
 
@@ -211,7 +242,7 @@ export function Map({
 
   const mapStyles = useMemo(() => {
     // Explicit styles win. Otherwise `blank` opts into the transparent tile-less basemap; with
-    // neither, fall back to the Carto defaults.
+    // neither, the house Protomaps style when a key is configured, else the Carto defaults.
     if (styles) {
       return {
         dark: styles.dark ?? defaultStyles.dark,
@@ -221,8 +252,14 @@ export function Map({
     if (blank) {
       return { dark: blankMapStyle, light: blankMapStyle };
     }
+    if (apiKey) {
+      return {
+        dark: buildProtomapsStyle('dark', apiKey),
+        light: buildProtomapsStyle('light', apiKey),
+      };
+    }
     return defaultStyles;
-  }, [styles, blank]);
+  }, [styles, blank, apiKey]);
 
   // Expose the map instance to the parent via the imperative `ref`: the ref value (the MapLibre
   // instance) isn't the DOM node this component renders, so `useImperativeHandle` still earns its
@@ -236,10 +273,12 @@ export function Map({
     }
   }, []);
 
-  const initialRef = useRef({ resolvedTheme, mapStyles, props, viewport });
+  // Latest-ref (not a mount-time snapshot): creation can be deferred past first render by
+  // `styleReady`, and the map must be born with the values current at creation time.
+  const initialRef = useLatest({ resolvedTheme, mapStyles, props, viewport });
 
   useEffect(() => {
-    if (!containerRef.current) {
+    if (!containerRef.current || !styleReady) {
       return;
     }
 
@@ -301,7 +340,7 @@ export function Map({
       setIsStyleLoaded(false);
       setMapInstance(null);
     };
-  }, [clearStyleTimeout, projectionRef, onViewportChangeRef]);
+  }, [clearStyleTimeout, projectionRef, onViewportChangeRef, initialRef, styleReady]);
 
   useEffect(() => {
     if (!mapInstance || !isControlled || !viewport) {

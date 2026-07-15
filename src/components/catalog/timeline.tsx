@@ -1,11 +1,13 @@
 import type { CatalogComponentProps } from '@/catalog/catalog';
+import { flowBlock } from '@/components/catalog/flow';
 import { OrderedEntry } from '@/components/catalog/ordered-entry';
+import { cn } from '@/lib/utils';
 
 type Props = CatalogComponentProps<'Timeline'>;
 
 export function Timeline({ props }: { props: Props }) {
   return (
-    <ol className="flex flex-col">
+    <ol className={cn('flex flex-col', flowBlock)}>
       {props.items.map((item) => (
         <OrderedEntry
           key={item.id}

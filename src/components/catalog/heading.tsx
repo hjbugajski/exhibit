@@ -9,9 +9,9 @@ type Props = CatalogComponentProps<'Heading'>;
  * rendered spec exceeds text-2xl.
  */
 const levelClass = {
-  1: 'text-2xl',
-  2: 'text-xl',
-  3: 'text-lg',
+  1: 'text-2xl mt-12 mb-4',
+  2: 'text-xl mt-12 mb-4',
+  3: 'text-lg mt-8 mb-4',
 } as const;
 
 export function Heading({ props }: { props: Props }) {
@@ -22,7 +22,10 @@ export function Heading({ props }: { props: Props }) {
 
   return (
     <Tag
-      className={cn('text-foreground font-semibold tracking-tight', levelClass[props.level])}
+      className={cn(
+        'text-foreground font-semibold tracking-tight first:mt-0 last:mb-0',
+        levelClass[props.level],
+      )}
       id={slug || undefined}
     >
       {props.text}

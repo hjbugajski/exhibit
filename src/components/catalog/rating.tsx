@@ -2,6 +2,7 @@ import { useStateStore, useStateValue } from '@json-render/react';
 import { Star } from 'lucide-react';
 
 import type { CatalogComponentProps } from '@/catalog/catalog';
+import { flowBlock } from '@/components/catalog/flow';
 import { QuestionCard } from '@/components/catalog/question-card';
 import { RadioGroup } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
@@ -31,7 +32,7 @@ export function Rating({ props }: { props: Props }) {
 
   return (
     <QuestionCard
-      cardClassName="px-4"
+      cardClassName={cn('px-4', flowBlock)}
       contentClassName="flex items-center justify-between gap-4"
       label={props.label}
     >

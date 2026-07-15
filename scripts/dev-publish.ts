@@ -14,6 +14,7 @@ import { createHash, randomBytes } from 'node:crypto';
 
 import { comparisonFixture } from '../src/catalog/fixtures/comparison.ts';
 import { explainerFixture } from '../src/catalog/fixtures/explainer.ts';
+import { flowFixture } from '../src/catalog/fixtures/flow.ts';
 import { itineraryFixture } from '../src/catalog/fixtures/itinerary.ts';
 import { kitchenSinkFixture } from '../src/catalog/fixtures/kitchen-sink.ts';
 import { decisionMemoExample } from './examples/decision-memo.ts';
@@ -295,6 +296,13 @@ async function main() {
     spec: roadTripExample.spec,
   });
 
+  const flow = await callTool(accessToken, 'publish_spec', {
+    title: 'Flow Stress Test',
+    description: 'Every block seam in sequence — the prose-flow margin rhythm stress test.',
+    tags: ['demo', 'flow'],
+    spec: flowFixture,
+  });
+
   const htmlArtifact = await callTool(accessToken, 'publish_html', {
     title: 'Sandbox Check Page',
     description: 'Inline JS that probes cookie/localStorage/parent access from the iframe sandbox.',
@@ -313,6 +321,7 @@ async function main() {
         decisionMemo: { id: decisionMemo.id, title: decisionMemoExample.title },
         statusReport: { id: statusReport.id, title: statusReportExample.title },
         roadTrip: { id: roadTrip.id, title: roadTripExample.title },
+        flow: { id: flow.id, title: 'Flow Stress Test' },
         html: { id: htmlArtifact.id, title: 'Sandbox Check Page', version: htmlArtifact.version },
       },
       null,
