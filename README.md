@@ -29,6 +29,8 @@ Edit `.env`:
 docker compose up -d
 ```
 
+This pulls the prebuilt image from `ghcr.io/hjbugajski/exhibit` (published from `main` by CI). On Linux hosts, create the data directory owned by the container user first: `mkdir -p data && sudo chown 1000:1000 data` (the image runs as `node`, uid 1000; Docker Desktop handles this transparently on macOS/Windows).
+
 Open `BASE_URL` and sign in. Migrations run on boot, and the app seeds the owner account once; after that, change email and password in **/settings** (the env values are never re-applied).
 
 ## Connect Claude
@@ -72,22 +74,30 @@ The app validates all of this at boot and refuses to start on bad config: missin
 
 Without Resend, everything still works: password changes need the current password, email changes apply immediately, and there is no reset flow (if you lose the password, see "Recovering access").
 
-## Deploying (Coolify or any Docker host)
+## Deploying (any Docker host)
 
-The image is self-contained: multi-stage build, migrations on boot, `HEALTHCHECK` against `/healthz`, SQLite in the `/data` volume.
+Releases are cut automatically from conventional commit messages: merging to `main` bumps the version (`fix` → patch, `feat` → minor, breaking change → major), tags it, creates a GitHub Release, and publishes the image as `X.Y.Z`, `X.Y`, and `latest`, plus an immutable `sha-<commit>`. Merges with no release-worthy commits (`chore`, `docs`, `ci`) publish only the `sha-<commit>` tag and don't move `latest`. The image is self-contained: multi-stage build, migrations on boot, `HEALTHCHECK` against `/healthz`, SQLite in the `/data` volume.
 
-On Coolify:
+On the server:
 
-1. New resource → your Git repository → build pack **Dockerfile** (or Docker Compose).
+1. Copy `compose.yaml` and `.env.example` (as `.env`) into a directory — or clone the repo.
 2. Set the environment variables from the table above, with `BASE_URL=https://your-domain`.
-3. Add persistent storage mounted at `/data`.
-4. Assign the domain with HTTPS and deploy.
+3. `mkdir -p data && sudo chown 1000:1000 data` so the non-root container can write the database.
+4. `docker compose up -d`, and point an HTTPS reverse proxy (Caddy, Traefik, nginx) at port 3000.
+
+To upgrade:
+
+```sh
+docker compose pull && docker compose up -d
+```
+
+To pin a version instead of tracking `latest`, set the image tag in `compose.yaml` to `X.Y` or a `sha-<commit>` tag. Migrations are forward-only, so before upgrading across a release that adds migration files, take the backup below first — the backup, not an older image tag, is the rollback path.
 
 Notes:
 
 - `BASE_URL` is load-bearing for auth: it is the cookie origin and the OAuth issuer/audience baked into tokens. Changing it invalidates existing MCP connections; clients re-authorize on their next use.
 - Everything except `/sign-in`, `/reset-password`, `/api/auth/*`, `/.well-known/*`, and `/healthz` requires the owner session; `/mcp` requires a Bearer token. No extra proxy layer is needed, but the app assumes it is the only thing served on its origin.
-- Sign-in and password-reset rate limiting keys on the client IP from proxy headers. Coolify forwards `X-Forwarded-For` out of the box; set `TRUSTED_PROXIES` when a known proxy fronts the app. Without one, the header is client-controlled and rate limiting is best-effort.
+- Sign-in and password-reset rate limiting keys on the client IP from proxy headers. Set `TRUSTED_PROXIES` to your reverse proxy's IP so its `X-Forwarded-For` is trusted. Without one, the header is client-controlled and rate limiting is best-effort.
 
 ## Backups
 
@@ -129,6 +139,8 @@ pnpm gate           # typecheck + lint + fmt + tests
 pnpm build          # production bundle (.output/)
 pnpm db:generate    # drizzle migrations from schema changes
 ```
+
+The compose file pulls the published image; to run a local build instead, `docker build -t exhibit .` and point `compose.yaml`'s `image:` at it (or run the container directly).
 
 In dev, `/dev/library` is a component library with a props playground for every house UI component and every catalog component, plus the kitchen-sink example artifact. `scripts/dev-publish.ts` drives the full OAuth + MCP publish flow against a running instance; run it with plain `node scripts/dev-publish.ts` (scripts stick to relative imports, so Node's native type stripping is enough).
 

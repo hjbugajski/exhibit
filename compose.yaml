@@ -1,6 +1,6 @@
 services:
   exhibit:
-    build: .
+    image: ghcr.io/hjbugajski/exhibit:latest
     # Node as PID 1 ignores SIGTERM; init forwards it so `compose stop` is
     # instant instead of waiting out the 10s kill timeout.
     init: true
