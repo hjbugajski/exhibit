@@ -16,10 +16,13 @@ ENV NODE_ENV=production
 ENV DATABASE_PATH=/data/app.db
 COPY --from=build /app/.output ./.output
 COPY --from=build /app/src/database/migrations ./src/database/migrations
-RUN mkdir -p /data && chown node:node /data
+COPY docker-entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh && mkdir -p /data && chown node:node /data
 VOLUME /data
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
   CMD node -e "fetch('http://127.0.0.1:3000/healthz').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
-USER node
+# Starts as root so the entrypoint can chown the (typically root-owned) /data
+# bind mount, then setpriv-drops to node before exec'ing the server.
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["node", ".output/server/index.mjs"]
