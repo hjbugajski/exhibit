@@ -4,7 +4,8 @@ import { SpecView } from '@/catalog/registry';
 import type { LibraryDemo } from '@/components/library/demo';
 import { Playground } from '@/components/library/playground';
 
-// Covers Itinerary + Day + Stop together, and all five Stop kinds across the two days.
+// Covers Itinerary + Day + Stop together, and all five Stop kinds across the two days. Day 1's
+// stops carry coordinates, so that day auto-renders a map; day 2 has none and stays map-free.
 const spec: Spec = {
   root: 'itinerary',
   elements: {
@@ -29,6 +30,7 @@ const spec: Spec = {
         duration: '2 hours',
         title: 'Fushimi Inari Shrine',
         location: 'Fushimi-ku',
+        coordinates: { lat: 34.9671, lng: 135.7727 },
         markdown: 'Arrive early to beat the crowds on the torii gate trail.',
         kind: 'activity',
       },
@@ -41,6 +43,7 @@ const spec: Spec = {
         duration: '1 hour',
         title: 'Lunch at Omen',
         location: 'Gion',
+        coordinates: { lat: 35.0037, lng: 135.778 },
         markdown: 'Udon noodles with seasonal vegetables; no reservation needed.',
         kind: 'food',
       },
@@ -52,6 +55,7 @@ const spec: Spec = {
         time: '7:00 PM',
         title: 'Check in: Kyoto Granbell Hotel',
         location: 'Gion-Shijo',
+        coordinates: { lat: 35.0031, lng: 135.7726 },
         kind: 'lodging',
       },
       children: [],
@@ -98,7 +102,7 @@ export const catalogItineraryDemo: LibraryDemo = {
   slug: 'catalog-itinerary',
   title: 'Itinerary',
   description:
-    'Itinerary, Day, and Stop together: a multi-day trip container of days, each a list of stops.',
+    'Itinerary, Day, and Stop together: a multi-day trip container of days, each a list of stops. Days whose stops have coordinates auto-render a map.',
   group: 'Catalog',
   render: () => <CatalogItineraryDemo />,
 };

@@ -285,7 +285,12 @@ export const kitchenSinkFixture: Spec = {
           { key: 'price', label: 'Unit Price', align: 'right' },
         ],
         rows: [
-          { item: 'Sink', model: 'Kraus KWT200-33', qty: '1', price: '$429' },
+          {
+            item: 'Sink',
+            model: { text: 'Kraus KWT200-33', href: 'https://www.kraususa.com/' },
+            qty: '1',
+            price: '$429',
+          },
           {
             item: 'Garbage disposal',
             model: 'InSinkErator Evolution Compleat',

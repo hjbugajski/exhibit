@@ -2,7 +2,8 @@ import type { Spec } from '@json-render/core';
 
 /**
  * Uses Itinerary/Day/Stop richly: two days, mixed stop kinds, markdown with
- * a link, and stops with/without duration.
+ * a link, stops with/without duration, and coordinates on day 1's stops (which
+ * make the day auto-render a map).
  */
 export const itineraryFixture: Spec = {
   root: 'itinerary',
@@ -28,6 +29,7 @@ export const itineraryFixture: Spec = {
         duration: '2 hours',
         title: 'Fushimi Inari Shrine',
         location: 'Fushimi-ku',
+        coordinates: { lat: 34.9671, lng: 135.7727 },
         markdown:
           'Arrive early to beat the crowds on the [torii gate trail](https://www.japan-guide.com/e/e3915.html).',
         kind: 'activity',
@@ -41,6 +43,7 @@ export const itineraryFixture: Spec = {
         duration: '1 hour',
         title: 'Lunch at Omen',
         location: 'Gion',
+        coordinates: { lat: 35.0037, lng: 135.778 },
         markdown: 'Udon noodles with seasonal vegetables.',
         kind: 'food',
       },
@@ -52,6 +55,7 @@ export const itineraryFixture: Spec = {
         time: '7:00 PM',
         title: 'Check in: Kyoto Granbell Hotel',
         location: 'Gion-Shijo',
+        coordinates: { lat: 35.0031, lng: 135.7726 },
         kind: 'lodging',
       },
       children: [],

@@ -1,6 +1,9 @@
+import { useContext, useEffect, useId } from 'react';
+
 import { BedDouble, Compass, MapPin, Plane, UtensilsCrossed } from 'lucide-react';
 
 import type { CatalogComponentProps } from '@/catalog/catalog';
+import { DayMapContext } from '@/components/catalog/day-map-context';
 import { MarkdownBody } from '@/components/catalog/markdown-body';
 import { Card } from '@/components/ui/card';
 
@@ -16,6 +19,20 @@ const icons = {
 
 export function Stop({ props }: { props: Props }) {
   const Icon = icons[props.kind ?? 'other'];
+  const register = useContext(DayMapContext);
+  const markerId = useId();
+  const { title, location } = props;
+  const { lat, lng } = props.coordinates ?? {};
+
+  useEffect(() => {
+    if (!register || lat === undefined || lng === undefined) {
+      return;
+    }
+
+    register(markerId, { lat, lng, label: title, description: location });
+
+    return () => register(markerId, null);
+  }, [register, markerId, lat, lng, title, location]);
 
   return (
     /* Icon-side (left) padding one notch tighter so the icon sits optically

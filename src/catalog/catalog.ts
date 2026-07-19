@@ -32,6 +32,12 @@ const latLng = z.object({
   lat: z.number().min(-90).max(90).describe('Latitude in decimal degrees.'),
   lng: z.number().min(-180).max(180).describe('Longitude in decimal degrees.'),
 });
+
+/**
+ * Marker cap for a single map. Shared by Map's own schema, the per-Day lint in validate.ts, and the
+ * Day auto-map's render guard (day.tsx) so the three can't drift.
+ */
+export const MAP_MARKERS_MAX = 500;
 const listItemId = z
   .string()
   .min(1)
@@ -258,7 +264,7 @@ export const catalog = defineCatalog(schema, {
     },
     Table: {
       description:
-        'Data table for structured rows and columns. Cell values are plain strings — no markdown; use for facts and figures, not for prose.',
+        'Data table for structured rows and columns. Cell values are plain strings or { text, href } links — no markdown; use for facts and figures, not for prose.',
       props: z.object({
         columns: z
           .array(
@@ -281,10 +287,28 @@ export const catalog = defineCatalog(schema, {
           )
           .describe('Column definitions, left to right.'),
         rows: z
-          .array(z.record(z.string().max(SHORT_MAX), z.string().max(SHORT_MAX)))
+          .array(
+            z.record(
+              z.string().max(SHORT_MAX),
+              z.union([
+                z.string().max(SHORT_MAX),
+                z.object({
+                  text: z.string().max(SHORT_MAX).describe('Cell text, shown as the link.'),
+                  href: z
+                    .string()
+                    .max(2_000)
+                    // Same rule as markdown links (see markdown-body.tsx): http(s) only.
+                    .regex(/^https?:\/\//i, 'must be an http(s) URL')
+                    .describe('Absolute http(s) URL the cell links to.'),
+                }),
+              ]),
+            ),
+          )
           // Generous for real data dumps, well short of a rendering hazard.
           .max(2_000)
-          .describe('Row data; each row maps column key to a plain string value.'),
+          .describe(
+            'Row data; each row maps column key to a plain string, or { text, href } to render the cell as a link.',
+          ),
       }),
     },
     KeyValueList: {
@@ -482,7 +506,7 @@ export const catalog = defineCatalog(schema, {
                 .describe('Detail shown in a popup when the marker is clicked.'),
             }),
           )
-          .max(500)
+          .max(MAP_MARKERS_MAX)
           .check(uniqueIds)
           .optional()
           .describe('Points of interest to pin on the map.'),
@@ -597,7 +621,7 @@ export const catalog = defineCatalog(schema, {
     Day: {
       slots: ['default'],
       description:
-        'One day within an Itinerary; children must be Stop elements. Use one per day of the trip.',
+        'One day within an Itinerary; children are typically Stop elements, optionally mixed with other blocks (e.g. a Figure between stops). When any child Stop has coordinates, the day automatically renders a map of those stops — do not add a separate Map element for them.',
       props: z.object({
         label: z.string().max(SHORT_MAX).describe('Day label, e.g. "Day 1 — Saturday".'),
         date: z
@@ -628,6 +652,11 @@ export const catalog = defineCatalog(schema, {
           .describe('How long this stop takes, e.g. "1.5 hours".'),
         title: z.string().max(SHORT_MAX).describe('Name of the stop, e.g. "Fushimi Inari Shrine".'),
         location: z.string().max(SHORT_MAX).optional().describe('Neighborhood, address, or area.'),
+        coordinates: latLng
+          .optional()
+          .describe(
+            'Geographic coordinates of the stop. When any stop in a Day has coordinates, the day renders a map of its stops automatically.',
+          ),
         markdown: z
           .string()
           .max(LONG_MAX)

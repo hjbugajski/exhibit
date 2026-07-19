@@ -95,6 +95,91 @@ describe('validateArtifactSpec', () => {
     );
   });
 
+  it('rejects Stop coordinates outside valid ranges', () => {
+    const result = validateArtifactSpec({
+      root: 'stop',
+      elements: {
+        stop: {
+          type: 'Stop',
+          props: { title: 'Nowhere', coordinates: { lat: 91, lng: 0 } },
+          children: [],
+        },
+      },
+    });
+
+    expect(result.valid).toBe(false);
+    if (result.valid) {
+      throw new Error('expected invalid result');
+    }
+
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({
+        element: 'stop',
+        component: 'Stop',
+        path: 'elements.stop.props.coordinates.lat',
+      }),
+    );
+  });
+
+  it('rejects a Day whose coordinate-bearing stops exceed the auto-map marker cap', () => {
+    const stops = Object.fromEntries(
+      Array.from({ length: 501 }, (_, i) => [
+        `stop-${i}`,
+        {
+          type: 'Stop',
+          props: { title: `Stop ${i}`, coordinates: { lat: 0, lng: 0 } },
+          children: [],
+        },
+      ]),
+    );
+    const result = validateArtifactSpec({
+      root: 'day',
+      elements: {
+        day: { type: 'Day', props: { label: 'Day 1' }, children: Object.keys(stops) },
+        ...stops,
+      },
+    });
+
+    expect(result.valid).toBe(false);
+    if (result.valid) {
+      throw new Error('expected invalid result');
+    }
+
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({
+        element: 'day',
+        component: 'Day',
+        path: 'elements.day.children',
+        message: expect.stringContaining('at most 500'),
+      }),
+    );
+  });
+
+  it('rejects a Table link cell with a non-http(s) href', () => {
+    const result = validateArtifactSpec({
+      root: 'table',
+      elements: {
+        table: {
+          type: 'Table',
+          props: {
+            columns: [{ key: 'a', label: 'A' }],
+            rows: [{ a: { text: 'click', href: 'javascript:alert(1)' } }],
+          },
+          children: [],
+        },
+      },
+    });
+
+    expect(result.valid).toBe(false);
+    if (result.valid) {
+      throw new Error('expected invalid result');
+    }
+
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({ element: 'table', component: 'Table' }),
+    );
+  });
+
   it('flags two elements writing to the same statePath', () => {
     const result = validateArtifactSpec({
       root: 'root',
