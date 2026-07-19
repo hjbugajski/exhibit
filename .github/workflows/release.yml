@@ -1,8 +1,13 @@
 name: Release
 
+# workflow_dispatch is the recovery path for the rare push event GitHub drops
+# (main merge 75055e6 produced no run); the tag action re-derives the version
+# from commits since the last tag, so a manual run publishes exactly what the
+# lost run would have.
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 # Queue, never cancel: a run that merges a release PR must finish publishing
 # its version tags even if another push lands mid-build.
