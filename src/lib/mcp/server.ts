@@ -139,7 +139,7 @@ export function buildMcpServer(db: Db): McpServer {
 
       return {
         content: text(
-          `Published spec artifact "${artifact.title}" (${artifact.id}), version ${version.version}.`,
+          `Published spec artifact "${artifact.title}" (${artifact.id}), version ${version.version}: ${url}`,
         ),
         structuredContent: { id: artifact.id, url, version: version.version },
       };
@@ -187,7 +187,7 @@ export function buildMcpServer(db: Db): McpServer {
 
       return {
         content: text(
-          `Published HTML artifact "${artifact.title}" (${artifact.id}), version ${version.version}.`,
+          `Published HTML artifact "${artifact.title}" (${artifact.id}), version ${version.version}: ${url}`,
         ),
         structuredContent: { id: artifact.id, url, version: version.version },
       };
@@ -291,7 +291,7 @@ export function buildMcpServer(db: Db): McpServer {
       const url = artifactUrl(id);
 
       return {
-        content: text(`Updated artifact "${id}", current version ${versionNumber}.`),
+        content: text(`Updated artifact "${id}", current version ${versionNumber}: ${url}`),
         structuredContent: { id, url, version: versionNumber },
       };
     },

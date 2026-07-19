@@ -67,6 +67,8 @@ describe('publish_spec', () => {
     const id = result.structuredContent?.id as string;
     expect(id).toBeTruthy();
     expect(result.structuredContent?.url).toBe(`http://localhost:3000/a/${id}`);
+    // The url must be in the text too — most MCP clients only surface text content.
+    expect(textOf(result)).toContain(`http://localhost:3000/a/${id}`);
 
     const getResult = await callTool(client, 'get_artifact', { id });
     expect(getResult.structuredContent?.title).toBe('Kyoto Trip');
@@ -119,6 +121,7 @@ describe('publish_html', () => {
     expect(result.structuredContent).toMatchObject({ version: 1 });
 
     const id = result.structuredContent?.id as string;
+    expect(textOf(result)).toContain(`http://localhost:3000/a/${id}`);
     const getResult = await callTool(client, 'get_artifact', { id });
     expect(getResult.structuredContent?.body).toBe(html);
     expect(getResult.structuredContent?.type).toBe('html');
@@ -167,6 +170,7 @@ describe('update_artifact', () => {
 
     expect(updated.isError).toBeFalsy();
     expect(updated.structuredContent).toMatchObject({ id, version: 2 });
+    expect(textOf(updated)).toContain(`http://localhost:3000/a/${id}`);
   });
 
   it('updates metadata in place without creating a new version', async () => {
