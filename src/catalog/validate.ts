@@ -14,7 +14,7 @@ import type { Spec } from '@json-render/core';
 import { validateSpec } from '@json-render/core';
 import type { z } from 'zod';
 
-import { catalog } from '@/catalog/catalog';
+import { catalog, MAP_MARKERS_MAX } from '@/catalog/catalog';
 
 /**
  * Catalog components are typed as a fixed-key object; widen to an index signature so we can look up
@@ -119,6 +119,66 @@ function findDuplicateStatePathErrors(elements: Record<string, unknown>): Artifa
       path: 'statePath',
       message: `statePath "${path}" is used by ${keys.length} elements (${keys.join(', ')}); they will silently share state — each interactive element needs a unique statePath.`,
     });
+  }
+
+  return errors;
+}
+
+/**
+ * A Day auto-renders one map from every descendant Stop with coordinates (day.tsx), which never
+ * passes through Map's own markers cap — enforce the same cap per Day here so an oversized day
+ * fails at publish time instead of silently truncating pins at render. Nested Days are skipped:
+ * their stops register with their own map.
+ */
+function findDayMapMarkerCapErrors(elements: Record<string, unknown>): ArtifactSpecError[] {
+  const errors: ArtifactSpecError[] = [];
+
+  for (const [key, element] of Object.entries(elements)) {
+    if (elementType(elements, key) !== 'Day' || !isRecord(element)) {
+      continue;
+    }
+
+    let count = 0;
+    const visited = new Set<string>([key]);
+    const queue = Array.isArray(element.children) ? [...element.children] : [];
+
+    while (queue.length > 0) {
+      const childKey = queue.pop();
+
+      if (typeof childKey !== 'string' || visited.has(childKey)) {
+        continue;
+      }
+
+      visited.add(childKey);
+      const childType = elementType(elements, childKey);
+
+      if (childType === 'Day') {
+        continue;
+      }
+
+      const child = elements[childKey];
+
+      if (!isRecord(child)) {
+        continue;
+      }
+
+      if (childType === 'Stop' && isRecord(child.props) && isRecord(child.props.coordinates)) {
+        count += 1;
+      }
+
+      if (Array.isArray(child.children)) {
+        queue.push(...child.children);
+      }
+    }
+
+    if (count > MAP_MARKERS_MAX) {
+      errors.push({
+        element: key,
+        component: 'Day',
+        path: `elements.${key}.children`,
+        message: `Day "${key}" has ${count} stops with coordinates; its auto-rendered map shows at most ${MAP_MARKERS_MAX}. Split the day or omit coordinates on some stops.`,
+      });
+    }
   }
 
   return errors;
@@ -245,6 +305,7 @@ export function validateArtifactSpec(spec: unknown): ArtifactValidationResult {
     errors.push(
       ...findDuplicateStatePathErrors(elements),
       ...findTabsChildCountMismatchErrors(elements),
+      ...findDayMapMarkerCapErrors(elements),
     );
   }
 
