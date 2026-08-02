@@ -1,6 +1,4 @@
-import { createFileRoute, notFound, Outlet } from '@tanstack/react-router';
-
-import { LibraryLayout } from '@/components/library/library-layout';
+import { createFileRoute, lazyRouteComponent, notFound } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/dev/library')({
   beforeLoad: () => {
@@ -9,13 +7,8 @@ export const Route = createFileRoute('/_authed/dev/library')({
     }
   },
   head: () => ({ meta: [{ title: 'Library · Exhibit' }] }),
-  component: LibraryLayoutRoute,
+  component: lazyRouteComponent(
+    () => import('@/components/library/library-layout'),
+    'LibraryLayout',
+  ),
 });
-
-function LibraryLayoutRoute() {
-  return (
-    <LibraryLayout>
-      <Outlet />
-    </LibraryLayout>
-  );
-}

@@ -1,6 +1,4 @@
-import type { ReactNode } from 'react';
-
-import { Link } from '@tanstack/react-router';
+import { Link, Outlet } from '@tanstack/react-router';
 
 import type { LibraryGroup } from '@/components/library/demo';
 import { demosByGroup, libraryGroupOrder } from '@/components/library/registry';
@@ -30,11 +28,13 @@ function NavGroup({ group }: { group: LibraryGroup }) {
 }
 
 /**
- * Sidebar shell for `/dev/library`; the matched page renders as `children`. The shell fills the
- * viewport below the fixed 64px header (h-16 in AuthedLayout), and the sidebar and page each
- * scroll their own overflow — the body itself never scrolls.
+ * Sidebar shell for `/dev/library`; the matched page renders in the `Outlet`. It is the layout
+ * route's component itself (loaded lazily) rather than a wrapper the route file imports, so the
+ * registry it pulls in stays out of production chunks. The shell fills the viewport below the
+ * fixed 64px header (h-16 in AuthedLayout), and the sidebar and page each scroll their own
+ * overflow — the body itself never scrolls.
  */
-export function LibraryLayout({ children }: { children: ReactNode }) {
+export function LibraryLayout() {
   return (
     <div className="mx-auto flex h-[calc(100dvh-4rem)] w-full max-w-5xl gap-10 px-6">
       <aside className="w-44 shrink-0 [scrollbar-gutter:stable] overflow-y-auto py-12 pr-2">
@@ -48,7 +48,7 @@ export function LibraryLayout({ children }: { children: ReactNode }) {
         </nav>
       </aside>
       <div className="min-w-0 flex-1 [scrollbar-gutter:stable] overflow-y-auto py-12">
-        {children}
+        <Outlet />
       </div>
     </div>
   );

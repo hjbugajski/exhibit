@@ -1,7 +1,8 @@
-import { createFileRoute } from '@tanstack/react-router';
-
-import { LibraryOverview } from '@/components/library/library-overview';
+import { createFileRoute, lazyRouteComponent } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/dev/library/')({
-  component: LibraryOverview,
+  component: lazyRouteComponent(
+    () => import('@/components/library/library-overview'),
+    'LibraryOverview',
+  ),
 });
