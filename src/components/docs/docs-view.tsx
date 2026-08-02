@@ -3,49 +3,30 @@ import { Check, Copy, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Table } from '@/components/ui/table';
+import type { McpToolName } from '@/lib/mcp/tool-names';
+import { MCP_TOOL_NAMES } from '@/lib/mcp/tool-names';
 import { useCopyToClipboard } from '@/lib/use-copy-to-clipboard';
 
 /**
- * Human-facing summaries of the MCP surface, kept in the registration order of
- * `src/lib/mcp/server.ts`. Deliberately not the LLM-facing description strings — update both when
- * a tool changes.
+ * Human-facing summaries of the MCP surface. Deliberately not the LLM-facing description strings —
+ * update both when a tool changes. Exhaustive over `MCP_TOOL_NAMES`, so a tool added or removed in
+ * `server.ts` fails typecheck here until this table follows.
  */
-const MCP_TOOLS = [
-  {
-    name: 'publish_spec',
-    purpose:
-      'Publishes a new artifact composed from the component catalog — the format Claude prefers for guides, comparisons, itineraries, and checklists.',
-  },
-  {
-    name: 'publish_html',
-    purpose:
-      'Publishes a standalone HTML document for content the catalog can’t express. Rendered sandboxed on its own page.',
-  },
-  {
-    name: 'get_catalog',
-    purpose: 'Returns the component vocabulary and example specs Claude authors specs against.',
-  },
-  {
-    name: 'update_artifact',
-    purpose: 'Revises an existing artifact — appends body versions or edits metadata in place.',
-  },
-  {
-    name: 'list_artifacts',
-    purpose: 'Browses published artifacts with search, tag and type filters, and sorting.',
-  },
-  {
-    name: 'list_tags',
-    purpose: 'Lists the tags already in use so new artifacts reuse them.',
-  },
-  {
-    name: 'get_artifact',
-    purpose: 'Fetches an artifact’s metadata, body, and your saved interaction state.',
-  },
-  {
-    name: 'delete_artifact',
-    purpose: 'Soft-deletes an artifact and all of its versions.',
-  },
-];
+const MCP_TOOLS: Record<McpToolName, string> = {
+  publish_spec:
+    'Publishes a new artifact composed from the component catalog — the format Claude prefers for guides, comparisons, itineraries, and checklists.',
+  publish_html:
+    'Publishes a standalone HTML document for content the catalog can’t express. Rendered sandboxed on its own page.',
+  get_catalog: 'Returns the component vocabulary and example specs Claude authors specs against.',
+  update_artifact:
+    'Revises an existing artifact — appends body versions or edits metadata in place.',
+  list_artifacts: 'Browses published artifacts with search, tag and type filters, and sorting.',
+  list_tags: 'Lists the tags already in use so new artifacts reuse them.',
+  get_artifact: 'Fetches an artifact’s metadata, body, and your saved interaction state.',
+  set_artifact_archived:
+    'Archives an artifact out of Claude’s default listing, or restores it. Nothing is deleted.',
+  delete_artifact: 'Soft-deletes an artifact and all of its versions.',
+};
 
 function CopyField({ label, value }: { label: string; value: string }) {
   const { copyStatus, copy } = useCopyToClipboard();
@@ -122,13 +103,13 @@ export function DocsView({ mcpUrl }: { mcpUrl: string }) {
             </Table.Row>
           </Table.Header>
           <Table.Body>
-            {MCP_TOOLS.map((tool) => (
-              <Table.Row key={tool.name}>
+            {MCP_TOOL_NAMES.map((name) => (
+              <Table.Row key={name}>
                 <Table.Cell className="align-top">
-                  <code className="font-mono text-xs">{tool.name}</code>
+                  <code className="font-mono text-xs">{name}</code>
                 </Table.Cell>
                 <Table.Cell className="text-foreground-muted whitespace-normal">
-                  {tool.purpose}
+                  {MCP_TOOLS[name]}
                 </Table.Cell>
               </Table.Row>
             ))}

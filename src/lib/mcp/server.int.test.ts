@@ -8,6 +8,7 @@ import { itineraryFixture } from '@/catalog/fixtures/itinerary';
 import type { Db } from '@/database/repository';
 import { setArtifactArchived, setArtifactState } from '@/database/repository';
 import { buildMcpServer } from '@/lib/mcp/server';
+import { MCP_TOOL_NAMES } from '@/lib/mcp/tool-names';
 import { createTestDb } from '@testing/db';
 import { invalidFixture } from '@testing/fixtures/invalid';
 
@@ -42,6 +43,16 @@ function textOf(result: CallToolResult): string {
   return result.content.map((c) => c.text ?? '').join('\n');
 }
 
+/**
+ * The read tools' text-block contract: one summary line, then the payload as JSON. Clients that
+ * drop `structuredContent` see only this, so the tests assert against it directly.
+ */
+function jsonOf(result: CallToolResult): Record<string, unknown> {
+  const body = textOf(result);
+
+  return JSON.parse(body.slice(body.indexOf('\n') + 1)) as Record<string, unknown>;
+}
+
 let db: Db;
 let client: Client;
 
@@ -52,6 +63,14 @@ beforeEach(async () => {
 
 afterEach(() => {
   sqlite.close();
+});
+
+describe('tools/list', () => {
+  it('registers exactly the declared tool names', async () => {
+    const { tools } = await client.listTools();
+
+    expect(tools.map((tool) => tool.name).sort()).toEqual([...MCP_TOOL_NAMES].sort());
+  });
 });
 
 describe('publish_spec', () => {
@@ -302,6 +321,68 @@ describe('list_artifacts', () => {
     expect(items.map((item) => item.title)).toEqual(['Live']);
   });
 
+  it('returns archived artifacts and only those when archived is true', async () => {
+    const published = await callTool(client, 'publish_spec', {
+      title: 'Shelved',
+      spec: itineraryFixture,
+    });
+    const id = published.structuredContent?.id as string;
+
+    await callTool(client, 'publish_html', { title: 'Live', html: '<html>a</html>' });
+    setArtifactArchived(db, id, true);
+
+    const result = await callTool(client, 'list_artifacts', { archived: true });
+    const items = result.structuredContent?.items as { title: string }[];
+
+    expect(items.map((item) => item.title)).toEqual(['Shelved']);
+  });
+
+  it('serializes the full payload into the text block', async () => {
+    await callTool(client, 'publish_spec', {
+      title: 'Alpha',
+      description: 'First one',
+      tags: ['red'],
+      spec: itineraryFixture,
+    });
+
+    const result = await callTool(client, 'list_artifacts', {});
+    const payload = jsonOf(result);
+
+    expect(payload).toEqual(result.structuredContent);
+    expect(payload.total).toBe(1);
+    expect(payload.nextCursor).toBeNull();
+    expect(payload.items).toEqual([
+      {
+        id: expect.any(String),
+        title: 'Alpha',
+        description: 'First one',
+        type: 'spec',
+        tags: ['red'],
+        createdAt: expect.any(Number),
+        updatedAt: expect.any(Number),
+        stateUpdatedAt: null,
+        url: expect.stringContaining('http://localhost:3000/a/'),
+      },
+    ]);
+  });
+
+  it('returns every artifact regardless of the spec/html mix', async () => {
+    await callTool(client, 'publish_spec', { title: 'One', spec: itineraryFixture });
+    await callTool(client, 'publish_html', { title: 'Two', html: '<html>b</html>' });
+    await callTool(client, 'publish_spec', { title: 'Three', spec: comparisonFixture });
+    await callTool(client, 'publish_html', { title: 'Four', html: '<html>d</html>' });
+
+    const payload = jsonOf(await callTool(client, 'list_artifacts', {}));
+
+    expect(payload.total).toBe(4);
+    expect((payload.items as { title: string }[]).map((item) => item.title).sort()).toEqual([
+      'Four',
+      'One',
+      'Three',
+      'Two',
+    ]);
+  });
+
   it('carries stateUpdatedAt: null until the owner interacts, then the state timestamp', async () => {
     const published = await callTool(client, 'publish_spec', {
       title: 'Doc',
@@ -382,6 +463,38 @@ describe('get_artifact', () => {
     expect(textOf(missingArtifact)).toContain('list_artifacts');
   });
 
+  it('serializes the full payload into the text block', async () => {
+    const published = await callTool(client, 'publish_spec', {
+      title: 'Doc',
+      description: 'A doc',
+      tags: ['red'],
+      spec: itineraryFixture,
+    });
+    const id = published.structuredContent?.id as string;
+
+    setArtifactState(db, id, { done: true });
+
+    const result = await callTool(client, 'get_artifact', { id });
+    const payload = jsonOf(result);
+
+    expect(payload).toEqual(result.structuredContent);
+    expect(payload).toEqual({
+      id,
+      title: 'Doc',
+      description: 'A doc',
+      type: 'spec',
+      tags: ['red'],
+      url: `http://localhost:3000/a/${id}`,
+      version: 1,
+      body: JSON.stringify(itineraryFixture),
+      versions: [1],
+      state: { done: true },
+      stateUpdatedAt: expect.any(Number),
+      createdAt: expect.any(Number),
+      updatedAt: expect.any(Number),
+    });
+  });
+
   it('carries state and stateUpdatedAt: null before interaction, populated after', async () => {
     const published = await callTool(client, 'publish_spec', {
       title: 'Doc',
@@ -398,6 +511,57 @@ describe('get_artifact', () => {
     const after = await callTool(client, 'get_artifact', { id });
     expect(after.structuredContent?.state).toEqual({ done: true });
     expect(after.structuredContent?.stateUpdatedAt).toEqual(expect.any(Number));
+  });
+});
+
+describe('set_artifact_archived', () => {
+  it('round-trips an artifact out of and back into the default listing', async () => {
+    const published = await callTool(client, 'publish_spec', {
+      title: 'Doc',
+      spec: itineraryFixture,
+    });
+    const id = published.structuredContent?.id as string;
+
+    const archived = await callTool(client, 'set_artifact_archived', { id, archived: true });
+    expect(archived.isError).toBeFalsy();
+    expect(archived.structuredContent).toEqual({ id, archived: true });
+
+    const hidden = await callTool(client, 'list_artifacts', {});
+    expect(hidden.structuredContent?.items).toEqual([]);
+    // Archived artifacts stay fetchable by id.
+    expect((await callTool(client, 'get_artifact', { id })).isError).toBeFalsy();
+
+    const restored = await callTool(client, 'set_artifact_archived', { id, archived: false });
+    expect(restored.structuredContent).toEqual({ id, archived: false });
+
+    const visible = await callTool(client, 'list_artifacts', {});
+    expect((visible.structuredContent?.items as { id: string }[]).map((item) => item.id)).toEqual([
+      id,
+    ]);
+  });
+
+  it('is idempotent: archiving an already archived artifact still succeeds', async () => {
+    const published = await callTool(client, 'publish_spec', {
+      title: 'Doc',
+      spec: itineraryFixture,
+    });
+    const id = published.structuredContent?.id as string;
+
+    await callTool(client, 'set_artifact_archived', { id, archived: true });
+    const second = await callTool(client, 'set_artifact_archived', { id, archived: true });
+
+    expect(second.isError).toBeFalsy();
+    expect(second.structuredContent).toEqual({ id, archived: true });
+  });
+
+  it('reports not-found for an unknown id', async () => {
+    const result = await callTool(client, 'set_artifact_archived', {
+      id: 'does-not-exist',
+      archived: true,
+    });
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain('list_artifacts');
   });
 });
 

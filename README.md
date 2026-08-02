@@ -42,16 +42,17 @@ claude.ai requires HTTPS for connectors, so connect it to a deployed instance, n
 
 MCP tools:
 
-| Tool              | Purpose                                                  |
-| ----------------- | -------------------------------------------------------- |
-| `get_catalog`     | Spec-authoring reference: components, props, wire format |
-| `publish_spec`    | Create a spec artifact from catalog components           |
-| `publish_html`    | Create an artifact from a standalone HTML document       |
-| `update_artifact` | Add a version, or update title/description/tags in place |
-| `list_artifacts`  | Browse and filter published artifacts                    |
-| `list_tags`       | List tags in use                                         |
-| `get_artifact`    | Fetch one, including saved interaction state             |
-| `delete_artifact` | Soft-delete (hidden from listings, kept in the database) |
+| Tool                    | Purpose                                                  |
+| ----------------------- | -------------------------------------------------------- |
+| `get_catalog`           | Spec-authoring reference: components, props, wire format |
+| `publish_spec`          | Create a spec artifact from catalog components           |
+| `publish_html`          | Create an artifact from a standalone HTML document       |
+| `update_artifact`       | Add a version, or update title/description/tags in place |
+| `list_artifacts`        | Browse and filter published artifacts                    |
+| `list_tags`             | List tags in use                                         |
+| `get_artifact`          | Fetch one, including saved interaction state             |
+| `set_artifact_archived` | Hide from Claude's default listing, or restore           |
+| `delete_artifact`       | Soft-delete (hidden from listings, kept in the database) |
 
 Connected clients appear in **/settings → MCP connections**, where you can revoke them. Revocation deletes the client registration and its tokens; outstanding access tokens are short-lived JSON Web Tokens (JWTs) that expire on their own.
 

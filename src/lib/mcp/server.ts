@@ -13,6 +13,7 @@ import {
   listArtifacts,
   listTags,
   listVersions,
+  setArtifactArchived,
   softDeleteArtifact,
   updateMetadata,
 } from '@/database/repository';
@@ -20,12 +21,34 @@ import { artifactSorts, artifactTypes } from '@/lib/artifact-sorts';
 import { buildCatalogSummary } from '@/lib/mcp/catalog-summary';
 import { checkBodySize } from '@/lib/mcp/limits';
 import { normalizeTags } from '@/lib/mcp/tags';
+import type { McpToolName } from '@/lib/mcp/tool-names';
 import { artifactUrl } from '@/lib/mcp/url';
 
 import packageJson from '../../../package.json' with { type: 'json' };
 
+/**
+ * Constrains a registration to a declared tool name, so the tool list can't drift from
+ * `MCP_TOOL_NAMES` (the docs table is an exhaustive record over the same union). Missing or extra
+ * registrations are caught by the `tools/list` assertion in server.int.test.ts.
+ */
+function toolName(name: McpToolName): string {
+  return name;
+}
+
 function text(value: string): CallToolResult['content'] {
   return [{ type: 'text', text: value }];
+}
+
+/**
+ * Read-tool response shape: a summary line, then the complete payload serialized as JSON, with the
+ * same object in `structuredContent`. Many MCP clients (claude.ai among them) surface only text
+ * content, so the two representations must never diverge — building both here guarantees it.
+ */
+function textWithJson(summary: string, payload: Record<string, unknown>): CallToolResult {
+  return {
+    content: text(`${summary}\n${JSON.stringify(payload)}`),
+    structuredContent: payload,
+  };
 }
 
 function errorResult(message: string, structuredContent?: Record<string, unknown>): CallToolResult {
@@ -85,8 +108,10 @@ function artifactRow(artifact: ArtifactListItem) {
   return {
     id: artifact.id,
     title: artifact.title,
+    description: artifact.description,
     type: artifact.type,
     tags: artifact.tags,
+    createdAt: artifact.createdAt,
     updatedAt: artifact.updatedAt,
     stateUpdatedAt: artifact.stateUpdatedAt,
     url: artifactUrl(artifact.id),
@@ -97,11 +122,11 @@ export function buildMcpServer(db: Db): McpServer {
   const server = new McpServer({ name: 'exhibit', version: packageJson.version });
 
   server.registerTool(
-    'publish_spec',
+    toolName('publish_spec'),
     {
       title: 'Publish spec artifact',
       description:
-        'Creates a new artifact from a json-render spec — the preferred format for documents, guides, itineraries, comparisons, checklists, and dashboards, since specs render with the gallery’s native theming. Call get_catalog once first to learn the component vocabulary and wire format. The spec is validated against the catalog; on failure you get per-element errors to fix and resubmit. Returns the artifact id and shareable url — to revise the artifact later, call update_artifact with that id instead of publishing again. Use publish_html only when the content needs custom code the catalog cannot express.',
+        'Creates a new artifact from a json-render spec — the preferred format for documents, guides, itineraries, comparisons, checklists, and dashboards, since specs render with the gallery’s native theming. Call get_catalog once first to learn the component vocabulary and wire format. The spec is validated against the catalog; on failure you get per-element errors to fix and resubmit. Returns the artifact id and url — the url opens for the gallery owner only, since it requires their session, so it is not a link to share. To revise the artifact later, call update_artifact with that id instead of publishing again. Use publish_html only when the content needs custom code the catalog cannot express.',
       inputSchema: {
         title: z.string().min(1).max(200).describe('Artifact title.'),
         description: z.string().max(2000).optional().describe('Optional short description.'),
@@ -147,11 +172,11 @@ export function buildMcpServer(db: Db): McpServer {
   );
 
   server.registerTool(
-    'publish_html',
+    toolName('publish_html'),
     {
       title: 'Publish HTML artifact',
       description:
-        'Creates a new artifact from a complete standalone HTML document. Prefer publish_spec — spec artifacts match the gallery’s theming and stay editable at the component level; use HTML only for content the catalog cannot express (custom visualizations, bespoke interactivity). The document renders sandboxed on its own page with no network access to the app, so inline all CSS/JS (external scripts only from cdnjs if unavoidable) and include <html>, <head>, and <body>. Returns the artifact id and shareable url — revise later with update_artifact, not a second publish.',
+        'Creates a new artifact from a complete standalone HTML document. Prefer publish_spec — spec artifacts match the gallery’s theming and stay editable at the component level; use HTML only for content the catalog cannot express (custom visualizations, bespoke interactivity). The document renders sandboxed on its own page under a strict CSP: fetch, XHR, and WebSocket connections are blocked entirely, so the page must work with zero network calls; scripts and styles must be inline or loaded from cdnjs.cloudflare.com; images and fonts may come from any https: URL or a data: URI. Include <html>, <head>, and <body>. Returns the artifact id and url — the url opens for the gallery owner only, since it requires their session, so it is not a link to share. Revise later with update_artifact, not a second publish.',
       inputSchema: {
         title: z.string().min(1).max(200).describe('Artifact title.'),
         description: z.string().max(2000).optional().describe('Optional short description.'),
@@ -195,7 +220,7 @@ export function buildMcpServer(db: Db): McpServer {
   );
 
   server.registerTool(
-    'get_catalog',
+    toolName('get_catalog'),
     {
       title: 'Get component catalog',
       description:
@@ -210,7 +235,7 @@ export function buildMcpServer(db: Db): McpServer {
   );
 
   server.registerTool(
-    'update_artifact',
+    toolName('update_artifact'),
     {
       title: 'Update artifact',
       description:
@@ -298,11 +323,11 @@ export function buildMcpServer(db: Db): McpServer {
   );
 
   server.registerTool(
-    'list_artifacts',
+    toolName('list_artifacts'),
     {
       title: 'List artifacts',
       description:
-        'Lists published artifacts (metadata only, no bodies), sortable, with cursor pagination. Use it to find an artifact’s id before get_artifact, update_artifact, or delete_artifact, and to check what already exists before publishing something similar. Each item’s `stateUpdatedAt` is when the owner’s interaction state last changed, or null if untouched — compare against your last check to see fresh owner input.',
+        'Lists published artifacts (metadata only, no bodies), sortable, with cursor pagination. Use it to find an artifact’s id before get_artifact, update_artifact, or delete_artifact, and to check what already exists before publishing something similar. Archived artifacts are excluded unless you pass `archived: true`, which returns those and only those. Each item’s `stateUpdatedAt` is when the owner’s interaction state last changed, or null if untouched — compare against your last check to see fresh owner input.',
       inputSchema: {
         query: z.string().optional().describe('Case-insensitive substring match on title.'),
         tag: z
@@ -315,6 +340,12 @@ export function buildMcpServer(db: Db): McpServer {
           .optional()
           .describe('Filter to artifacts having any of these exact tags.'),
         type: z.enum(artifactTypes).optional().describe('Filter by artifact type.'),
+        archived: z
+          .boolean()
+          .optional()
+          .describe(
+            'Omit (the default) to list only unarchived artifacts; true to list only archived ones.',
+          ),
         sort: z
           .enum(artifactSorts)
           .optional()
@@ -332,28 +363,27 @@ export function buildMcpServer(db: Db): McpServer {
       },
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
     },
-    ({ query, tag, tags, type, sort, limit, cursor }) => {
+    ({ query, tag, tags, type, archived, sort, limit, cursor }) => {
       const result = listArtifacts(db, {
         query,
         tags: tags ?? (tag ? [tag] : undefined),
         type,
+        archived,
         sort,
         limit,
         cursor,
       });
       const items = result.items.map(artifactRow);
 
-      return {
-        content: text(
-          `${items.length} artifact${items.length === 1 ? '' : 's'}${result.nextCursor ? ' (more available)' : ''}.`,
-        ),
-        structuredContent: { items, nextCursor: result.nextCursor },
-      };
+      return textWithJson(
+        `${items.length} ${archived ? 'archived' : 'unarchived'} artifact${items.length === 1 ? '' : 's'}${result.nextCursor ? ' (more available)' : ''}.`,
+        { items, total: items.length, nextCursor: result.nextCursor },
+      );
     },
   );
 
   server.registerTool(
-    'list_tags',
+    toolName('list_tags'),
     {
       title: 'List tags',
       description:
@@ -371,7 +401,7 @@ export function buildMcpServer(db: Db): McpServer {
   );
 
   server.registerTool(
-    'get_artifact',
+    toolName('get_artifact'),
     {
       title: 'Get artifact',
       description:
@@ -405,11 +435,9 @@ export function buildMcpServer(db: Db): McpServer {
       const versions = listVersions(db, id);
       const stateResult = getArtifactState(db, id);
 
-      return {
-        content: text(
-          `Artifact "${result.artifact.title}" (${id}), version ${result.version.version} of ${versions.length}.`,
-        ),
-        structuredContent: {
+      return textWithJson(
+        `Artifact "${result.artifact.title}" (${id}), version ${result.version.version} of ${versions.length}.`,
+        {
           id: result.artifact.id,
           title: result.artifact.title,
           description: result.artifact.description,
@@ -421,13 +449,45 @@ export function buildMcpServer(db: Db): McpServer {
           versions: versions.map((v) => v.version),
           state: stateResult?.state ?? null,
           stateUpdatedAt: stateResult?.updatedAt ?? null,
+          createdAt: result.artifact.createdAt,
+          updatedAt: result.artifact.updatedAt,
         },
+      );
+    },
+  );
+
+  server.registerTool(
+    toolName('set_artifact_archived'),
+    {
+      title: 'Archive or unarchive artifact',
+      description:
+        'Archives an artifact, or restores an archived one. Archiving keeps the artifact, its versions, and its url intact and still fetchable by get_artifact — it only drops out of list_artifacts unless you ask for `archived: true`. Use it to clear finished work out of the default listing; use delete_artifact only when the artifact should stop existing.',
+      inputSchema: {
+        id: z.string().describe('Artifact id.'),
+        archived: z.boolean().describe('true to archive, false to restore to the default listing.'),
+      },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
+    },
+    ({ id, archived }) => {
+      const existing = getArtifact(db, id);
+
+      if (!existing) {
+        return notFoundResult(id);
+      }
+
+      setArtifactArchived(db, id, archived);
+
+      return {
+        content: text(
+          `${archived ? 'Archived' : 'Unarchived'} artifact "${existing.artifact.title}" (${id}).`,
+        ),
+        structuredContent: { id, archived },
       };
     },
   );
 
   server.registerTool(
-    'delete_artifact',
+    toolName('delete_artifact'),
     {
       title: 'Delete artifact',
       description:
