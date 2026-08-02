@@ -1,5 +1,5 @@
 import { layers, namedFlavor, type Flavor } from '@protomaps/basemaps';
-import type MapLibreGL from 'maplibre-gl';
+import type * as MapLibreGL from 'maplibre-gl';
 
 import type { Theme } from '@/components/ui/map/map-context';
 

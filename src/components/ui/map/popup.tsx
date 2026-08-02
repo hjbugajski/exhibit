@@ -1,7 +1,8 @@
 import { useEffect, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
-import MapLibreGL, { type PopupOptions } from 'maplibre-gl';
+import * as MapLibreGL from 'maplibre-gl';
+import { type PopupOptions } from 'maplibre-gl';
 
 import { useMap } from '@/components/ui/map/map-context';
 import { PopupCloseButton, usePopupInstance } from '@/components/ui/map/popup-utils';

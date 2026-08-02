@@ -11,13 +11,23 @@ import {
 
 import 'maplibre-gl/dist/maplibre-gl.css';
 
-import MapLibreGL from 'maplibre-gl';
+import * as MapLibreGL from 'maplibre-gl';
+/**
+ * maplibre-gl v6 is ESM-only and resolves its worker from `import.meta.url`, which a bundler's
+ * module graph doesn't map back to the dist file — so bundler consumers must point it at the
+ * worker once. `?worker&url` (not plain `?url`) routes it through Vite's worker pipeline so the
+ * emitted chunk inlines its `maplibre-gl-shared.mjs` sibling; without that, production builds
+ * load no vector tiles.
+ */
+import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 
 import { MapContext, type Theme } from '@/components/ui/map/map-context';
 import { useLatest } from '@/components/ui/map/map-utils';
 import { buildProtomapsStyle } from '@/components/ui/map/protomaps-style';
 import { getProtomapsApiKeyFn } from '@/lib/map-config';
 import { cn } from '@/lib/utils';
+
+MapLibreGL.setWorkerUrl(workerUrl);
 
 /** Fallback basemaps when no PROTOMAPS_API_KEY is configured. */
 const defaultStyles = {

@@ -1,5 +1,9 @@
+# better-sqlite3 is pinned off: v13 ships a prebuilt binary for every target in
+# the package itself. Allowing its build makes pnpm run the implicit node-gyp
+# rebuild for the bundled binding.gyp, which needs a Python/C++ toolchain the
+# node:*-slim image doesn't have.
 allowBuilds:
-  better-sqlite3: true
+  better-sqlite3: false
   esbuild: true
   lightningcss: true
   simple-git-hooks: true

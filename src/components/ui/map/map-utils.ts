@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 
-import type MapLibreGL from 'maplibre-gl';
+import type * as MapLibreGL from 'maplibre-gl';
 
 /**
  * Keeps a ref in sync with the latest value so callbacks/effects can read it without depending on

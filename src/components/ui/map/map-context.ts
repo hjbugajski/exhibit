@@ -1,6 +1,6 @@
 import { createContext, use } from 'react';
 
-import type MapLibreGL from 'maplibre-gl';
+import type * as MapLibreGL from 'maplibre-gl';
 
 export type Theme = 'light' | 'dark';
 

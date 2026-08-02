@@ -1,7 +1,8 @@
 import { createContext, use, useEffect, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
-import MapLibreGL, { type MarkerOptions, type PopupOptions } from 'maplibre-gl';
+import * as MapLibreGL from 'maplibre-gl';
+import { type MarkerOptions, type PopupOptions } from 'maplibre-gl';
 
 import { useMap } from '@/components/ui/map/map-context';
 import { useLatest } from '@/components/ui/map/map-utils';
