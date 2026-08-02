@@ -98,12 +98,32 @@ async function getSharedClientId(): Promise<string> {
 }
 
 /**
+ * A PKCE S256 authorize URL. Always sends `prompt=consent` so the consent screen shows even when
+ * the (possibly reused) client already has a stored grant from an earlier call.
+ */
+function buildAuthorizeUrl(params: { clientId: string; challenge: string; scope?: string }): URL {
+  const authorizeUrl = new URL(`${baseURL}/api/auth/oauth2/authorize`);
+
+  authorizeUrl.searchParams.set('response_type', 'code');
+  authorizeUrl.searchParams.set('client_id', params.clientId);
+  authorizeUrl.searchParams.set('redirect_uri', REDIRECT_URI);
+  authorizeUrl.searchParams.set('code_challenge', params.challenge);
+  authorizeUrl.searchParams.set('code_challenge_method', 'S256');
+  authorizeUrl.searchParams.set('state', base64url(randomBytes(16)));
+  authorizeUrl.searchParams.set('prompt', 'consent');
+
+  if (params.scope) {
+    authorizeUrl.searchParams.set('scope', params.scope);
+  }
+
+  return authorizeUrl;
+}
+
+/**
  * Drives DCR -> sign-in -> PKCE authorize (steps 1-3) and stops at the consent screen, returning
  * everything needed to submit (or deny) consent — the shared setup for both `authorizeAndGetCode`
  * and the consent-denial case below. `scope`, if given, is requested on the authorize call (e.g.
- * `offline_access` to get a refresh token back from the token endpoint). Always sends
- * `prompt=consent` so the consent screen shows even when the (possibly reused) client already has a
- * stored grant from an earlier call.
+ * `offline_access` to get a refresh token back from the token endpoint).
  */
 async function authorizeToConsent(
   scope?: string,
@@ -118,20 +138,7 @@ async function authorizeToConsent(
   const cookie = await getOwnerCookie();
 
   const { verifier, challenge } = pkcePair();
-  const state = base64url(randomBytes(16));
-  const authorizeUrl = new URL(`${baseURL}/api/auth/oauth2/authorize`);
-
-  authorizeUrl.searchParams.set('response_type', 'code');
-  authorizeUrl.searchParams.set('client_id', clientId);
-  authorizeUrl.searchParams.set('redirect_uri', REDIRECT_URI);
-  authorizeUrl.searchParams.set('code_challenge', challenge);
-  authorizeUrl.searchParams.set('code_challenge_method', 'S256');
-  authorizeUrl.searchParams.set('state', state);
-  authorizeUrl.searchParams.set('prompt', 'consent');
-
-  if (scope) {
-    authorizeUrl.searchParams.set('scope', scope);
-  }
+  const authorizeUrl = buildAuthorizeUrl({ clientId, challenge, scope });
 
   const authorizeResponse = await fetch(authorizeUrl, {
     headers: { cookie, accept: 'application/json' },
@@ -620,6 +627,56 @@ describe('MCP OAuth flow (DCR -> PKCE authorize -> consent -> token -> /mcp)', (
     expect(refreshJson.access_token).toBeUndefined();
   });
 
+  it('refuses to exchange an authorization code a second time', async () => {
+    // A dedicated client: the provider may punish a replayed code by revoking the grant, which must
+    // not disturb the shared client the other cases reuse.
+    const { clientId, code, verifier } = await authorizeAndGetCode(undefined, {
+      freshClient: true,
+    });
+
+    const exchange = () =>
+      fetch(`${baseURL}/api/auth/oauth2/token`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'authorization_code',
+          code,
+          redirect_uri: REDIRECT_URI,
+          client_id: clientId,
+          code_verifier: verifier,
+          resource: `${baseURL}/mcp`,
+        }).toString(),
+      });
+
+    const firstResponse = await exchange();
+
+    expect(firstResponse.status).toBe(200);
+
+    // Authorization codes are single-use (OAuth 2.1 §4.1.3): a code intercepted from the redirect
+    // must be worthless once the legitimate client has redeemed it.
+    const secondResponse = await exchange();
+
+    expect(secondResponse.ok).toBe(false);
+    const secondJson = (await secondResponse.json()) as { access_token?: string };
+    expect(secondJson.access_token).toBeUndefined();
+  });
+
+  it('sends an unauthenticated authorize request to sign-in, never to consent or a code', async () => {
+    const clientId = await getSharedClientId();
+    const { challenge } = pkcePair();
+
+    // No cookie: the /authorize endpoint must not mint anything for a caller who has not proven
+    // they are the owner, however well-formed the request is.
+    const authorizeResponse = await fetch(buildAuthorizeUrl({ clientId, challenge }), {
+      headers: { accept: 'application/json' },
+    });
+    const authorizeJson = (await authorizeResponse.json()) as { redirect: boolean; url: string };
+    const target = new URL(authorizeJson.url, baseURL);
+
+    expect(target.pathname).toBe('/sign-in');
+    expect(target.searchParams.get('code')).toBeNull();
+  });
+
   it('denying consent redirects with an oauth error instead of a code', async () => {
     const { cookie, consentUrl } = await authorizeToConsent();
 
@@ -635,5 +692,37 @@ describe('MCP OAuth flow (DCR -> PKCE authorize -> consent -> token -> /mcp)', (
 
     expect(redirectUrl.searchParams.get('code')).toBeNull();
     expect(redirectUrl.searchParams.get('error')).toBe('access_denied');
+  });
+});
+
+describe('single-owner guarantee', () => {
+  it('refuses public sign-up, leaving the seeded owner as the only user', async () => {
+    const { seedOwner } = await import('@/lib/seed');
+    const { db } = await import('@/database');
+    const { user } = await import('@/database/schemas/auth');
+
+    await seedOwner(OWNER_EMAIL, OWNER_PASSWORD);
+
+    // Exhibit is a single-owner app: /sign-up must be closed in Better Auth's own config
+    // (`disableSignUp`), not merely hidden from the UI, or anyone who can reach the origin can mint
+    // themselves an account with full access to every artifact.
+    const signUpResponse = await fetch(`${baseURL}/api/auth/sign-up/email`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        email: 'intruder@example.com',
+        password: 'another correct horse battery staple',
+        name: 'Intruder',
+      }),
+    });
+
+    expect(signUpResponse.ok).toBe(false);
+    expect(
+      db
+        .select()
+        .from(user)
+        .all()
+        .map((row) => row.email),
+    ).toEqual([OWNER_EMAIL]);
   });
 });
