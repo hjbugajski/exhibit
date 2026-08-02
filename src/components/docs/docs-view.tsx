@@ -124,8 +124,9 @@ export function DocsView({ mcpUrl }: { mcpUrl: string }) {
           <Link className="text-foreground underline underline-offset-4" to="/settings">
             Settings
           </Link>{' '}
-          under MCP connections. Revoking removes the client’s registration and tokens; it can
-          reconnect later by authorizing again.
+          under MCP connections. Revoking removes the client’s registration and tokens and ends its
+          access immediately, including for tokens it already holds; it can reconnect later by
+          authorizing again.
         </p>
       </section>
     </div>

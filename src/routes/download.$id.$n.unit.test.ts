@@ -87,6 +87,9 @@ describe('/download/$id/$n', () => {
     expect(response.headers.get('Content-Disposition')).toBe(
       'attachment; filename="html-download-v1.html"',
     );
+    // A downloaded artifact opened from disk must not leak the gallery URL to the remote hosts its
+    // own markup references.
+    expect(response.headers.get('Referrer-Policy')).toBe('no-referrer');
     expect(await response.text()).toBe(html);
   });
 

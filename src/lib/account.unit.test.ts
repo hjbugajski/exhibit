@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-const { summarizeConnections } = await import('./account');
+const { redirectHosts, summarizeConnections } = await import('./account');
 
 const NOW = 1_000_000;
 
@@ -64,5 +64,26 @@ describe('summarizeConnections', () => {
       lastGrantAt: null,
       scopes: [],
     });
+  });
+});
+
+describe('redirectHosts', () => {
+  it('keeps the port and de-duplicates hosts across paths', () => {
+    expect(
+      redirectHosts([
+        'https://claude.ai/api/mcp/auth_callback',
+        'https://claude.ai/other',
+        'http://127.0.0.1:8765/callback',
+      ]),
+    ).toEqual(['claude.ai', '127.0.0.1:8765']);
+  });
+
+  it('drops entries that are not parseable URLs rather than showing them as hosts', () => {
+    expect(redirectHosts(['not a url', 42, null, 'https://claude.ai/cb'])).toEqual(['claude.ai']);
+  });
+
+  it('returns nothing for a redirect_uris column that is not an array', () => {
+    expect(redirectHosts(null)).toEqual([]);
+    expect(redirectHosts('https://claude.ai/cb')).toEqual([]);
   });
 });

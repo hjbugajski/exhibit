@@ -1,9 +1,11 @@
 /**
- * Pins the two Better Auth security options that have no observable surface of their own: the rate
- * limiter being force-enabled outside production, and the trusted-proxy list that decides which
+ * Pins the Better Auth security options that have no observable surface of their own: the rate
+ * limiter being force-enabled outside production, and the IP-resolution config that decides which
  * forwarded hop the limiter (and every other IP-keyed check) believes. Asserted statically rather
  * than by driving a live 429 - a timing-dependent burst test buys no extra confidence here and
- * costs a flaky suite.
+ * costs a flaky suite. The no-proxy case is doubly config-only: `getIp` short-circuits to a
+ * localhost constant under dev/test (@better-auth/core/dist/utils/ip.mjs), so the header path it
+ * pins only differs in production.
  *
  * TRUSTED_PROXIES is set before the app modules load so the assertion covers the real wiring
  * (env parsing, the comma-split transform, the `advanced.ipAddress` key) rather than echoing a
@@ -12,7 +14,9 @@
  */
 process.env.TRUSTED_PROXIES = '10.0.0.1, 192.168.0.0/16';
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+const CONFIGURED_PROXIES = process.env.TRUSTED_PROXIES;
 
 const { auth } = await import('@/lib/auth');
 
@@ -25,10 +29,29 @@ describe('auth configuration', () => {
     expect(context.rateLimit.enabled).toBe(true);
   });
 
-  it('resolves trusted proxies from TRUSTED_PROXIES', () => {
+  it('resolves trusted proxies from TRUSTED_PROXIES and keeps reading forwarded headers', () => {
     expect(auth.options.advanced?.ipAddress?.trustedProxies).toEqual([
       '10.0.0.1',
       '192.168.0.0/16',
     ]);
+    expect(auth.options.advanced?.ipAddress?.ipAddressHeaders).toBeUndefined();
+  });
+
+  it('ignores forwarded IP headers entirely when TRUSTED_PROXIES is unset', async () => {
+    delete process.env.TRUSTED_PROXIES;
+    vi.resetModules();
+
+    try {
+      // `ipAddressHeaders: []` is truthy, so it replaces the ["x-forwarded-for"] default rather than
+      // falling back to it: with no proxy declared, a caller-supplied header can no longer buy its
+      // own rate-limit bucket.
+      const { auth: unproxied } = await import('@/lib/auth');
+
+      expect(unproxied.options.advanced?.ipAddress?.ipAddressHeaders).toEqual([]);
+      expect(unproxied.options.advanced?.ipAddress?.trustedProxies).toBeUndefined();
+    } finally {
+      process.env.TRUSTED_PROXIES = CONFIGURED_PROXIES;
+      vi.resetModules();
+    }
   });
 });

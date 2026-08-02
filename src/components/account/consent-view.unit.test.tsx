@@ -5,16 +5,23 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderWithRouter } from '@testing/router';
 
 vi.mock('@/lib/auth-client', () => ({
-  authClient: {
-    oauth2: {
-      publicClient: vi.fn(),
-      consent: vi.fn(),
-    },
-  },
+  authClient: { oauth2: { consent: vi.fn() } },
 }));
 
 const { authClient } = await import('@/lib/auth-client');
 const { ConsentView } = await import('@/components/account/consent-view');
+
+const HOUR_AGO = Date.now() - 3_600_000;
+
+function client(
+  overrides: Partial<{
+    name: string | null;
+    redirectHosts: string[];
+    createdAt: number | null;
+  }> = {},
+) {
+  return { name: 'Claude Code', redirectHosts: ['claude.ai'], createdAt: HOUR_AGO, ...overrides };
+}
 
 afterEach(() => {
   cleanup();
@@ -46,40 +53,54 @@ function stubLocation(search: string): string[] {
 }
 
 describe('ConsentView', () => {
-  it('renders client_name from a successful publicClient response', async () => {
-    vi.mocked(authClient.oauth2.publicClient).mockResolvedValue({
-      data: { client_id: 'client-1', client_name: 'Claude Code' },
-    } as never);
-
-    renderWithRouter(<ConsentView clientId="client-1" scope="openid" />);
+  it('renders the registered name and every redirect host from the loader data', async () => {
+    renderWithRouter(
+      <ConsentView
+        client={client({ redirectHosts: ['claude.ai', '127.0.0.1:8765'] })}
+        clientId="client-1"
+        scope="openid"
+      />,
+    );
 
     expect(await screen.findByText('Claude Code')).toBeTruthy();
+    expect(screen.getByText('claude.ai, 127.0.0.1:8765')).toBeTruthy();
   });
 
-  it('falls back to clientId when the publicClient response fails schema validation', async () => {
-    vi.mocked(authClient.oauth2.publicClient).mockResolvedValue({
-      data: { client_name: 'Missing client_id' },
-    } as never);
+  it('does not warn about an established registration', async () => {
+    renderWithRouter(<ConsentView client={client()} clientId="client-1" />);
 
-    renderWithRouter(<ConsentView clientId="client-77" />);
+    await screen.findByText('Claude Code');
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('warns when the client registered minutes ago', async () => {
+    renderWithRouter(
+      <ConsentView client={client({ createdAt: Date.now() - 30_000 })} clientId="client-1" />,
+    );
+
+    expect(await screen.findByText('Registered just now')).toBeTruthy();
+  });
+
+  /** Lookup failure and "no such registration" are the same story to the owner: nothing vouches. */
+  it('falls back to the clientId and warns when there is no client on record', async () => {
+    renderWithRouter(<ConsentView client={null} clientId="client-77" />);
 
     expect(await screen.findByText('client-77')).toBeTruthy();
-  });
-
-  it('falls back to clientId when the publicClient fetch rejects', async () => {
-    vi.mocked(authClient.oauth2.publicClient).mockRejectedValue(new Error('network error'));
-
-    renderWithRouter(<ConsentView clientId="client-88" />);
-
-    expect(await screen.findByText('client-88')).toBeTruthy();
+    expect(screen.getByText('Registration unknown')).toBeTruthy();
+    expect(screen.getByText('No redirect host is on record for this client.')).toBeTruthy();
   });
 
   it('renders scope items when scope has entries', async () => {
-    renderWithRouter(<ConsentView scope="openid email" />);
+    renderWithRouter(<ConsentView client={client()} scope="openid email" />);
 
     expect(await screen.findByText('openid')).toBeTruthy();
     expect(screen.getByText('email')).toBeTruthy();
-    expect(screen.getByText('This application')).toBeTruthy();
+  });
+
+  it('falls back to a generic name with no client and no clientId', async () => {
+    renderWithRouter(<ConsentView client={null} />);
+
+    expect(await screen.findByText('This application')).toBeTruthy();
   });
 
   it('Allow calls consent with accept true and navigates to the returned url', async () => {
@@ -90,7 +111,7 @@ describe('ConsentView', () => {
       error: null,
     } as never);
 
-    renderWithRouter(<ConsentView clientId="client-1" scope="openid" />);
+    renderWithRouter(<ConsentView client={client()} clientId="client-1" scope="openid" />);
 
     fireEvent.click(await screen.findByRole('button', { name: 'Allow' }));
 
@@ -109,7 +130,7 @@ describe('ConsentView', () => {
       error: null,
     } as never);
 
-    renderWithRouter(<ConsentView clientId="client-1" />);
+    renderWithRouter(<ConsentView client={client()} clientId="client-1" />);
 
     fireEvent.click(await screen.findByRole('button', { name: 'Deny' }));
 
@@ -129,7 +150,7 @@ describe('ConsentView', () => {
       error: { message: 'Failed to process consent' },
     } as never);
 
-    renderWithRouter(<ConsentView clientId="client-1" />);
+    renderWithRouter(<ConsentView client={client()} clientId="client-1" />);
 
     const allowButton = (await screen.findByRole('button', {
       name: 'Allow',

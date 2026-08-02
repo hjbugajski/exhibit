@@ -54,7 +54,7 @@ MCP tools:
 | `set_artifact_archived` | Hide from Claude's default listing, or restore           |
 | `delete_artifact`       | Soft-delete (hidden from listings, kept in the database) |
 
-Connected clients appear in **/settings → MCP connections**, where you can revoke them. Revocation deletes the client registration and its tokens; outstanding access tokens are short-lived JSON Web Tokens (JWTs) that expire on their own.
+Connected clients appear in **/settings → MCP connections**, where you can revoke them. Revocation deletes the client registration and its tokens, and takes effect immediately: `/mcp` re-checks the client registration on every request, so an access token issued before the revocation stops working on its next call.
 
 ## Environment
 

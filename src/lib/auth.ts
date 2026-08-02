@@ -21,6 +21,7 @@ import { mailerConfigured, sendEmail } from './mailer.ts';
  */
 type EmailPasswordOptions = NonNullable<BetterAuthOptions['emailAndPassword']>;
 type ChangeEmailOptions = NonNullable<NonNullable<BetterAuthOptions['user']>['changeEmail']>;
+type EmailVerificationOptions = NonNullable<BetterAuthOptions['emailVerification']>;
 
 /**
  * Builds a Better Auth instance backed by the app's SQLite/Drizzle database.
@@ -54,9 +55,31 @@ export function createAuth(options: { disableSignUp?: boolean } = {}) {
           },
         } satisfies Pick<EmailPasswordOptions, 'sendResetPassword'>)),
     },
-    // Owner can change email/password in /settings; OWNER_EMAIL/PASSWORD are first-seed values only
-    // (see seedOwner). Without a mailer there's no way to deliver a confirmation, so the change
-    // applies immediately; with one, a confirmation link goes to the OLD address first.
+    /**
+     * Better Auth gates every /change-email confirmation flow on this callback existing, not just
+     * the one that uses it (see canSendVerification in dist/api/routes/update-user.mjs) — without
+     * it the endpoint 400s and sendChangeEmailConfirmation below is dead code. With the owner's
+     * address marked verified (see seedOwner), the confirmation path wins and this callback is only
+     * reached if that flag were ever false.
+     */
+    ...(mailerConfigured() && {
+      emailVerification: {
+        sendVerificationEmail: async ({ user, url }) => {
+          await sendEmail({
+            to: user.email,
+            subject: 'Verify your Exhibit email',
+            text: `Verify this address for your Exhibit account:\n\n${url}\n\nIf you didn’t request this, ignore this email.`,
+          });
+        },
+      } satisfies Pick<EmailVerificationOptions, 'sendVerificationEmail'>,
+    }),
+    /**
+     * Owner can change email/password in /settings; OWNER_EMAIL/PASSWORD are first-seed values only
+     * (see seedOwner). Without a mailer there's no way to deliver a confirmation, so the change
+     * applies immediately. With one, the confirmation link goes to the OLD address and the new one
+     * is not written until that link is followed — so holding the session alone is not enough to
+     * move the account to an address you control.
+     */
     user: {
       changeEmail: {
         enabled: true,
@@ -76,10 +99,18 @@ export function createAuth(options: { disableSignUp?: boolean } = {}) {
     // Rate limiting defaults to enabled only in production; force it on so dev/test behavior
     // matches prod.
     rateLimit: { enabled: true },
-    // Scopes which forwarded hops are trusted for client-IP resolution (used by rateLimit above).
-    // Unset keeps the default: a single-value X-Forwarded-For is trusted verbatim, which is
-    // spoofable unless a trusted proxy strips inbound copies of that header.
-    advanced: { ipAddress: { trustedProxies: env.TRUSTED_PROXIES } },
+    /**
+     * Scopes which forwarded hops are trusted for client-IP resolution (used by rateLimit above).
+     * With a proxy declared, that list decides which hop is believed. With none declared, Better
+     * Auth's default would trust a single-value X-Forwarded-For verbatim — so anyone could mint a
+     * fresh rate-limit bucket per password guess just by varying the header. An empty header list
+     * forces the no-header path instead: every caller shares one strict bucket.
+     */
+    advanced: {
+      ipAddress: env.TRUSTED_PROXIES
+        ? { trustedProxies: env.TRUSTED_PROXIES }
+        : { ipAddressHeaders: [] },
+    },
     plugins: [
       jwt({
         // Session payloads should not be signed when an oAuth provider plugin is present; only

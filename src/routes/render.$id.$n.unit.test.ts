@@ -122,6 +122,9 @@ describe('/render/$id/$n', () => {
     expect(response.headers.get('Content-Type')).toBe('text/html; charset=utf-8');
     expect(response.headers.get('Content-Security-Policy')).toBe(EXPECTED_RENDER_CSP);
     expect(response.headers.get('X-Content-Type-Options')).toBe('nosniff');
+    // The artifact chooses which https hosts its images and fonts come from; none of them may learn
+    // the gallery URL that loaded it.
+    expect(response.headers.get('Referrer-Policy')).toBe('no-referrer');
     expect(await response.text()).toBe(html);
   });
 

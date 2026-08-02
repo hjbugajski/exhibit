@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest';
 
-const { seedOwner } = await import('./seed');
+const { db } = await import('@/database');
+const { user } = await import('@/database/schemas/auth');
+const { markOwnerEmailVerified, seedOwner } = await import('./seed');
+
+function verifiedFlags(): boolean[] {
+  return db
+    .select()
+    .from(user)
+    .all()
+    .map((row) => row.emailVerified);
+}
 
 describe('seedOwner', () => {
   it('creates the owner user then is idempotent on a second call', async () => {
@@ -20,5 +30,27 @@ describe('seedOwner', () => {
 
     const result = await seedOwner('stale-env-email@example.com', 'correct horse battery staple');
     expect(result).toEqual({ created: false });
+  });
+
+  /**
+   * signUpEmail leaves the row unverified, and Better Auth only sends a change-email confirmation
+   * to the CURRENT address when it is verified - otherwise it verifies the address the request
+   * asked to move to, which a session thief chooses. The seed email is trusted by construction.
+   */
+  it('marks the owner verified on creation', async () => {
+    await seedOwner('owner@example.com', 'correct horse battery staple');
+
+    expect(verifiedFlags()).toEqual([true]);
+  });
+
+  it('backfills an owner row that predates the flag, and is a no-op afterwards', async () => {
+    await seedOwner('owner@example.com', 'correct horse battery staple');
+    db.update(user).set({ emailVerified: false }).run();
+
+    markOwnerEmailVerified();
+    expect(verifiedFlags()).toEqual([true]);
+
+    markOwnerEmailVerified();
+    expect(verifiedFlags()).toEqual([true]);
   });
 });

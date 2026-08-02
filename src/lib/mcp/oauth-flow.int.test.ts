@@ -579,7 +579,7 @@ describe('MCP OAuth flow (DCR -> PKCE authorize -> consent -> token -> /mcp)', (
     expect(toolNames).toEqual(expect.arrayContaining(['publish_spec', 'get_artifact']));
   });
 
-  it('rejects refresh-token reuse once the client registration is revoked', async () => {
+  it('rejects both the outstanding access-token JWT and refresh-token reuse once the client registration is revoked', async () => {
     // A dedicated (not shared) client: this test deletes it, which must not affect the shared
     // client other cases in this file reuse.
     const { clientId, code, verifier } = await authorizeAndGetCode('offline_access', {
@@ -599,8 +599,19 @@ describe('MCP OAuth flow (DCR -> PKCE authorize -> consent -> token -> /mcp)', (
       }).toString(),
     });
 
-    const tokenJson = (await tokenResponse.json()) as { refresh_token?: string };
+    const tokenJson = (await tokenResponse.json()) as {
+      access_token: string;
+      refresh_token?: string;
+    };
     expect(tokenJson.refresh_token).toBeTruthy();
+
+    const beforeRevocation = await mcpCall(tokenJson.access_token, {
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'tools/list',
+    });
+
+    expect(beforeRevocation.status).toBe(200);
 
     // Mirrors revokeMcpConnectionFn's deletion (see src/lib/account.ts): deleting the client
     // registration cascades (ON DELETE CASCADE) to its refresh tokens — the safety promise behind
@@ -610,6 +621,17 @@ describe('MCP OAuth flow (DCR -> PKCE authorize -> consent -> token -> /mcp)', (
     const { eq } = await import('drizzle-orm');
 
     db.delete(oauthClient).where(eq(oauthClient.clientId, clientId)).run();
+
+    // The access token is a stateless JWT that is still unexpired and still verifies against the
+    // JWKS: only the `azp` client-registration check (see verifyMcpBearer) makes revocation bite
+    // now rather than up to an hour from now.
+    const afterRevocation = await mcpCall(tokenJson.access_token, {
+      jsonrpc: '2.0',
+      id: 2,
+      method: 'tools/list',
+    });
+
+    expect(afterRevocation.status).toBe(401);
 
     const refreshResponse = await fetch(`${baseURL}/api/auth/oauth2/token`, {
       method: 'POST',

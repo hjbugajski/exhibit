@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm';
 import { createLocalJWKSet, errors as joseErrors, jwtVerify } from 'jose';
 
 import { db } from '@/database';
-import { oauthAccessToken } from '@/database/schemas/auth';
+import { oauthAccessToken, oauthClient } from '@/database/schemas/auth';
 import { auth } from '@/lib/auth';
 import { env } from '@/lib/env';
 
@@ -52,15 +52,33 @@ function verifyOpaqueToken(token: string): McpAuthSuccess | undefined {
 }
 
 /**
+ * Whether the client registration a token was minted for still exists and is enabled. The provider
+ * stamps the client id on every issued JWT as `azp` (see `createAccessToken` in
+ * `@better-auth/oauth-provider`), so this is what makes revocation immediate: a JWT is otherwise
+ * self-contained proof only that this app signed it, and a client revoked in /settings would keep
+ * full publish/update/delete access until the token expired on its own.
+ */
+function clientIsActive(clientId: string): boolean {
+  const row = db
+    .select({ disabled: oauthClient.disabled })
+    .from(oauthClient)
+    .where(eq(oauthClient.clientId, clientId))
+    .get();
+
+  return row !== undefined && !row.disabled;
+}
+
+/**
  * Verifies the `Authorization: Bearer <token>` header on an incoming /mcp request against the app's
  * own JWKS (Better Auth's `jwt` plugin, issuer pinned to `BASE_URL` — see src/lib/auth.ts),
  * accepting either audience configured as valid (`BASE_URL` or `BASE_URL/mcp`). Tokens that aren't
  * a parseable JWT fall back to a lookup in `oauth_access_token`, since not every token request
  * yields a JWT (see verifyOpaqueToken).
  *
- * Verification is local: the JWKS is read from the database via `auth.api.getJwks()` rather than
- * fetched from `BASE_URL/api/auth/jwks` over the network — inside a container the public BASE_URL
- * usually isn't reachable from the app itself (port mapping, hairpin NAT).
+ * Signature verification is local: the JWKS is read from the database via `auth.api.getJwks()`
+ * rather than fetched from `BASE_URL/api/auth/jwks` over the network — inside a container the public
+ * BASE_URL usually isn't reachable from the app itself (port mapping, hairpin NAT). The one DB
+ * lookup that is not optional is the token's client registration (see clientIsActive).
  */
 export async function verifyMcpBearer(request: Request): Promise<McpAuthResult> {
   const baseURL = env.BASE_URL;
@@ -80,6 +98,10 @@ export async function verifyMcpBearer(request: Request): Promise<McpAuthResult> 
       issuer: baseURL,
       audience: [baseURL, `${baseURL}/mcp`],
     });
+
+    if (typeof payload.azp !== 'string' || !clientIsActive(payload.azp)) {
+      return { ok: false, status: 401, wwwAuthenticate: wwwAuthenticate(baseURL, 'invalid_token') };
+    }
 
     return { ok: true, subject: typeof payload.sub === 'string' ? payload.sub : undefined };
   } catch (error) {

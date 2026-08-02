@@ -1,61 +1,42 @@
-import { useEffect, useState } from 'react';
-
-import { z } from 'zod';
-
 import { AuthScreen } from '@/components/account/auth-screen';
 import { FormStatus } from '@/components/blocks/form-status';
+import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Item } from '@/components/ui/item';
+import type { ConsentClient } from '@/lib/account';
 import { authClient } from '@/lib/auth-client';
+import { formatRelativeTime } from '@/lib/format-time';
 import { useFormAction } from '@/lib/use-form-action';
 
+const RECENT_REGISTRATION_MS = 10 * 60 * 1000;
+
 /**
- * The consent screen renders client_name as the thing the owner is trusting; parse the
- * (unauthenticated) client-info response instead of casting it.
+ * A registration minutes old is either the client the owner is connecting right now, or one an
+ * attacker registered seconds ago to catch this exact prompt — the owner is the only one who can
+ * tell those apart, so say so. Unknown age (no matching registration, or a row without a timestamp)
+ * fails toward caution and warns too.
  */
-const publicOAuthClientSchema = z.object({
-  client_id: z.string(),
-  client_name: z.string().optional(),
-});
+function isRecentlyRegistered(createdAt: number | null | undefined): boolean {
+  return createdAt == null || Date.now() - createdAt < RECENT_REGISTRATION_MS;
+}
 
-type PublicOAuthClient = z.infer<typeof publicOAuthClientSchema>;
+export interface ConsentViewProps {
+  /** The client registration on record; null when the lookup found nothing or failed. */
+  client: ConsentClient | null;
+  clientId?: string;
+  scope?: string;
+}
 
-export function ConsentView({ clientId, scope }: { clientId?: string; scope?: string }) {
-  const [client, setClient] = useState<PublicOAuthClient | null>(null);
+/**
+ * The one control between an attacker-registered OAuth client and a token for the whole gallery. It
+ * leads with the two things the client cannot choose for itself — where the authorization code will
+ * be delivered, and how long the registration has existed — because the name beside them is a free
+ * string set at dynamic registration.
+ */
+export function ConsentView({ client, clientId, scope }: ConsentViewProps) {
   const { pending, status, setStatus, run } = useFormAction();
   const scopes = scope?.split(' ').filter(Boolean) ?? [];
-
-  useEffect(() => {
-    if (!clientId) {
-      setClient(null);
-      return;
-    }
-
-    let ignore = false;
-
-    authClient.oauth2
-      .publicClient({ query: { client_id: clientId } })
-      .then(({ data }) => {
-        if (ignore) {
-          return;
-        }
-
-        const parsed = publicOAuthClientSchema.safeParse(data);
-
-        setClient(parsed.success ? parsed.data : null);
-      })
-      .catch(() => {
-        if (ignore) {
-          return;
-        }
-
-        setClient(null);
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, [clientId]);
+  const hosts = client?.redirectHosts ?? [];
 
   function handleRespond(accept: boolean) {
     void run(async () => {
@@ -77,12 +58,37 @@ export function ConsentView({ clientId, scope }: { clientId?: string; scope?: st
   return (
     <AuthScreen title="Authorize access">
       <div className="flex flex-col gap-6">
-        <p className="text-sm">
-          <strong className="font-semibold">
-            {client?.client_name ?? clientId ?? 'This application'}
-          </strong>{' '}
-          is requesting access to your account.
-        </p>
+        <div className="flex flex-col gap-2">
+          <p className="text-sm">
+            <strong className="font-semibold">
+              {client?.name ?? clientId ?? 'This application'}
+            </strong>{' '}
+            is requesting access to your account.
+          </p>
+          <p className="text-sm">
+            {hosts.length > 0 ? (
+              <>
+                It receives the authorization code at{' '}
+                <strong className="font-semibold">{hosts.join(', ')}</strong>.
+              </>
+            ) : (
+              'No redirect host is on record for this client.'
+            )}
+          </p>
+        </div>
+        {isRecentlyRegistered(client?.createdAt) ? (
+          <Alert.Root variant="warning">
+            <Alert.Title>
+              {client?.createdAt == null
+                ? 'Registration unknown'
+                : `Registered ${formatRelativeTime(client.createdAt)}`}
+            </Alert.Title>
+            <Alert.Description>
+              This is the first time you are seeing this client. Allow it only if you just started
+              connecting one yourself.
+            </Alert.Description>
+          </Alert.Root>
+        ) : null}
         {scopes.length > 0 ? (
           <Item.Group>
             {scopes.map((s) => (

@@ -226,7 +226,7 @@ function ConnectionRow({ connection }: { connection: McpConnection }) {
       <ConfirmDestructiveAction
         action={action}
         actionLabel="Revoke"
-        description="The client’s registration and tokens are removed and it can no longer publish. Outstanding access tokens expire on their own within the hour; the client can reconnect later by authorizing again."
+        description="The client’s registration and tokens are removed and it can no longer publish. Access ends immediately, including for tokens it already holds; the client can reconnect later by authorizing again."
         onConfirm={handleRevoke}
         pendingLabel="Revoking…"
         title={`Revoke “${connection.name ?? connection.clientId}”?`}

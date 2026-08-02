@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 
+import { eq } from 'drizzle-orm';
 import { exportJWK, generateKeyPair, SignJWT } from 'jose';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -22,6 +23,17 @@ const { oauthAccessToken, oauthClient, user } = await import('@/database/schemas
 
 const KID = 'test-kid';
 
+/**
+ * Every JWT the provider mints carries the client id it was minted for as `azp`, and verification
+ * now requires that registration to still exist and be enabled - so the JWT cases below need a
+ * default client on record.
+ */
+const AZP = 'jwt-client';
+
+db.insert(oauthClient)
+  .values({ id: 'jwt-client-row', clientId: AZP, redirectUris: ['https://example.com'] })
+  .run();
+
 const { publicKey, privateKey } = await generateKeyPair('RS256');
 const publicJwk = await exportJWK(publicKey);
 
@@ -40,15 +52,17 @@ function request(token?: string): Request {
   return new Request('http://localhost:3000/mcp', { headers });
 }
 
+/** `azp: null` mints a token without the claim at all, which must not authenticate. */
 function mintJwt(
   overrides: {
     issuer?: string;
     audience?: string | string[];
     expirationTime?: number;
     subject?: string;
+    azp?: string | null;
   } = {},
 ): Promise<string> {
-  return new SignJWT({})
+  return new SignJWT(overrides.azp === null ? {} : { azp: overrides.azp ?? AZP })
     .setProtectedHeader({ alg: 'RS256', kid: KID })
     .setSubject(overrides.subject ?? 'user-1')
     .setIssuedAt()
@@ -176,5 +190,60 @@ describe('verifyMcpBearer', () => {
     const result = await verifyMcpBearer(request(token));
 
     expect(result).toEqual({ ok: true, subject: 'user-456' });
+  });
+
+  it('rejects an otherwise-valid JWT with no azp claim', async () => {
+    const token = await mintJwt({ azp: null });
+    const result = await verifyMcpBearer(request(token));
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.status).toBe(401);
+      expect(result.wwwAuthenticate).toContain('error="invalid_token"');
+    }
+  });
+
+  /**
+   * The revocation guarantee: /settings "Revoke" deletes the oauth_client row, and a JWT minted
+   * before that must stop working on its very next request rather than at its own expiry.
+   */
+  it('rejects an unexpired JWT whose client registration has been deleted', async () => {
+    db.insert(oauthClient)
+      .values({ id: 'revoked-row', clientId: 'revoked-client', redirectUris: ['https://x.test'] })
+      .run();
+
+    const token = await mintJwt({ azp: 'revoked-client' });
+
+    expect(await verifyMcpBearer(request(token))).toEqual({ ok: true, subject: 'user-1' });
+
+    db.delete(oauthClient).where(eq(oauthClient.clientId, 'revoked-client')).run();
+
+    const result = await verifyMcpBearer(request(token));
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.status).toBe(401);
+      expect(result.wwwAuthenticate).toContain('error="invalid_token"');
+    }
+  });
+
+  it('rejects a valid JWT whose client registration is disabled', async () => {
+    db.insert(oauthClient)
+      .values({
+        id: 'disabled-row',
+        clientId: 'disabled-client',
+        disabled: true,
+        redirectUris: ['https://x.test'],
+      })
+      .run();
+
+    const token = await mintJwt({ azp: 'disabled-client' });
+    const result = await verifyMcpBearer(request(token));
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.status).toBe(401);
+      expect(result.wwwAuthenticate).toContain('error="invalid_token"');
+    }
   });
 });

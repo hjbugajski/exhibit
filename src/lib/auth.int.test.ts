@@ -26,6 +26,14 @@ const dbDir = mkdtempSync(join(tmpdir(), 'exhibit-auth-int-'));
 process.env.DATABASE_PATH = join(dbDir, 'app.db');
 
 const ORIGIN = 'http://localhost:3000';
+/**
+ * The one hop this suite's requests claim to arrive through. With no trusted proxy declared,
+ * src/lib/auth.ts pins `ipAddressHeaders: []` and every caller collapses into one rate-limit bucket
+ * (the point of that setting) - which would make the cases below race each other into a 429 rather
+ * than exercise the credential checks they mean to. Declaring a proxy is also the shape of a real
+ * deployment, so the suite runs the config an owner behind a reverse proxy actually gets.
+ */
+const TRUSTED_PROXY = '10.0.0.1';
 const OWNER_EMAIL = 'owner@example.com';
 const OWNER_PASSWORD = 'correct horse battery staple';
 const NEW_PASSWORD = 'a different correct horse battery staple';
@@ -69,11 +77,12 @@ function authFetch(
         'content-type': 'application/json',
         ...(init.cookie ? { cookie: init.cookie } : {}),
         // Better Auth's rate limiter buckets by (client IP, path) and caps credential paths at 3
-        // requests / 10s. With no trusted-proxy list configured a single-value X-Forwarded-For is
-        // taken verbatim, so giving each sign-in its own address keeps the cases independent -
+        // requests / 10s, so giving each sign-in its own address keeps the cases independent -
         // otherwise a later "the old password is rejected" assertion could pass on a 429 instead of
-        // on the credential check it means to exercise.
-        ...(init.ip ? { 'x-forwarded-for': init.ip } : {}),
+        // on the credential check it means to exercise. The trailing hop is what makes the address
+        // believed: TRUSTED_PROXIES is set below, and Better Auth walks the chain from the right to
+        // the first untrusted entry.
+        ...(init.ip ? { 'x-forwarded-for': `${init.ip}, ${TRUSTED_PROXY}` } : {}),
       },
       ...(init.body === undefined ? {} : { body: JSON.stringify(init.body) }),
     }),
@@ -108,6 +117,7 @@ beforeAll(async () => {
   process.env.RESEND_BASE_URL = `http://127.0.0.1:${address.port}`;
   process.env.RESEND_API_KEY = 're_stub_key';
   process.env.EMAIL_FROM = 'exhibit@example.com';
+  process.env.TRUSTED_PROXIES = TRUSTED_PROXY;
 
   server = await bootTestServer(new URL('../../vite.config.ts', import.meta.url));
 }, 30000);
@@ -124,6 +134,7 @@ afterAll(async () => {
   delete process.env.RESEND_BASE_URL;
   delete process.env.RESEND_API_KEY;
   delete process.env.EMAIL_FROM;
+  delete process.env.TRUSTED_PROXIES;
 });
 
 describe('changing the password', () => {
@@ -188,21 +199,14 @@ describe('with a mailer configured', () => {
   });
 
   /**
-   * KNOWN DEFECT, pinned deliberately - see the report accompanying this suite.
-   *
-   * With Resend configured, `user.changeEmail.updateEmailWithoutVerification` is false, so Better
-   * Auth needs a confirmation flow to fall back on. It picks one from three flags
-   * (better-auth 1.6.25, dist/api/routes/update-user.mjs:449-455), and every one of them requires
-   * `emailVerification.sendVerificationEmail` - which src/lib/auth.ts never configures. So
-   * `sendChangeEmailConfirmation` is dead code and /change-email 400s outright: with a mailer
-   * present the owner cannot change their email at all, and src/lib/auth.ts's comment promising "a
-   * confirmation link goes to the OLD address first" is not what happens.
-   *
-   * The security invariant still holds - the address never changes without confirmation, which is
-   * what this test guards. Fixing the defect (a production change, out of scope here) should turn
-   * the 400 into a 200 plus a confirmation email, and this test must be updated with it.
+   * Which of Better Auth's three change-email flows runs is decided by config
+   * (better-auth 1.6.25, dist/api/routes/update-user.mjs:449-455), and two of the three are wrong
+   * for this app: without `emailVerification.sendVerificationEmail` the endpoint 400s outright,
+   * and with it but an unverified owner row it verifies the NEW address - which, for someone who
+   * has stolen the session, is an address they chose. Only the seeded-verified owner reaches the
+   * flow asserted here. That makes this test the pin on both halves of the fix.
    */
-  it('refuses to change the email, and never applies the new address unconfirmed', async () => {
+  it('sends the change-email confirmation to the OLD address and applies nothing until it is followed', async () => {
     const { db } = await import('@/database');
 
     sentEmails = [];
@@ -216,8 +220,13 @@ describe('with a mailer configured', () => {
       body: { newEmail: 'moved@example.com', callbackURL: '/' },
     });
 
-    expect(changeResponse.status).toBe(400);
-    expect(sentEmails).toEqual([]);
+    expect(changeResponse.status).toBe(200);
+    expect(sentEmails).toHaveLength(1);
+    // The anti-takeover property: the confirmation goes to the address on file, never to the one
+    // the request asked to move to.
+    expect(sentEmails[0]?.to).toEqual([OWNER_EMAIL]);
+    expect(sentEmails[0]?.subject).toBe('Confirm your Exhibit email change');
+    expect(sentEmails[0]?.text).toContain('/verify-email?token=');
     expect(
       db
         .select()

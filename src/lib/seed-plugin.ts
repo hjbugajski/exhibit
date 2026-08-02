@@ -13,7 +13,7 @@ import '../database/index.ts';
  * itself is bundled by Nitro, which does resolve it, but staying consistent costs nothing.
  */
 import { env } from './env.ts';
-import { seedOwner } from './seed.ts';
+import { markOwnerEmailVerified, seedOwner } from './seed.ts';
 
 /**
  * Creates the owner account at server boot when OWNER_EMAIL/OWNER_PASSWORD are set, so a fresh
@@ -22,6 +22,11 @@ import { seedOwner } from './seed.ts';
  * synchronous, so the async work is fire-and-forget.
  */
 export default definePlugin(() => {
+  // Backfill for databases seeded before the owner row was marked verified. Deliberately ahead of
+  // the OWNER_* guard below: a deployment that dropped those vars after its first boot still needs
+  // the flag, or /change-email silently downgrades to verifying the NEW address (see seed.ts).
+  markOwnerEmailVerified();
+
   const email = env.OWNER_EMAIL;
   const password = env.OWNER_PASSWORD;
 

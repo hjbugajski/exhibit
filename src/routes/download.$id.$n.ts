@@ -38,6 +38,9 @@ async function handleGet({
       'Content-Type': isSpec ? 'application/json; charset=utf-8' : 'text/html; charset=utf-8',
       'Content-Disposition': `attachment; filename="${filename}"`,
       'X-Content-Type-Options': 'nosniff',
+      // Same reasoning as /render (see that route): a downloaded artifact opened from disk must not
+      // hand the gallery's URL to the remote hosts its own markup references.
+      'Referrer-Policy': 'no-referrer',
     },
   });
 }
