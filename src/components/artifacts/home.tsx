@@ -47,6 +47,9 @@ export function Home() {
 
     if (search.query !== pushedQuery.current) {
       setQueryInput(search.query ?? '');
+      // Adopt the external value as our own last write, or the navigate effect would push a
+      // redundant no-op write (rerunning both gallery loaders) once the debounce catches up.
+      pushedQuery.current = search.query;
     }
   }
 
@@ -66,9 +69,11 @@ export function Home() {
   useEffect(() => {
     const next = debouncedQuery || undefined;
 
-    // Already what the URL says — on mount, and after each of our own writes lands. Navigating
-    // anyway would rerun both gallery loaders for no change.
-    if (next === urlQuery.current) {
+    // Skip only when the URL AND our last write both already say `next` — on mount, and after one
+    // of our own writes lands. Checking the URL alone deadlocks a fast clear: with "ab" still in
+    // flight, next=undefined matches the stale URL, the write is skipped, and the URL keeps
+    // filtering by "ab" under an empty search box.
+    if (next === urlQuery.current && next === pushedQuery.current) {
       return;
     }
 

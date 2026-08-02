@@ -5,9 +5,8 @@ import { highlight, resolveHighlightLanguage } from '@/lib/highlight';
 /**
  * Bodies past this render plain: tokenizing an artifact (up to 1MB, see src/lib/mcp/limits.ts)
  * blocks the render pass, and a token span per word costs more than the highlighting is worth.
- * Compared against the string length — UTF-16 units, close enough for a guard.
  */
-const HIGHLIGHT_MAX_BYTES = 100_000;
+const HIGHLIGHT_MAX_CHARS = 100_000;
 
 /**
  * `<pre>` with syntax highlighting. Tokenization is synchronous, so highlighted markup ships from
@@ -23,7 +22,7 @@ export function HighlightedCode({
   language?: string;
   className?: string;
 }) {
-  const lang = code.length > HIGHLIGHT_MAX_BYTES ? null : resolveHighlightLanguage(language);
+  const lang = code.length > HIGHLIGHT_MAX_CHARS ? null : resolveHighlightLanguage(language);
   const lines = lang ? highlight(code, lang) : null;
 
   return (

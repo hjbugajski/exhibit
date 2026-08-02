@@ -114,6 +114,29 @@ describe('Home search sync', () => {
     expect(input.value).toBe('abc');
   });
 
+  it('clears the URL when the box is emptied while a write is still in flight', async () => {
+    const { block, input, release, router } = await mountHome();
+
+    block();
+    fireEvent.change(input, { target: { value: 'ab' } });
+    await act(async () => {
+      vi.advanceTimersByTime(300);
+    });
+
+    // The owner clears the box before the write of 'ab' lands. The URL still says no query, so a
+    // guard that only compares against the landed URL would skip the clearing write entirely.
+    fireEvent.change(input, { target: { value: '' } });
+    await act(async () => {
+      vi.advanceTimersByTime(300);
+    });
+    await act(async () => {
+      release();
+    });
+
+    expect(router.state.location.search).toEqual({});
+    expect(input.value).toBe('');
+  });
+
   it('resyncs the input when the query changes from outside (back/forward, shared link)', async () => {
     const { input, router } = await mountHome();
 

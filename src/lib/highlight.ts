@@ -62,9 +62,13 @@ export function resolveHighlightLanguage(language: string | undefined): Highligh
 
   const normalized = language.trim().toLowerCase();
 
-  return normalized in LANGUAGES
-    ? (normalized as HighlightLanguage)
-    : (ALIASES[normalized] ?? null);
+  // Object.hasOwn, not `in`/indexing: a fence language like `constructor` must not resolve
+  // through Object.prototype.
+  if (Object.hasOwn(LANGUAGES, normalized)) {
+    return normalized as HighlightLanguage;
+  }
+
+  return Object.hasOwn(ALIASES, normalized) ? (ALIASES[normalized] ?? null) : null;
 }
 
 /**
