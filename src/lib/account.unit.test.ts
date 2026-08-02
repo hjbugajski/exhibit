@@ -78,6 +78,15 @@ describe('redirectHosts', () => {
     ).toEqual(['claude.ai', '127.0.0.1:8765']);
   });
 
+  it('unwraps the double-encoded rows Better Auth’s adapter writes', () => {
+    // What a dynamically-registered client's row actually holds after one drizzle json-mode parse:
+    // a string containing the JSON array, because the adapter stringified before drizzle did.
+    expect(redirectHosts('["http://127.0.0.1:8765/callback","https://claude.ai/cb"]')).toEqual([
+      '127.0.0.1:8765',
+      'claude.ai',
+    ]);
+  });
+
   it('drops entries that are not parseable URLs rather than showing them as hosts', () => {
     expect(redirectHosts(['not a url', 42, null, 'https://claude.ai/cb'])).toEqual(['claude.ai']);
   });

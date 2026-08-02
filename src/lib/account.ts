@@ -118,8 +118,20 @@ export const listMcpConnectionsFn = createServerFn({ method: 'GET' })
  * `redirect_uris` — a JSON column, hence `unknown`. Exported for tests. Entries that aren't a
  * parseable URL are dropped: the consent screen presents these as the fact "this is where the
  * authorization code goes", and a string that isn't a URL is not that fact.
+ *
+ * Rows written by Better Auth's adapter arrive double-encoded: it stringifies the array itself
+ * before drizzle's `mode: 'json'` stringifies again, so one parse yields a string holding JSON,
+ * not the array. Unwrap that layer before deciding the shape is wrong.
  */
 export function redirectHosts(redirectUris: unknown): string[] {
+  if (typeof redirectUris === 'string') {
+    try {
+      redirectUris = JSON.parse(redirectUris);
+    } catch {
+      return [];
+    }
+  }
+
   if (!Array.isArray(redirectUris)) {
     return [];
   }
