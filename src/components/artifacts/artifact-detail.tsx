@@ -89,10 +89,17 @@ export function ArtifactDetailView({ id, detail }: { id: string; detail: Artifac
 
     let timer: ReturnType<typeof setTimeout> | undefined;
     let pendingSnapshot: JsonObject | null = null;
+    let inFlight = Promise.resolve();
 
+    // Chained rather than fired off independently: the server replaces the stored state wholesale,
+    // so two overlapping requests could land out of order and resurrect an older snapshot.
     function save(state: JsonObject) {
-      saveArtifactStateFn({ data: { id, state } }).catch(() => {
-        setSaveStatus({ kind: 'error', message: 'Could not save your changes. Try again.' });
+      inFlight = inFlight.then(async () => {
+        try {
+          await saveArtifactStateFn({ data: { id, state } });
+        } catch {
+          setSaveStatus({ kind: 'error', message: 'Could not save your changes. Try again.' });
+        }
       });
     }
 

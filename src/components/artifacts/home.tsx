@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { getRouteApi } from '@tanstack/react-router';
 
@@ -27,6 +27,11 @@ export function Home() {
 
   const [queryInput, setQueryInput] = useState(search.query ?? '');
   const [prevSearchQuery, setPrevSearchQuery] = useState(search.query);
+  // The last query this component pushed into the URL. Our own writes land a loader round-trip
+  // later, by which time the owner may have typed more — reseeding the input from them would
+  // revert those characters, so only genuinely external changes (back/forward, a shared link)
+  // resync it.
+  const pushedQuery = useRef(search.query);
   // Starts at 'grid' for a deterministic SSR render, then syncs from localStorage after mount to
   // avoid a hydration mismatch.
   const [view, setView] = useLocalStorageState<GalleryView>(
@@ -39,18 +44,36 @@ export function Home() {
 
   if (search.query !== prevSearchQuery) {
     setPrevSearchQuery(search.query);
-    setQueryInput(search.query ?? '');
+
+    if (search.query !== pushedQuery.current) {
+      setQueryInput(search.query ?? '');
+    }
   }
 
   // Debounced, server-side title search: waits 300ms after the last keystroke before pushing the
   // value into the URL, which reruns the loader (listArtifactsFn).
   const debouncedQuery = useDebouncedValue(queryInput, 300);
 
+  // A ref, not an effect dependency: the navigate effect must react only to settled debounce
+  // values. Re-running it on URL changes would fire it with a stale debouncedQuery right after an
+  // external navigation and bounce the URL back to the old query. Declared before that effect so
+  // the sync runs first each commit.
+  const urlQuery = useRef(search.query);
   useEffect(() => {
-    void navigate({
-      search: (prev) => ({ ...prev, query: debouncedQuery || undefined }),
-      replace: true,
-    });
+    urlQuery.current = search.query;
+  });
+
+  useEffect(() => {
+    const next = debouncedQuery || undefined;
+
+    // Already what the URL says — on mount, and after each of our own writes lands. Navigating
+    // anyway would rerun both gallery loaders for no change.
+    if (next === urlQuery.current) {
+      return;
+    }
+
+    pushedQuery.current = next;
+    void navigate({ search: (prev) => ({ ...prev, query: next }), replace: true });
   }, [debouncedQuery, navigate]);
 
   function handleTypeChange(type: TypeFilter) {

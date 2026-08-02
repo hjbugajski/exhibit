@@ -17,6 +17,7 @@ import {
 } from '@/database/repository';
 import type { Db } from '@/database/repository';
 import { artifactVersions } from '@/database/schemas/artifact-version';
+import { normalizeTags } from '@/lib/mcp/tags';
 import { createTestDb } from '@testing/db';
 
 let sqlite: Database.Database;
@@ -204,6 +205,25 @@ describe('listArtifacts', () => {
     expect(result.items.map((item) => item.title)).toEqual(['Percent']);
   });
 
+  it('matches tags element-wise, not as a substring of the serialized JSON', () => {
+    createArtifact(db, { title: 'Two tags', type: 'spec', tags: ['a', 'b'], body: 'v1' });
+
+    // The serialized column is `["a","b"]`, so a substring match on `a","b` would hit it — the
+    // filter has to compare whole array elements.
+    expect(listArtifacts(db, { tags: ['a","b'] }).items).toHaveLength(0);
+    expect(listArtifacts(db, { tags: ['a'] }).items).toHaveLength(1);
+  });
+
+  it('filters by a tag that needed quote-stripping to be storable', () => {
+    const tags = normalizeTags(['re"d']);
+
+    createArtifact(db, { title: 'Quoted', type: 'spec', tags, body: 'v1' });
+    createArtifact(db, { title: 'Other', type: 'spec', tags: ['blue'], body: 'v1' });
+
+    expect(tags).toEqual(['red']);
+    expect(listArtifacts(db, { tags }).items.map((item) => item.title)).toEqual(['Quoted']);
+  });
+
   it('matches artifacts with ANY of the selected tags (OR semantics)', () => {
     const red = createArtifact(db, {
       title: 'Red',
@@ -342,6 +362,27 @@ describe('listArtifacts', () => {
 
     expect(page2.items.map((item) => item.title)).toEqual(['cherry', 'date']);
     expect(page2.nextCursor).toBeNull();
+  });
+
+  it('paginates past a non-ASCII title boundary for title-asc', () => {
+    // SQLite's lower() is ASCII-only, so 'Ápple' sorts after 'Zoo'. Deriving the cursor key in JS
+    // instead (toLowerCase() lowercases 'Á') put it after 'Élan' too, and page 2 came back empty.
+    ['Alpha', 'Zoo', 'Ápple', 'Élan'].forEach((title) => {
+      createArtifact(db, { title, type: 'spec', body: 'v1' });
+    });
+
+    const page1 = listArtifacts(db, { sort: 'title-asc', limit: 3 });
+
+    expect(page1.items.map((item) => item.title)).toEqual(['Alpha', 'Zoo', 'Ápple']);
+    expect(page1.nextCursor).not.toBeNull();
+
+    const page2 = listArtifacts(db, {
+      sort: 'title-asc',
+      limit: 3,
+      cursor: page1.nextCursor ?? undefined,
+    });
+
+    expect(page2.items.map((item) => item.title)).toEqual(['Élan']);
   });
 
   it('ignores a cursor whose sort does not match the requested sort', () => {

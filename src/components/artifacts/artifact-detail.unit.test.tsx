@@ -225,13 +225,52 @@ describe('ArtifactDetailView interaction state', () => {
     });
     expect(saveArtifactStateFn).not.toHaveBeenCalled();
 
-    // Navigating away mid-debounce must not silently drop the owner's edit.
-    cleanup();
+    // Navigating away mid-debounce must not silently drop the owner's edit. Saves queue behind any
+    // in-flight request, so the flush is dispatched on the next microtask rather than inline.
+    await act(async () => {
+      cleanup();
+    });
 
     expect(saveArtifactStateFn).toHaveBeenCalledTimes(1);
     expect(saveArtifactStateFn).toHaveBeenCalledWith({
       data: { id: 'fixture-id', state: { tasks: { cabinets: true } } },
     });
+  });
+
+  it('holds a newer save until the in-flight one settles, so snapshots reach the server in order', async () => {
+    const resolvers: (() => void)[] = [];
+
+    vi.mocked(saveArtifactStateFn).mockImplementation(
+      (() =>
+        new Promise<void>((resolve) => {
+          resolvers.push(resolve);
+        })) as never,
+    );
+
+    await mountChecklist(makeChecklistDetail());
+
+    toggle('Order cabinets');
+    await act(async () => {
+      vi.advanceTimersByTime(600);
+    });
+    expect(saveArtifactStateFn).toHaveBeenCalledTimes(1);
+
+    // A second edit debounces out while the first request is still open. Firing it now would let
+    // the two land in either order, and the server upsert replaces state wholesale.
+    toggle('Book the plumber');
+    await act(async () => {
+      vi.advanceTimersByTime(600);
+    });
+    expect(saveArtifactStateFn).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      resolvers[0]?.();
+    });
+
+    expect(vi.mocked(saveArtifactStateFn).mock.calls.map(([arg]) => arg.data.state)).toEqual([
+      { tasks: { cabinets: true } },
+      { tasks: { cabinets: true, plumber: true } },
+    ]);
   });
 
   it('tells the owner when a save fails', async () => {

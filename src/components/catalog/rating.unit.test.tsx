@@ -12,13 +12,18 @@ afterEach(() => {
 
 describe('Rating', () => {
   /**
-   * Persisted state is untrusted: it can predate the five-star cap or be seeded outright by a
-   * hostile spec, so a stored value must never render more (or fewer) stars than exist.
+   * Persisted state is untrusted: it can predate the five-star cap, be seeded outright by a hostile
+   * spec, or have been written by whatever component a previous version pointed at this path — so a
+   * stored value must never render more (or fewer) stars than exist, and a non-number reads as
+   * unrated.
    */
   it.each([
     { stored: 9999, filled: 5 },
     { stored: -3, filled: 0 },
     { stored: 2.7, filled: 2 },
+    { stored: 'four', filled: 0 },
+    { stored: Number.NaN, filled: 0 },
+    { stored: true, filled: 0 },
   ])('renders $filled stars for a stored value of $stored', ({ stored, filled }) => {
     const store = createStateStore({ ratings: { 'draft-1': stored } });
 

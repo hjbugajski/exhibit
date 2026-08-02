@@ -19,7 +19,9 @@ function itemBody(text: string, checked: boolean) {
 function StatefulItem({ item, statePath }: { item: Item; statePath: string }) {
   const { set } = useStateStore();
   const stored = useStateValue<boolean>(statePath);
-  const checked = stored ?? Boolean(item.checked);
+  // State is keyed per artifact, not per version, so a later version can point a different
+  // component type at this path — anything but a boolean falls back to the spec's default.
+  const checked = typeof stored === 'boolean' ? stored : Boolean(item.checked);
 
   return (
     <li>

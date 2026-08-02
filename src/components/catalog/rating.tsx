@@ -12,13 +12,16 @@ type Props = CatalogComponentProps<'Rating'>;
 const STARS = [1, 2, 3, 4, 5];
 
 /**
- * Persisted state is untrusted (could predate this cap, or be seeded by a hostile spec) — clamp to
- * a valid star count before using it.
+ * Persisted state is untrusted (could predate this cap, be seeded by a hostile spec, or be a value
+ * a different component wrote to the same path) — anything that isn't a real number reads as
+ * unrated, and a real one is clamped to a valid star count.
  */
-function clampRating(raw: number | undefined): number {
-  const truncated = Math.trunc(raw ?? 0);
+function clampRating(raw: unknown): number {
+  if (typeof raw !== 'number' || !Number.isFinite(raw)) {
+    return 0;
+  }
 
-  return Math.min(STARS.length, Math.max(0, truncated));
+  return Math.min(STARS.length, Math.max(0, Math.trunc(raw)));
 }
 
 /**

@@ -1,3 +1,4 @@
+import type { SQL } from 'drizzle-orm';
 import {
   and,
   asc,
@@ -93,11 +94,21 @@ export interface ListArtifactsResult {
   nextCursor: string | null;
 }
 
+/**
+ * Field-by-field, not a spread: selects carry extra columns (stateUpdatedAt, sortKey) that must not
+ * leak into the artifact the caller — including MCP responses — sees.
+ */
 function toArtifact(row: typeof artifacts.$inferSelect): Artifact {
   return {
-    ...row,
+    id: row.id,
+    title: row.title,
+    description: row.description,
     type: row.type as ArtifactType,
     tags: row.tags ?? [],
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    archivedAt: row.archivedAt,
+    deletedAt: row.deletedAt,
   };
 }
 
@@ -118,8 +129,9 @@ function escapeLike(value: string): string {
 type SortField = 'updatedAt' | 'createdAt' | 'title';
 
 /**
- * Title sort is case-insensitive (cheap via SQLite's `lower()`); the cursor's `k` is stored
- * pre-lowercased for title sorts so comparisons stay consistent.
+ * Title sort is case-insensitive (cheap via SQLite's `lower()`, which is ASCII-only); the cursor's
+ * `k` is the value SQLite itself returned for the sort expression, so the cursor and the ORDER BY
+ * can't disagree about collation.
  */
 const sortSpecs: Record<ArtifactSort, { field: SortField; dir: 'asc' | 'desc' }> = {
   'updated-desc': { field: 'updatedAt', dir: 'desc' },
@@ -130,14 +142,14 @@ const sortSpecs: Record<ArtifactSort, { field: SortField; dir: 'asc' | 'desc' }>
   'title-desc': { field: 'title', dir: 'desc' },
 };
 
-function sortColumnExpr(field: SortField) {
+function sortColumnExpr(field: SortField): SQL<number | string> {
   switch (field) {
     case 'updatedAt':
-      return sql`${artifacts.updatedAt}`;
+      return sql<number | string>`${artifacts.updatedAt}`;
     case 'createdAt':
-      return sql`${artifacts.createdAt}`;
+      return sql<number | string>`${artifacts.createdAt}`;
     case 'title':
-      return sql`lower(${artifacts.title})`;
+      return sql<number | string>`lower(${artifacts.title})`;
   }
 }
 
@@ -147,14 +159,8 @@ interface Cursor {
   id: string;
 }
 
-function encodeCursor(
-  sort: ArtifactSort,
-  field: SortField,
-  row: { updatedAt: number; createdAt: number; title: string; id: string },
-): string {
-  const k = field === 'title' ? row.title.toLowerCase() : row[field];
-
-  return Buffer.from(JSON.stringify({ sort, k, id: row.id })).toString('base64url');
+function encodeCursor(sort: ArtifactSort, row: { sortKey: number | string; id: string }): string {
+  return Buffer.from(JSON.stringify({ sort, k: row.sortKey, id: row.id })).toString('base64url');
 }
 
 /**
@@ -354,9 +360,12 @@ export function listArtifacts(db: Db, input: ListArtifactsInput = {}): ListArtif
   }
 
   if (input.tags && input.tags.length > 0) {
+    // Element-wise via JSON1, not a substring match on the serialized column: a LIKE over the raw
+    // JSON matches across element boundaries, so a crafted filter value can hit unrelated tags.
     const tagCondition = or(
       ...input.tags.map(
-        (tag) => sql`${artifacts.tags} like ${`%"${escapeLike(tag)}"%`} escape '\\'`,
+        (tag) =>
+          sql`exists (select 1 from json_each(${artifacts.tags}) where json_each.value = ${tag})`,
       ),
     );
 
@@ -383,7 +392,11 @@ export function listArtifacts(db: Db, input: ListArtifactsInput = {}): ListArtif
   const orderFn = dir === 'desc' ? desc : asc;
 
   const rows = db
-    .select({ ...getTableColumns(artifacts), stateUpdatedAt: artifactStates.updatedAt })
+    .select({
+      ...getTableColumns(artifacts),
+      stateUpdatedAt: artifactStates.updatedAt,
+      sortKey: sortColumnExpr(field),
+    })
     .from(artifacts)
     .leftJoin(artifactStates, eq(artifacts.id, artifactStates.artifactId))
     .where(and(...conditions))
@@ -397,7 +410,7 @@ export function listArtifacts(db: Db, input: ListArtifactsInput = {}): ListArtif
 
   return {
     items: page.map(toArtifactListItem),
-    nextCursor: hasMore && last ? encodeCursor(sort, field, last) : null,
+    nextCursor: hasMore && last ? encodeCursor(sort, last) : null,
   };
 }
 
