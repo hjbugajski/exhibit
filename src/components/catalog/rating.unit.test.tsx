@@ -11,12 +11,7 @@ afterEach(() => {
 });
 
 describe('Rating', () => {
-  /**
-   * Persisted state is untrusted: it can predate the five-star cap, be seeded outright by a hostile
-   * spec, or have been written by whatever component a previous version pointed at this path — so a
-   * stored value must never render more (or fewer) stars than exist, and a non-number reads as
-   * unrated.
-   */
+  /** Stored values clamp to the star range and non-numbers read as unrated — rationale in rating.tsx. */
   it.each([
     { stored: 9999, filled: 5 },
     { stored: -3, filled: 0 },

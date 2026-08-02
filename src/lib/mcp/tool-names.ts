@@ -7,6 +7,7 @@
 export const MCP_TOOL_NAMES = [
   'publish_spec',
   'publish_html',
+  'publish_markdown',
   'get_catalog',
   'update_artifact',
   'list_artifacts',

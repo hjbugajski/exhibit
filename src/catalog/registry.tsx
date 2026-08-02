@@ -31,38 +31,43 @@ import { Table } from '@/components/catalog/table';
 import { Tabs } from '@/components/catalog/tabs';
 import { Timeline } from '@/components/catalog/timeline';
 
-export const { registry } = defineRegistry(catalog, {
-  components: {
-    Section,
-    Grid,
-    Columns,
-    Tabs,
-    Divider,
-    Heading,
-    Prose,
-    Callout,
-    Quote,
-    CodeBlock,
-    Card,
-    Table,
-    KeyValueList,
-    Steps,
-    Timeline,
-    Checklist,
-    Details,
-    Badge,
-    Figure,
-    Progress,
-    Chart,
-    Map,
-    Choice,
-    NoteBox,
-    Rating,
-    Itinerary,
-    Day,
-    Stop,
-  },
-});
+/**
+ * The concrete React component per catalog name. Exported as well as registered because markdown
+ * artifacts render single components directly (src/components/markdown/catalog-dispatch.tsx), with
+ * markdown children a spec element can't express.
+ */
+export const catalogComponents = {
+  Section,
+  Grid,
+  Columns,
+  Tabs,
+  Divider,
+  Heading,
+  Prose,
+  Callout,
+  Quote,
+  CodeBlock,
+  Card,
+  Table,
+  KeyValueList,
+  Steps,
+  Timeline,
+  Checklist,
+  Details,
+  Badge,
+  Figure,
+  Progress,
+  Chart,
+  Map,
+  Choice,
+  NoteBox,
+  Rating,
+  Itinerary,
+  Day,
+  Stop,
+};
+
+export const { registry } = defineRegistry(catalog, { components: catalogComponents });
 
 /**
  * Renders a spec against the catalog registry. `Renderer` alone throws

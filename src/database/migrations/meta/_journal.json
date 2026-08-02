@@ -8,6 +8,13 @@
       "when": 1783893435739,
       "tag": "0000_rare_quasar",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1785701942900,
+      "tag": "0001_loud_human_torch",
+      "breakpoints": true
     }
   ]
 }

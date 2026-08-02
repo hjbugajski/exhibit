@@ -28,6 +28,7 @@ const typeLabels: Record<TypeFilter, string> = {
   all: 'All types',
   spec: 'Spec',
   html: 'HTML',
+  markdown: 'Markdown',
 };
 
 const typeOptions = Object.keys(typeLabels) as TypeFilter[];
@@ -300,7 +301,8 @@ function Empty() {
           <EmptyPrimitive.Title>No artifacts yet</EmptyPrimitive.Title>
           <EmptyPrimitive.Description>
             Publish one from Claude via MCP: connect it to this app’s <code>/mcp</code> endpoint and
-            use the <code>publish_spec</code> or <code>publish_html</code> tool.
+            use the <code>publish_spec</code>, <code>publish_markdown</code>, or{' '}
+            <code>publish_html</code> tool.
           </EmptyPrimitive.Description>
         </EmptyPrimitive.Header>
       )}

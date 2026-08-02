@@ -2,9 +2,10 @@
 
 A self-hosted gallery for Claude artifacts. Claude publishes through a Model Context Protocol (MCP) connector; you browse the rendered results.
 
-Two artifact types:
+Three artifact types:
 
 - **Specs**: declarative JSON rendered natively by a 28-component catalog (prose, tables, charts, maps, itineraries, steps, …). Interactive components (Checklist, Choice, Rating, NoteBox) persist your input per artifact, and Claude can read it back later, so artifacts double as lightweight feedback forms.
+- **Markdown**: prose-first documents rendered in the gallery, with catalog components embeddable inline. Raw HTML is never interpreted.
 - **HTML**: full pages served sandboxed on their own route.
 
 One owner, one container: session-authed UI, OAuth 2.1 (PKCE + dynamic client registration) for MCP, SQLite for storage.
@@ -47,6 +48,7 @@ MCP tools:
 | `get_catalog`           | Spec-authoring reference: components, props, wire format |
 | `publish_spec`          | Create a spec artifact from catalog components           |
 | `publish_html`          | Create an artifact from a standalone HTML document       |
+| `publish_markdown`      | Create an artifact from a markdown document              |
 | `update_artifact`       | Add a version, or update title/description/tags in place |
 | `list_artifacts`        | Browse and filter published artifacts                    |
 | `list_tags`             | List tags in use                                         |

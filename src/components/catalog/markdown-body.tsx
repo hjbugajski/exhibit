@@ -1,27 +1,24 @@
 /**
  * Shared markdown renderer for every catalog component that accepts a `markdown` prop (Prose,
- * Callout, Quote, Steps, Timeline, Details, Stop). Centralizing this is what makes the security
- * properties easy to reason about and test in one place:
+ * Callout, Quote, Steps, Timeline, Details, Stop).
  *
- * - `skipHtml` drops raw HTML from the markdown source entirely (CommonMark only — no raw-HTML
- *   pass-through). There is no `dangerouslySetInnerHTML` anywhere; react-markdown renders to React
- *   elements.
- * - `remark-gfm` is enabled for tables, strikethrough, autolinks, and task lists — useful for the
- *   itinerary/comparison/explainer content this app renders, at negligible cost.
- * - Links only render as `<a>` when the href is `http(s)`; anything else (e.g. `javascript:`,
- *   `data:`) renders as plain text. Rendered links get `rel="noopener noreferrer"` and
- *   `target="_blank"`.
- * - Images only render when the `src` is `https:`; anything else (including plain `http:`) is
- *   dropped.
+ * The security policy — no raw-HTML pass-through, http(s)-only links, https-only images, fences
+ * through the app highlighter — lives in markdown-policy.tsx and is shared with the markdown
+ * artifact renderer, so the app has exactly one of it. All this adds is the typography wrapper.
+ *
+ * Catalog markdown runs the plain profile: no comment directives, no exhibit fences. A spec already
+ * expresses component structure directly, so a `markdown` prop never needs to reach back into the
+ * catalog.
  */
-import type { Components as MarkdownComponents } from 'react-markdown';
-import Markdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import { Markdown } from '@tanstack/markdown/react';
 
+import {
+  createMarkdownComponents,
+  markdownParseOptions,
+} from '@/components/markdown/markdown-policy';
 import { cn } from '@/lib/utils';
 
-const HTTP_URL = /^https?:\/\//i;
-const HTTPS_URL = /^https:\/\//i;
+const components = createMarkdownComponents();
 
 type MarkdownBodySize = 'base' | 'sm' | 'lg';
 
@@ -35,27 +32,6 @@ const sizeClass: Record<MarkdownBodySize, string> = {
   lg: 'prose-lg max-w-none',
 };
 
-const components: MarkdownComponents = {
-  a: ({ href, children }) => {
-    if (typeof href === 'string' && HTTP_URL.test(href)) {
-      return (
-        <a href={href} rel="noopener noreferrer" target="_blank">
-          {children}
-        </a>
-      );
-    }
-
-    return <>{children}</>;
-  },
-  img: ({ src, alt }) => {
-    if (typeof src === 'string' && HTTPS_URL.test(src)) {
-      return <img alt={alt ?? ''} src={src} />;
-    }
-
-    return null;
-  },
-};
-
 export function MarkdownBody({
   markdown,
   className,
@@ -67,7 +43,7 @@ export function MarkdownBody({
 }) {
   return (
     <div className={cn('prose', sizeClass[size], className)}>
-      <Markdown components={components} remarkPlugins={[remarkGfm]} skipHtml>
+      <Markdown components={components} {...markdownParseOptions}>
         {markdown}
       </Markdown>
     </div>

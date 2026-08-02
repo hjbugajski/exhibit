@@ -30,11 +30,7 @@ describe('Checklist', () => {
     expect(renderChecklist(true).getAttribute('aria-checked')).toBe('true');
   });
 
-  /**
-   * State is keyed per artifact but not per version, so a later version can point a different
-   * component type at the same path — a non-boolean must fall back to the spec's default rather
-   * than reach the checkbox.
-   */
+  /** Non-boolean stored values must fall back to the spec default — rationale in checklist.tsx. */
   it.each([{ stored: 'yes' }, { stored: 1 }, { stored: null }, { stored: { nested: true } }])(
     'falls back to the spec default for a stored value of $stored',
     ({ stored }) => {

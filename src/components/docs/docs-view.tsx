@@ -17,6 +17,8 @@ const MCP_TOOLS: Record<McpToolName, string> = {
     'Publishes a new artifact composed from the component catalog — the format Claude prefers for guides, comparisons, itineraries, and checklists.',
   publish_html:
     'Publishes a standalone HTML document for content the catalog can’t express. Rendered sandboxed on its own page.',
+  publish_markdown:
+    'Publishes a markdown document for prose-first content, rendered in the gallery. Catalog components can be embedded inline.',
   get_catalog: 'Returns the component vocabulary and example specs Claude authors specs against.',
   update_artifact:
     'Revises an existing artifact — appends body versions or edits metadata in place.',

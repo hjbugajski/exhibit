@@ -188,6 +188,28 @@ describe('ArtifactDetailView', () => {
     expect(document.querySelector('iframe')).toBeNull();
     expect(document.querySelector('code')?.textContent).toBe('<html><body>hi</body></html>');
   });
+
+  it('renders a markdown artifact inline, and shows its raw body in the Source view', async () => {
+    const body = '# Trip notes\n\nBook the [train](https://example.com) first.\n';
+    const detail: ArtifactDetail = {
+      artifact: makeArtifact({ type: 'markdown' }),
+      version: makeVersion({ body }),
+      versions: [{ version: 1, createdAt: 1000 }],
+      state: null,
+    };
+
+    renderDetail(detail);
+
+    expect((await screen.findByText('Trip notes')).tagName).toBe('H1');
+    expect(screen.getByText('train').closest('a')?.getAttribute('href')).toBe(
+      'https://example.com',
+    );
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Source' }));
+
+    // Unlike a spec body, markdown is stored and shown byte-for-byte.
+    expect(document.querySelector('code')?.textContent).toBe(body);
+  });
 });
 
 describe('ArtifactDetailView interaction state', () => {

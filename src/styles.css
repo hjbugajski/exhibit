@@ -681,20 +681,93 @@
   letter-spacing: -0.01em;
 }
 
+/* Line-heights pair with the house scale (24/32, 20/28, 18/28, 16/24) — without them,
+   typography's leadings for its original oversized fonts stay behind and h1/h2 collapse to the
+   same computed line box. */
 .prose h1 {
   font-size: 1.5em;
+  line-height: calc(4 / 3);
 }
 
 .prose h2 {
   font-size: 1.25em;
+  line-height: 1.4;
 }
 
 .prose h3 {
   font-size: 1.125em;
+  line-height: calc(28 / 18);
 }
 
 .prose h4 {
   font-size: 1em;
+  line-height: 1.5;
+}
+
+/*
+ * Inline code as a chip, not typography's quoted style: the backtick
+ * pseudo-content reads as literal backticks in rendered prose, and the house
+ * look for code-at-rest is a muted surface (CodeBlock, Source view). Scoped to
+ * inline spans — fenced code renders through CodeBlock, whose <pre> internals
+ * this must not restyle.
+ */
+.prose :where(code):not(:where(pre *))::before,
+.prose :where(code):not(:where(pre *))::after {
+  content: none;
+}
+
+.prose :where(code):not(:where(pre *)) {
+  background: var(--color-surface-muted);
+  border-radius: var(--radius-sm);
+  padding: 0.125rem 0.375rem;
+  font-weight: 500;
+}
+
+/*
+ * GFM task lists render through the house Checkbox (markdown-policy.tsx maps
+ * `input`), and these rules line them up with the catalog Checklist: no
+ * bullets, flush list, hanging indent of box + gap, muted when checked. Keyed
+ * on the explicit `data-md-task` marker the input mapping sets — never on
+ * structure alone: the static catalog Checklist also puts its box as a direct
+ * li child, so a structural :has() would restyle embedded Checklists. The
+ * `> p >` variants cover loose (blank-line-separated) items, whose content the
+ * renderer wraps in a paragraph; `:is(ul, ol)` covers `1. [ ]` task lists.
+ */
+.prose :is(ul, ol):has(> li > [data-md-task], > li > p > [data-md-task]) {
+  list-style: none;
+  padding-inline-start: 0;
+}
+
+.prose li:has(> [data-md-task], > p > [data-md-task]) {
+  padding-inline-start: 1.75rem;
+}
+
+/*
+ * Inline-flow variant of Checklist's `items-start gap-3`: the checkbox hangs
+ * into the li padding; the margin plus the renderer's literal space after the
+ * box adds up to the same 12px gap. vertical-align seats the 16px box on the
+ * text line the way Checklist's mt-1 does.
+ */
+.prose li > [data-md-task],
+.prose li > p > [data-md-task] {
+  display: inline-flex;
+  margin-inline-start: -1.75rem;
+  margin-inline-end: 0.5rem;
+  vertical-align: -0.125em;
+}
+
+/*
+ * Muted color only, no line-through: a struck li decorates its whole subtree
+ * (nested lists included) and the decoration draws across the box-to-text gap.
+ * The unchecked rule is the color's inverse so a nested unchecked item under a
+ * checked parent reads at full strength again.
+ */
+.prose li:has(> [data-md-task][data-checked], > p > [data-md-task][data-checked]) {
+  color: var(--color-foreground-muted);
+}
+
+.prose li:has(> [data-md-task]:not([data-checked]), > p > [data-md-task]:not([data-checked])) {
+  color: var(--color-foreground);
 }
 
 /*
@@ -710,6 +783,93 @@
 
 .prose > :last-child {
   margin-bottom: 0;
+}
+
+/*
+ * House blocks embedded in markdown own their interiors. Typography's element
+ * rules tie with component utility classes at 0,1,0 and can win on emission
+ * order, so `my-0`-style utilities cannot defend a component inside `.prose`.
+ * Everything here is unlayered and ≥ 0,1,1 specificity, which outranks the
+ * typography plugin regardless of how it is layered.
+ */
+
+/* The house table shell: the wrapper carries the flow rhythm; the inner
+   <table> must sit flush against its bordered container. */
+.prose [data-slot='table'] {
+  margin-block: 0;
+}
+
+/* Every <pre> inside prose is component chrome (CodeBlock, HighlightedCode) —
+   markdown fences never reach the DOM as bare pre. The component's container
+   owns padding and rhythm; typography's pre margin would open a dead band
+   inside the border. */
+.prose pre {
+  margin-block: 0;
+}
+
+/*
+ * Catalog components dispatched from markdown (exhibit fences and directives)
+ * render inside a [data-md-embed] island (catalog-dispatch.tsx). The island
+ * carries the flow rhythm; inside it, list layout and line-height belong to
+ * the component, not to prose. Markdown that re-enters a component — directive
+ * children ([data-md-prose]) and MarkdownBody props (.prose) — is exempt: it
+ * is prose again.
+ */
+.prose [data-md-embed] {
+  line-height: 1.5;
+}
+
+.prose [data-md-embed] ul:not(:where([data-md-embed] :is(.prose, [data-md-prose]) *)),
+.prose [data-md-embed] ol:not(:where([data-md-embed] :is(.prose, [data-md-prose]) *)) {
+  margin-block: 0;
+  padding-inline-start: 0;
+  list-style: none;
+}
+
+.prose [data-md-embed] li:not(:where([data-md-embed] :is(.prose, [data-md-prose]) *)) {
+  margin-block: 0;
+  padding-inline-start: 0;
+}
+
+.prose [data-md-embed] [data-md-prose] {
+  line-height: 1.75;
+}
+
+/* Directive children sit inside component chrome that already pads itself —
+   trim the first/last prose margins exactly like `.prose`'s own edge rule. */
+.prose [data-md-prose] > :first-child {
+  margin-top: 0;
+}
+
+.prose [data-md-prose] > :last-child {
+  margin-bottom: 0;
+}
+
+/*
+ * Markdown blockquotes speak the catalog Quote's visual language (quote.tsx):
+ * the same 2px rounded accent bar at inline-start, no typography border and no
+ * decorative quote marks.
+ */
+.prose blockquote {
+  position: relative;
+  border-inline-start: none;
+  padding-inline-start: 1.25rem;
+  quotes: none;
+}
+
+.prose blockquote::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0.5rem;
+  width: 2px;
+  border-radius: calc(infinity * 1px);
+  background: var(--color-accent);
+}
+
+.prose blockquote p:first-of-type::before,
+.prose blockquote p:last-of-type::after {
+  content: none;
 }
 
 /*

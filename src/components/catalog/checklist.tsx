@@ -24,7 +24,7 @@ function StatefulItem({ item, statePath }: { item: Item; statePath: string }) {
   const checked = typeof stored === 'boolean' ? stored : Boolean(item.checked);
 
   return (
-    <li>
+    <li className="m-0 ps-0">
       {/* items-start + box offset: keeps the box on the first line when the text wraps (mt-1
           centers the 16px box in the 24px base line). */}
       <label className="flex cursor-pointer items-start gap-3">
@@ -41,12 +41,12 @@ function StatefulItem({ item, statePath }: { item: Item; statePath: string }) {
 
 export function Checklist({ props }: { props: Props }) {
   return (
-    <ul className={cn('flex flex-col gap-2', flowBlock)}>
+    <ul className={cn('m-0 flex list-none flex-col gap-2 p-0', flowBlock)}>
       {props.items.map((item) =>
         item.statePath ? (
           <StatefulItem item={item} key={item.id} statePath={item.statePath} />
         ) : (
-          <li className="flex items-start gap-3" key={item.id}>
+          <li className="m-0 flex items-start gap-3 ps-0" key={item.id}>
             <Checkbox checked={Boolean(item.checked)} className="mt-1" disabled />
             {itemBody(item.text, Boolean(item.checked))}
           </li>

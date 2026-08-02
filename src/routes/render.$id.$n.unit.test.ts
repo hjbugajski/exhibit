@@ -107,6 +107,25 @@ describe('/render/$id/$n', () => {
     expect(response.status).toBeLessThan(500);
   });
 
+  // Markdown artifacts render in-app through MarkdownView, never as their own document — this route
+  // stays the html-only escape hatch.
+  it('returns 404 for a markdown-type artifact', async () => {
+    vi.mocked(getSessionForRequest).mockResolvedValue(fakeSession as never);
+
+    const { artifact } = createArtifact(db, {
+      title: 'Some Markdown',
+      type: 'markdown',
+      body: '# hi',
+    });
+
+    const response = await callHandler({
+      request: new Request(`http://localhost:3000/render/${artifact.id}/1`),
+      params: { id: artifact.id, n: '1' },
+    });
+
+    expect(response.status).toBe(404);
+  });
+
   it('returns 200 with the CSP/nosniff headers and the raw HTML body for an html artifact', async () => {
     vi.mocked(getSessionForRequest).mockResolvedValue(fakeSession as never);
 

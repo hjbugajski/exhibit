@@ -1,13 +1,14 @@
 import { createFileRoute } from '@tanstack/react-router';
 
 import { Home } from '@/components/artifacts/home';
-import { artifactSorts, type ArtifactSort } from '@/lib/artifact-sorts';
+import type { ArtifactType } from '@/database/repository';
+import { artifactSorts, artifactTypes, type ArtifactSort } from '@/lib/artifact-sorts';
 import { listArtifactsFn } from '@/lib/artifacts';
 
 interface GallerySearch {
   query?: string;
   tags?: string[];
-  type?: 'spec' | 'html';
+  type?: ArtifactType;
   archived?: boolean;
   sort?: ArtifactSort;
 }
@@ -18,7 +19,9 @@ export const Route = createFileRoute('/_authed/')({
     tags: Array.isArray(search.tags)
       ? search.tags.filter((tag): tag is string => typeof tag === 'string')
       : undefined,
-    type: search.type === 'spec' || search.type === 'html' ? search.type : undefined,
+    type: artifactTypes.includes(search.type as ArtifactType)
+      ? (search.type as ArtifactType)
+      : undefined,
     archived: search.archived === true ? true : undefined,
     sort: artifactSorts.includes(search.sort as ArtifactSort)
       ? (search.sort as ArtifactSort)

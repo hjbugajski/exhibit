@@ -18,6 +18,7 @@ import { flowFixture } from '../src/catalog/fixtures/flow.ts';
 import { itineraryFixture } from '../src/catalog/fixtures/itinerary.ts';
 import { kitchenSinkFixture } from '../src/catalog/fixtures/kitchen-sink.ts';
 import { decisionMemoExample } from './examples/decision-memo.ts';
+import { markdownNotesExample } from './examples/markdown-notes.ts';
 import { researchSummaryExample } from './examples/research-summary.ts';
 import { roadTripExample } from './examples/road-trip.ts';
 import { statusReportExample } from './examples/status-report.ts';
@@ -303,6 +304,13 @@ async function main() {
     spec: flowFixture,
   });
 
+  const markdownNotes = await callTool(accessToken, 'publish_markdown', {
+    title: markdownNotesExample.title,
+    description: markdownNotesExample.description,
+    tags: markdownNotesExample.tags,
+    markdown: markdownNotesExample.markdown,
+  });
+
   const htmlArtifact = await callTool(accessToken, 'publish_html', {
     title: 'Sandbox Check Page',
     description: 'Inline JS that probes cookie/localStorage/parent access from the iframe sandbox.',
@@ -322,6 +330,7 @@ async function main() {
         statusReport: { id: statusReport.id, title: statusReportExample.title },
         roadTrip: { id: roadTrip.id, title: roadTripExample.title },
         flow: { id: flow.id, title: 'Flow Stress Test' },
+        markdownNotes: { id: markdownNotes.id, title: markdownNotesExample.title },
         html: { id: htmlArtifact.id, title: 'Sandbox Check Page', version: htmlArtifact.version },
       },
       null,

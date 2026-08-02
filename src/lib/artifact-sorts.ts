@@ -13,4 +13,4 @@ export const artifactSorts = [
 
 export type ArtifactSort = (typeof artifactSorts)[number];
 
-export const artifactTypes = ['spec', 'html'] as const;
+export const artifactTypes = ['spec', 'html', 'markdown'] as const;

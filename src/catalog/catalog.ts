@@ -8,9 +8,10 @@
  *
  * Every array and string field carries a generous but finite `.max()`: safety caps against a
  * hostile-but-schema-valid spec (a Chart with millions of points, a multi-megabyte markdown string)
- * hitting React/recharts/react-markdown — a real browser-DoS vector for the owner viewing rendered
- * artifacts. SHORT_MAX covers titles/labels/short strings, LONG_MAX long-form markdown/prose/code;
- * a few array fields use their own bound where that's obviously right (documented inline).
+ * hitting React/recharts/the markdown renderer — a real browser-DoS vector for the owner viewing
+ * rendered artifacts. SHORT_MAX covers titles/labels/short strings, LONG_MAX long-form
+ * markdown/prose/code; a few array fields use their own bound where that's obviously right
+ * (documented inline).
  */
 
 import { defineCatalog } from '@json-render/core';
@@ -175,7 +176,7 @@ export const catalog = defineCatalog(schema, {
           .string()
           .max(LONG_MAX)
           .describe(
-            'CommonMark + GFM markdown source. Raw HTML is stripped; links must be http(s) to render.',
+            'CommonMark + GFM markdown source. Raw HTML is never interpreted (it shows as literal text); links must be http(s) to render.',
           ),
       }),
     },

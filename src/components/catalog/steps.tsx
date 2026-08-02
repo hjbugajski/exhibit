@@ -7,7 +7,7 @@ type Props = CatalogComponentProps<'Steps'>;
 
 export function Steps({ props }: { props: Props }) {
   return (
-    <ol className={cn('flex flex-col', flowBlock)}>
+    <ol className={cn('m-0 flex list-none flex-col p-0', flowBlock)}>
       {props.items.map((item, index) => (
         <OrderedEntry
           key={item.id}

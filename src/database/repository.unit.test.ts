@@ -15,8 +15,9 @@ import {
   softDeleteArtifact,
   updateMetadata,
 } from '@/database/repository';
-import type { Db } from '@/database/repository';
+import type { ArtifactType, Db } from '@/database/repository';
 import { artifactVersions } from '@/database/schemas/artifact-version';
+import { artifactTypes } from '@/lib/artifact-sorts';
 import { normalizeTags } from '@/lib/mcp/tags';
 import { createTestDb } from '@testing/db';
 
@@ -48,6 +49,20 @@ describe('createArtifact', () => {
     expect(version.version).toBe(1);
     expect(version.body).toBe('hello');
     expect(version.artifactId).toBe(artifact.id);
+  });
+
+  it('accepts every declared artifact type', () => {
+    for (const type of artifactTypes) {
+      const { artifact } = createArtifact(db, { title: `A ${type}`, type, body: 'body' });
+
+      expect(artifact.type).toBe(type);
+    }
+  });
+
+  it("rejects a type outside the schema's check constraint", () => {
+    expect(() =>
+      createArtifact(db, { title: 'Bogus', type: 'mdx' as ArtifactType, body: 'body' }),
+    ).toThrow();
   });
 });
 
@@ -178,9 +193,11 @@ describe('listArtifacts', () => {
     createArtifact(db, { title: 'Alpha', type: 'spec', tags: ['red'], body: 'v1' });
     createArtifact(db, { title: 'Beta', type: 'html', tags: ['blue'], body: 'v1' });
     createArtifact(db, { title: 'Alphabet', type: 'spec', tags: ['red', 'blue'], body: 'v1' });
+    createArtifact(db, { title: 'Gamma', type: 'markdown', tags: ['blue'], body: '# hi' });
 
     expect(listArtifacts(db, { type: 'html' }).items).toHaveLength(1);
-    expect(listArtifacts(db, { tags: ['blue'] }).items).toHaveLength(2);
+    expect(listArtifacts(db, { type: 'markdown' }).items.map((a) => a.title)).toEqual(['Gamma']);
+    expect(listArtifacts(db, { tags: ['blue'] }).items).toHaveLength(3);
     expect(listArtifacts(db, { query: 'Alpha' }).items).toHaveLength(2);
     expect(listArtifacts(db, { query: 'Alpha', type: 'spec', tags: ['red'] }).items).toHaveLength(
       2,

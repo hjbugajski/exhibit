@@ -166,6 +166,49 @@ describe('publish_html', () => {
   });
 });
 
+describe('publish_markdown', () => {
+  it('round trips a markdown body byte for byte', async () => {
+    // Trailing newline, CRLF, tabs and a directive: nothing may be normalized on the way through.
+    const markdown = '# Title\r\n\n\t- [x] done\n\n<!-- ::Divider -->\n\nBody.\n';
+    const result = await callTool(client, 'publish_markdown', { title: 'Notes', markdown });
+
+    expect(result.isError).toBeFalsy();
+    expect(result.structuredContent).toMatchObject({ version: 1 });
+
+    const id = result.structuredContent?.id as string;
+    expect(textOf(result)).toContain(`http://localhost:3000/a/${id}`);
+
+    const getResult = await callTool(client, 'get_artifact', { id });
+    expect(getResult.structuredContent?.body).toBe(markdown);
+    expect(getResult.structuredContent?.type).toBe('markdown');
+  });
+
+  // Markdown is arbitrary prose: unlike spec and html bodies there is nothing to validate beyond
+  // its size, and content that looks like an attack must still store verbatim (it is escaped at
+  // render time, not on the way in).
+  it('stores markdown containing raw HTML without rejecting or rewriting it', async () => {
+    const markdown = '<script>alert(1)</script>\n\n<img src=x onerror=alert(1)>\n';
+    const result = await callTool(client, 'publish_markdown', { title: 'Hostile', markdown });
+
+    expect(result.isError).toBeFalsy();
+
+    const getResult = await callTool(client, 'get_artifact', {
+      id: result.structuredContent?.id as string,
+    });
+    expect(getResult.structuredContent?.body).toBe(markdown);
+  });
+
+  it('rejects a markdown payload over the 1 MB cap', async () => {
+    const result = await callTool(client, 'publish_markdown', {
+      title: 'Huge',
+      markdown: 'x'.repeat(1_100_000),
+    });
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain('1 MB');
+  });
+});
+
 describe('get_catalog', () => {
   it('returns catalog text and structured content under budget', async () => {
     const result = await callTool(client, 'get_catalog');
@@ -219,6 +262,60 @@ describe('update_artifact', () => {
 
     expect(updated.isError).toBe(true);
     expect(textOf(updated)).toContain('spec');
+  });
+
+  it('appends a markdown version to a markdown artifact', async () => {
+    const published = await callTool(client, 'publish_markdown', {
+      title: 'Notes',
+      markdown: '# v1',
+    });
+    const id = published.structuredContent?.id as string;
+
+    const updated = await callTool(client, 'update_artifact', { id, markdown: '# v2' });
+
+    expect(updated.isError).toBeFalsy();
+    expect(updated.structuredContent).toMatchObject({ id, version: 2 });
+
+    const getResult = await callTool(client, 'get_artifact', { id });
+    expect(getResult.structuredContent?.body).toBe('# v2');
+    expect(getResult.structuredContent?.versions).toEqual([1, 2]);
+  });
+
+  it('rejects a markdown body update against a spec artifact', async () => {
+    const published = await callTool(client, 'publish_spec', {
+      title: 'Doc',
+      spec: itineraryFixture,
+    });
+    const id = published.structuredContent?.id as string;
+
+    const updated = await callTool(client, 'update_artifact', {
+      id,
+      markdown: '# nope',
+    });
+
+    expect(updated.isError).toBe(true);
+    expect(textOf(updated)).toContain('a spec payload instead');
+  });
+
+  it('rejects more than one body payload in a single call', async () => {
+    const published = await callTool(client, 'publish_markdown', {
+      title: 'Notes',
+      markdown: '# v1',
+    });
+    const id = published.structuredContent?.id as string;
+
+    const updated = await callTool(client, 'update_artifact', {
+      id,
+      markdown: '# v2',
+      html: '<html></html>',
+    });
+
+    expect(updated.isError).toBe(true);
+    expect(textOf(updated)).toContain('at most one');
+
+    // The rejected call must not have appended anything.
+    const getResult = await callTool(client, 'get_artifact', { id });
+    expect(getResult.structuredContent?.versions).toEqual([1]);
   });
 });
 
@@ -349,7 +446,7 @@ describe('list_artifacts', () => {
     const payload = jsonOf(result);
 
     expect(payload).toEqual(result.structuredContent);
-    expect(payload.total).toBe(1);
+    expect(payload.count).toBe(1);
     expect(payload.nextCursor).toBeNull();
     expect(payload.items).toEqual([
       {
@@ -374,7 +471,7 @@ describe('list_artifacts', () => {
 
     const payload = jsonOf(await callTool(client, 'list_artifacts', {}));
 
-    expect(payload.total).toBe(4);
+    expect(payload.count).toBe(4);
     expect((payload.items as { title: string }[]).map((item) => item.title).sort()).toEqual([
       'Four',
       'One',

@@ -22,21 +22,30 @@ import { TypeBadge } from '@/components/artifacts/type-badge';
 import { ConfirmDestructiveAction } from '@/components/blocks/confirm-destructive-action';
 import { FormStatus } from '@/components/blocks/form-status';
 import { HighlightedCode } from '@/components/blocks/highlighted-code';
+import { MarkdownView } from '@/components/markdown/markdown-view';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu } from '@/components/ui/dropdown-menu';
 import { Select } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Tabs } from '@/components/ui/tabs';
-import type { JsonObject } from '@/database/repository';
+import type { ArtifactType, JsonObject } from '@/database/repository';
 import type { ArtifactDetail } from '@/lib/artifacts';
 import { deleteArtifactFn, saveArtifactStateFn, setArtifactArchivedFn } from '@/lib/artifacts';
 import { formatRelativeTime } from '@/lib/format-time';
+import type { HighlightLanguage } from '@/lib/highlight';
 import { useCopyToClipboard } from '@/lib/use-copy-to-clipboard';
 import type { ActionStatus } from '@/lib/use-form-action';
 import { useFormAction } from '@/lib/use-form-action';
 
 type View = 'rendered' | 'source';
+
+/** Highlighter grammar for each type's stored body, shown in the Source tab. */
+const sourceLanguage: Record<ArtifactType, HighlightLanguage> = {
+  spec: 'json',
+  html: 'html',
+  markdown: 'markdown',
+};
 
 /** Best-effort parse; `undefined` (as distinct from `null`) marks a parse failure. */
 function parseSpecBody(body: string): Spec | null | undefined {
@@ -66,24 +75,26 @@ export function ArtifactDetailView({ id, detail }: { id: string; detail: Artifac
     [artifact.type, version.body],
   );
 
-  // Stateful spec components (Checklist statePath) read/write this store; every change is debounced
-  // into saveArtifactStateFn. The routes key this component by artifact id but not by version, so
-  // the store is reseeded whenever the version identity changes — otherwise switching versions
-  // would render stale interaction state (and debounce-save it) against a spec it was never created
-  // for.
+  // Stateful catalog components (Checklist statePath) read/write this store, whether they come from
+  // a spec or from a markdown body's embedded components; every change is debounced into
+  // saveArtifactStateFn. html artifacts render outside the app entirely and have no store. The
+  // routes key this component by artifact id but not by version, so the store is reseeded whenever
+  // the version identity changes — otherwise switching versions would render stale interaction
+  // state (and debounce-save it) against a body it was never created for.
+  const stateful = artifact.type !== 'html';
   const versionKey = `${id}:${version.version}`;
   const [seededVersionKey, setSeededVersionKey] = useState(versionKey);
-  const [specStore, setSpecStore] = useState(() =>
-    artifact.type === 'spec' ? createStateStore(detail.state ?? {}) : null,
+  const [stateStore, setStateStore] = useState(() =>
+    stateful ? createStateStore(detail.state ?? {}) : null,
   );
 
   if (versionKey !== seededVersionKey) {
     setSeededVersionKey(versionKey);
-    setSpecStore(artifact.type === 'spec' ? createStateStore(detail.state ?? {}) : null);
+    setStateStore(stateful ? createStateStore(detail.state ?? {}) : null);
   }
 
   useEffect(() => {
-    if (!specStore) {
+    if (!stateStore) {
       return;
     }
 
@@ -103,8 +114,8 @@ export function ArtifactDetailView({ id, detail }: { id: string; detail: Artifac
       });
     }
 
-    const unsubscribe = specStore.subscribe(() => {
-      const snapshot = specStore.getSnapshot() as JsonObject;
+    const unsubscribe = stateStore.subscribe(() => {
+      const snapshot = stateStore.getSnapshot() as JsonObject;
 
       pendingSnapshot = snapshot;
       clearTimeout(timer);
@@ -124,7 +135,7 @@ export function ArtifactDetailView({ id, detail }: { id: string; detail: Artifac
         save(pendingSnapshot);
       }
     };
-  }, [specStore, id]);
+  }, [stateStore, id]);
 
   function handleVersionChange(next: number) {
     if (next === latestVersion) {
@@ -147,6 +158,10 @@ export function ArtifactDetailView({ id, detail }: { id: string; detail: Artifac
       await navigate({ to: '/' });
     });
   }
+
+  // html artifacts have no in-app rendered view — they open as their own sandboxed page — so the
+  // tabs are hidden for them and this stays false whatever `view` says.
+  const showRendered = view === 'rendered' && artifact.type !== 'html';
 
   const sourceText =
     artifact.type === 'spec'
@@ -211,7 +226,7 @@ export function ArtifactDetailView({ id, detail }: { id: string; detail: Artifac
                 </Select.Positioner>
               </Select.Portal>
             </Select.Root>
-            {artifact.type === 'spec' ? (
+            {artifact.type !== 'html' ? (
               <Tabs.Root onValueChange={(value) => setView(value as View)} value={view}>
                 <Tabs.List>
                   <Tabs.Trigger value="rendered">Rendered</Tabs.Trigger>
@@ -302,14 +317,16 @@ export function ArtifactDetailView({ id, detail }: { id: string; detail: Artifac
       <FormStatus status={saveStatus} />
       <FormStatus status={archiveAction.status} />
 
-      {artifact.type === 'spec' && view === 'rendered' ? (
+      {showRendered ? (
         <div>
-          {parsedSpec === undefined ? (
+          {artifact.type === 'markdown' ? (
+            <MarkdownView markdown={version.body} store={stateStore ?? undefined} />
+          ) : parsedSpec === undefined ? (
             <p className="text-danger">
               Could not parse the stored spec JSON. Check the Source tab or republish the artifact.
             </p>
           ) : (
-            <SpecView spec={parsedSpec} store={specStore ?? undefined} />
+            <SpecView spec={parsedSpec} store={stateStore ?? undefined} />
           )}
         </div>
       ) : (
@@ -333,7 +350,7 @@ export function ArtifactDetailView({ id, detail }: { id: string; detail: Artifac
           <HighlightedCode
             className="bg-background overflow-x-auto rounded-lg border p-4 text-sm"
             code={sourceText}
-            language={artifact.type === 'spec' ? 'json' : 'html'}
+            language={sourceLanguage[artifact.type]}
           />
         </div>
       )}

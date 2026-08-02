@@ -19,12 +19,12 @@ import { z } from 'zod';
 import { artifacts } from '@/database/schemas/artifact';
 import { artifactStates } from '@/database/schemas/artifact-state';
 import { artifactVersions } from '@/database/schemas/artifact-version';
-import type { ArtifactSort } from '@/lib/artifact-sorts';
+import type { ArtifactSort, artifactTypes } from '@/lib/artifact-sorts';
 import { artifactSorts } from '@/lib/artifact-sorts';
 
 export type Db = BetterSQLite3Database;
 
-export type ArtifactType = 'spec' | 'html';
+export type ArtifactType = (typeof artifactTypes)[number];
 
 /**
  * Timestamps are epoch milliseconds; `deletedAt` is null while live, `archivedAt` is null while
