@@ -13,6 +13,9 @@ export function Progress({ props }: { props: Props }) {
     >
       {props.label ? <ProgressPrimitive.Label>{props.label}</ProgressPrimitive.Label> : null}
       <ProgressPrimitive.Value />
+      <ProgressPrimitive.Track>
+        <ProgressPrimitive.Indicator />
+      </ProgressPrimitive.Track>
     </ProgressPrimitive.Root>
   );
 }

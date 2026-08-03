@@ -115,14 +115,14 @@ export function createMarkdownComponents(
       );
     },
     // GFM tables through the house table shell, so a markdown table and the catalog Table
-    // component are the same table. The flow wrapper carries the rhythm; typography's margin on
+    // component are the same table. The Viewport carries the flow rhythm; typography's margin on
     // the inner <table> is cancelled by the unlayered `.prose [data-slot='table']` rule in
     // styles.css (a `my-0` utility ties with typography and loses on order); border-0/py-0 cancel
     // the border and padding typography adds on thead/th that the parts express on other elements.
     table: ({ children }: MarkdownComponentProps<'table'>) => (
-      <div className={flowBlock}>
+      <Table.Viewport className={flowBlock}>
         <Table.Root>{children}</Table.Root>
-      </div>
+      </Table.Viewport>
     ),
     thead: (props: MarkdownComponentProps<'thead'>) => (
       <Table.Header className="border-0" {...props} />

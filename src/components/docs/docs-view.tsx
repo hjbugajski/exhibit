@@ -97,26 +97,28 @@ export function DocsView({ mcpUrl }: { mcpUrl: string }) {
           step-by-step guide, to update the Tokyo itinerary with a day trip, or what you checked off
           on the packing list it published.
         </p>
-        <Table.Root>
-          <Table.Header>
-            <Table.Row>
-              <Table.Head>Tool</Table.Head>
-              <Table.Head>What it does</Table.Head>
-            </Table.Row>
-          </Table.Header>
-          <Table.Body>
-            {MCP_TOOL_NAMES.map((name) => (
-              <Table.Row key={name}>
-                <Table.Cell className="align-top">
-                  <code className="font-mono text-xs">{name}</code>
-                </Table.Cell>
-                <Table.Cell className="text-foreground-muted whitespace-normal">
-                  {MCP_TOOLS[name]}
-                </Table.Cell>
+        <Table.Viewport>
+          <Table.Root>
+            <Table.Header>
+              <Table.Row>
+                <Table.Head>Tool</Table.Head>
+                <Table.Head>What it does</Table.Head>
               </Table.Row>
-            ))}
-          </Table.Body>
-        </Table.Root>
+            </Table.Header>
+            <Table.Body>
+              {MCP_TOOL_NAMES.map((name) => (
+                <Table.Row key={name}>
+                  <Table.Cell className="align-top">
+                    <code className="font-mono text-xs">{name}</code>
+                  </Table.Cell>
+                  <Table.Cell className="text-foreground-muted whitespace-normal">
+                    {MCP_TOOLS[name]}
+                  </Table.Cell>
+                </Table.Row>
+              ))}
+            </Table.Body>
+          </Table.Root>
+        </Table.Viewport>
       </section>
 
       <section className="flex flex-col gap-4">

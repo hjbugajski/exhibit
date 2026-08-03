@@ -105,10 +105,9 @@ function Positioner({
   );
 }
 
-function ScrollUpButton({
-  className,
-  ...props
-}: ComponentProps<typeof SelectPrimitive.ScrollUpArrow>) {
+export type SelectScrollUpArrowProps = ComponentProps<typeof SelectPrimitive.ScrollUpArrow>;
+
+function ScrollUpArrow({ className, ...props }: SelectScrollUpArrowProps) {
   return (
     <SelectPrimitive.ScrollUpArrow
       data-slot="select-scroll-up-button"
@@ -123,10 +122,9 @@ function ScrollUpButton({
   );
 }
 
-function ScrollDownButton({
-  className,
-  ...props
-}: ComponentProps<typeof SelectPrimitive.ScrollDownArrow>) {
+export type SelectScrollDownArrowProps = ComponentProps<typeof SelectPrimitive.ScrollDownArrow>;
+
+function ScrollDownArrow({ className, ...props }: SelectScrollDownArrowProps) {
   return (
     <SelectPrimitive.ScrollDownArrow
       data-slot="select-scroll-down-button"
@@ -141,30 +139,29 @@ function ScrollDownButton({
   );
 }
 
-export type SelectPopupProps = SelectPrimitive.Popup.Props & {
-  /**
-   * Mirrors the Positioner's `alignItemWithTrigger` so the popup can disable its open animation
-   * when overlaid directly on the trigger.
-   */
-  alignItemWithTrigger?: boolean;
-};
+export type SelectPopupProps = SelectPrimitive.Popup.Props;
 
-function Popup({ className, children, alignItemWithTrigger = true, ...props }: SelectPopupProps) {
+/**
+ * `data-side="none"` is Base UI's signal that the popup is overlaid on the trigger
+ * (`alignItemWithTrigger` active), where the open animation must not run.
+ */
+function Popup({ className, ...props }: SelectPopupProps) {
   return (
     <SelectPrimitive.Popup
       data-slot="select-content"
-      data-align-trigger={alignItemWithTrigger}
       className={cn(
-        'bg-surface-raised text-foreground data-[side=bottom]:slide-from-top data-[side=inline-end]:slide-from-left data-[side=inline-start]:slide-from-right data-[side=left]:slide-from-right data-[side=right]:slide-from-left data-[side=top]:slide-from-bottom data-open:animate-scale-in data-closed:animate-scale-out relative isolate z-50 max-h-(--available-height) w-max max-w-(--available-width) min-w-(--anchor-width) origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg border shadow-md data-[align-trigger=true]:animate-none',
+        'bg-surface-raised text-foreground data-[side=bottom]:slide-from-top data-[side=inline-end]:slide-from-left data-[side=inline-start]:slide-from-right data-[side=left]:slide-from-right data-[side=right]:slide-from-left data-[side=top]:slide-from-bottom data-open:animate-scale-in data-closed:animate-scale-out relative isolate z-50 max-h-(--available-height) w-max max-w-(--available-width) min-w-(--anchor-width) origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg border shadow-md data-[side=none]:animate-none',
         className,
       )}
       {...props}
-    >
-      <ScrollUpButton />
-      <SelectPrimitive.List>{children}</SelectPrimitive.List>
-      <ScrollDownButton />
-    </SelectPrimitive.Popup>
+    />
   );
+}
+
+export type SelectListProps = SelectPrimitive.List.Props;
+
+function List({ ...props }: SelectListProps) {
+  return <SelectPrimitive.List data-slot="select-list" {...props} />;
 }
 
 export type SelectItemProps = SelectPrimitive.Item.Props;
@@ -214,6 +211,9 @@ export const Select = {
   Portal,
   Positioner,
   Popup,
+  ScrollUpArrow,
+  List,
+  ScrollDownArrow,
   Item,
   Separator,
 };

@@ -225,19 +225,23 @@ export function ArtifactDetailView({ id, detail }: { id: string; detail: Artifac
               </Select.Trigger>
               <Select.Portal>
                 <Select.Positioner alignItemWithTrigger={false} align="start">
-                  <Select.Popup alignItemWithTrigger={false}>
-                    <Select.Group>
-                      {versions
-                        .slice()
-                        .reverse()
-                        .map((v) => (
-                          <Select.Item key={v.version} value={String(v.version)}>
-                            v{v.version}
-                            {v.version === latestVersion ? ' (latest)' : ''} ·{' '}
-                            {formatRelativeTime(v.createdAt)}
-                          </Select.Item>
-                        ))}
-                    </Select.Group>
+                  <Select.Popup>
+                    <Select.ScrollUpArrow />
+                    <Select.List>
+                      <Select.Group>
+                        {versions
+                          .slice()
+                          .reverse()
+                          .map((v) => (
+                            <Select.Item key={v.version} value={String(v.version)}>
+                              v{v.version}
+                              {v.version === latestVersion ? ' (latest)' : ''} ·{' '}
+                              {formatRelativeTime(v.createdAt)}
+                            </Select.Item>
+                          ))}
+                      </Select.Group>
+                    </Select.List>
+                    <Select.ScrollDownArrow />
                   </Select.Popup>
                 </Select.Positioner>
               </Select.Portal>
@@ -352,7 +356,7 @@ export function ArtifactDetailView({ id, detail }: { id: string; detail: Artifac
         <div className="relative">
           <Button
             aria-label="Copy source"
-            className="bg-background/90 absolute top-3 right-3 backdrop-blur-sm"
+            className="bg-scrim-strong absolute top-3 right-3 backdrop-blur-sm"
             onClick={() => {
               void copy(sourceText);
             }}

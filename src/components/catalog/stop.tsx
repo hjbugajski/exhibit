@@ -4,8 +4,10 @@ import { BedDouble, Compass, MapPin, Plane, UtensilsCrossed } from 'lucide-react
 
 import type { CatalogComponentProps } from '@/catalog/catalog';
 import { DayMapContext } from '@/components/catalog/day-map-context';
+import { flowTight } from '@/components/catalog/flow';
 import { MarkdownBody } from '@/components/catalog/markdown-body';
 import { Card } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 
 type Props = CatalogComponentProps<'Stop'>;
 
@@ -37,7 +39,7 @@ export function Stop({ props }: { props: Props }) {
   return (
     /* Icon-side (left) padding one notch tighter so the icon sits optically
        aligned with the card edge — same rule as icon-leading buttons. */
-    <Card.Root className="pr-card pl-card-icon my-4 flex-row gap-3 first:mt-0 last:mb-0">
+    <Card.Root className={cn('pr-card pl-card-icon flex-row gap-3', flowTight)}>
       <Icon aria-hidden className="text-foreground-muted mt-0.5 size-4 shrink-0" />
       <div className="min-w-0">
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">

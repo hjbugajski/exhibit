@@ -100,9 +100,9 @@ function CompassButton({ onClick }: { onClick: () => void }) {
         style={{ transformStyle: 'preserve-3d' }}
       >
         <path d="M12 2L16 12H12V2Z" className="fill-danger" />
-        <path d="M12 2L8 12H12V2Z" className="fill-danger/60" />
-        <path d="M12 22L16 12H12V22Z" className="fill-foreground-muted/60" />
-        <path d="M12 22L8 12H12V22Z" className="fill-foreground-muted/30" />
+        <path d="M12 2L8 12H12V2Z" className="fill-compass-north-shade" />
+        <path d="M12 22L16 12H12V22Z" className="fill-foreground-muted" />
+        <path d="M12 22L8 12H12V22Z" className="fill-compass-south-shade" />
       </svg>
     </ControlButton>
   );

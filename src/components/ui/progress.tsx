@@ -4,23 +4,13 @@ import { cn } from '@/lib/utils';
 
 export type ProgressRootProps = ProgressPrimitive.Root.Props;
 
-/**
- * Renders Track/Indicator itself after `children` — pass only overlay content (Label/Value);
- * supplying your own Track duplicates the bar.
- */
-function Root({ className, children, value, ...props }: ProgressRootProps) {
+function Root({ className, ...props }: ProgressRootProps) {
   return (
     <ProgressPrimitive.Root
-      value={value}
       data-slot="progress"
       className={cn('flex flex-wrap gap-3', className)}
       {...props}
-    >
-      {children}
-      <Track>
-        <Indicator />
-      </Track>
-    </ProgressPrimitive.Root>
+    />
   );
 }
 

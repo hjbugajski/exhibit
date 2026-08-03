@@ -84,6 +84,9 @@
  *                foreground-faint (empty-state glyphs)
  *   lines        border → border-strong (inputs) → border-active (selected) ·
  *                ring (focused border) · focus / focus-danger (3px halo)
+ *   scrims       overlay (dialog backdrop, always darkens) · scrim-subtle /
+ *                scrim / scrim-strong (translucent background for blurred
+ *                chrome floating over content)
  *   accent       inverted gray (soft black on light, soft white on dark);
  *                accent-hover, accent-subtle tint
  *   status       danger / info / success / warning as text on the matching
@@ -141,6 +144,11 @@
   --color-focus: var(--focus);
   --color-focus-danger: var(--focus-danger);
   --color-overlay: var(--overlay);
+  --color-scrim-subtle: var(--scrim-subtle);
+  --color-scrim: var(--scrim);
+  --color-scrim-strong: var(--scrim-strong);
+  --color-compass-north-shade: var(--compass-north-shade);
+  --color-compass-south-shade: var(--compass-south-shade);
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
   --color-accent-subtle: var(--accent-subtle);
@@ -371,6 +379,24 @@
   --focus-danger: var(--red-6);
   /* dialog scrim — always darkens, so it cannot key off foreground */
   --overlay: oklch(0 0 0 / 10%);
+  /*
+   * Blur scrims — translucent --background for chrome that floats over live
+   * content behind a backdrop-blur. Derived from the background so they follow
+   * the scheme; the alpha is the whole token, so it never appears in a class.
+   * subtle veils content that must stay readable through it (map loading
+   * state); the base tier backs the sticky header; strong is for a control
+   * sitting directly on arbitrary content (artifact copy button).
+   */
+  --scrim-subtle: oklch(from var(--background) l c h / 50%);
+  --scrim: oklch(from var(--background) l c h / 75%);
+  --scrim-strong: oklch(from var(--background) l c h / 90%);
+  /*
+   * Compass needle: the lit facets use danger / foreground-muted, these are the
+   * shaded ones. Step 8 recedes from the 10/11 anchors in both schemes (lighter
+   * on light, darker on dark), which is what the old alpha steps approximated.
+   */
+  --compass-north-shade: var(--red-8);
+  --compass-south-shade: var(--gray-8);
   --accent: var(--gray-12);
   --accent-hover: var(--gray-11);
   --accent-subtle: var(--gray-5);

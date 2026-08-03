@@ -74,7 +74,7 @@ function GroupLabel({ className, inset, ...props }: DropdownMenuGroupLabelProps)
   return (
     <MenuPrimitive.GroupLabel
       data-slot="dropdown-menu-label"
-      data-inset={inset}
+      data-inset={inset || undefined}
       className={cn(
         'text-foreground-muted px-compact py-popup text-xs font-medium data-inset:pl-6.5 pointer-coarse:py-1.5',
         className,
@@ -93,7 +93,7 @@ function Item({ className, inset, variant = 'default', ...props }: DropdownMenuI
   return (
     <MenuPrimitive.Item
       data-slot="dropdown-menu-item"
-      data-inset={inset}
+      data-inset={inset || undefined}
       data-variant={variant}
       className={cn(
         "group/dropdown-menu-item focus:bg-surface-muted focus:text-foreground not-data-[variant=destructive]:focus:**:text-foreground data-[variant=destructive]:text-danger data-[variant=destructive]:focus:bg-danger-subtle data-[variant=destructive]:focus:text-danger data-[variant=destructive]:*:[svg]:text-danger not-data-[variant=destructive]:[&_svg]:text-foreground-muted gap-icon-label px-compact py-popup has-data-[icon=inline-start]:pl-compact-icon relative flex cursor-default items-center rounded-md text-sm outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 data-inset:pl-6.5 pointer-coarse:py-2 pointer-coarse:text-base [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5",
@@ -118,7 +118,7 @@ function SubTrigger({ className, inset, children, ...props }: DropdownMenuSubTri
   return (
     <MenuPrimitive.SubmenuTrigger
       data-slot="dropdown-menu-sub-trigger"
-      data-inset={inset}
+      data-inset={inset || undefined}
       className={cn(
         "focus:bg-surface-muted focus:text-foreground focus:**:text-foreground data-popup-open:bg-surface-muted data-popup-open:text-foreground data-open:bg-surface-muted data-open:text-foreground [&_svg]:text-foreground-muted gap-icon-label px-compact py-popup has-data-[icon=inline-start]:pl-compact-icon flex cursor-default items-center rounded-md text-sm outline-hidden select-none data-inset:pl-6.5 pointer-coarse:py-2 pointer-coarse:text-base [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5",
         className,
@@ -145,7 +145,7 @@ function CheckboxItem({
   return (
     <MenuPrimitive.CheckboxItem
       data-slot="dropdown-menu-checkbox-item"
-      data-inset={inset}
+      data-inset={inset || undefined}
       className={cn(
         "focus:bg-surface-muted focus:text-foreground focus:**:text-foreground [&_svg]:text-foreground-muted gap-icon-label py-popup pl-compact has-data-[icon=inline-start]:pl-compact-icon relative flex cursor-default items-center rounded-md pr-8 text-sm outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 data-inset:pl-6.5 pointer-coarse:py-2 pointer-coarse:text-base [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5",
         className,
@@ -180,7 +180,7 @@ function RadioItem({ className, children, inset, ...props }: DropdownMenuRadioIt
   return (
     <MenuPrimitive.RadioItem
       data-slot="dropdown-menu-radio-item"
-      data-inset={inset}
+      data-inset={inset || undefined}
       className={cn(
         "focus:bg-surface-muted focus:text-foreground focus:**:text-foreground [&_svg]:text-foreground-muted gap-icon-label py-popup pl-compact has-data-[icon=inline-start]:pl-compact-icon relative flex cursor-default items-center rounded-md pr-8 text-sm outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 data-inset:pl-6.5 pointer-coarse:py-2 pointer-coarse:text-base [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5",
         className,

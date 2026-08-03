@@ -33,9 +33,7 @@ function CellValue({ value }: { value: Props['rows'][number][string] | undefined
 
 export function Table({ props }: { props: Props }) {
   return (
-    // UiTable.Root's className lands on the inner <table>, so the flow margin needs its own
-    // wrapper around the scroll container.
-    <div className={flowBlock}>
+    <UiTable.Viewport className={flowBlock}>
       <UiTable.Root>
         <UiTable.Header>
           <UiTable.Row>
@@ -58,6 +56,6 @@ export function Table({ props }: { props: Props }) {
           ))}
         </UiTable.Body>
       </UiTable.Root>
-    </div>
+    </UiTable.Viewport>
   );
 }

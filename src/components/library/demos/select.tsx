@@ -28,11 +28,15 @@ function SelectDemo() {
           </Select.Trigger>
           <Select.Portal>
             <Select.Positioner alignItemWithTrigger={false}>
-              <Select.Popup alignItemWithTrigger={false}>
-                <Select.Group>
-                  <Select.Item value="spec">Spec</Select.Item>
-                  <Select.Item value="html">HTML</Select.Item>
-                </Select.Group>
+              <Select.Popup>
+                <Select.ScrollUpArrow />
+                <Select.List>
+                  <Select.Group>
+                    <Select.Item value="spec">Spec</Select.Item>
+                    <Select.Item value="html">HTML</Select.Item>
+                  </Select.Group>
+                </Select.List>
+                <Select.ScrollDownArrow />
               </Select.Popup>
             </Select.Positioner>
           </Select.Portal>
