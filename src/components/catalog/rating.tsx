@@ -40,16 +40,37 @@ export function Rating({ props }: { props: Props }) {
       label={props.label}
     >
       <RadioGroup.Root
-        aria-label={`${props.label}: ${value} of 5 stars`}
+        aria-label={props.label}
         className="flex w-auto items-center gap-0.5"
         onValueChange={(next) => set(props.statePath, Number(next))}
         value={value ? String(value) : null}
       >
         {STARS.map((star) => (
-          // oxlint-disable-next-line jsx-a11y/label-has-associated-control
+          // oxlint-disable-next-line jsx-a11y/label-has-associated-control, jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions
           <label
             className="has-focus-visible:ring-focus flex cursor-pointer items-center rounded-sm p-0.5 has-focus-visible:ring-3"
             key={star}
+            /*
+             * Clearing lives on the label, not on the item: the item is a 1px invisible radio whose
+             * visible star is a sibling, so a pointer click never lands on it. Native radios emit no
+             * change event when the checked value is unchanged, so onValueChange alone can't see a
+             * re-activation of the current star.
+             *
+             * Exactly one transition per activation:
+             * - Pointer click on the star bubbles here undefaulted; preventDefault cancels the
+             *   label's forwarding to the hidden input, so no change event re-selects the star.
+             * - Keyboard Space fires a click on the radio, which preventDefaults it and re-dispatches
+             *   an undefaulted click on the hidden input — that one clears here, and the original
+             *   click is skipped by the defaultPrevented guard.
+             */
+            onClick={(event) => {
+              if (event.defaultPrevented || star !== value) {
+                return;
+              }
+
+              event.preventDefault();
+              set(props.statePath, 0);
+            }}
           >
             <RadioGroup.Item
               aria-label={`${star} of 5 stars`}
@@ -58,17 +79,6 @@ export function Rating({ props }: { props: Props }) {
                  replace them. */
               className="absolute size-px opacity-0"
               value={String(star)}
-              // Clicking (or Space-activating) the already-selected star clears the rating: native
-              // radios don't emit a change event when the checked value is unchanged, so
-              // onValueChange alone can't detect a re-click/re-press — this onClick (which fires
-              // for both pointer clicks and keyboard activation of the underlying button) handles
-              // that case; a genuine new selection is still handled by RadioGroup's onValueChange
-              // above.
-              onClick={() => {
-                if (star === value) {
-                  set(props.statePath, 0);
-                }
-              }}
             />
             <Star
               aria-hidden

@@ -9,16 +9,12 @@ afterEach(() => {
 });
 
 describe('Callout', () => {
-  it('uses role=status (polite) for the info variant', () => {
-    render(<Callout props={{ variant: 'info', markdown: 'heads up' }} />);
+  /** Static document copy must not announce when the artifact renders. */
+  it.each(['info', 'warning', 'danger'] as const)('is not a live region (%s)', (variant) => {
+    render(<Callout props={{ variant, markdown: 'heads up' }} />);
 
-    expect(screen.getByRole('status')).toBeTruthy();
     expect(screen.queryByRole('alert')).toBeNull();
-  });
-
-  it('keeps role=alert (assertive) for the warning variant', () => {
-    render(<Callout props={{ variant: 'warning', markdown: 'careful' }} />);
-
-    expect(screen.getByRole('alert')).toBeTruthy();
+    expect(screen.queryByRole('status')).toBeNull();
+    expect(document.querySelector('aside')).toBeTruthy();
   });
 });

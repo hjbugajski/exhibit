@@ -8,8 +8,34 @@ import { cn } from '@/lib/utils';
 type Props = CatalogComponentProps<'Checklist'>;
 type Item = Props['items'][number];
 
-function itemBody(text: string, checked: boolean) {
-  return <span className={cn(checked && 'text-foreground-muted line-through')}>{text}</span>;
+/**
+ * Without `onCheckedChange` the item is display-only: `readOnly` (not `disabled`) keeps it in the
+ * accessibility tree and undimmed, since it is static content rather than a blocked control.
+ */
+function ChecklistItem({
+  checked,
+  onCheckedChange,
+  text,
+}: {
+  checked: boolean;
+  onCheckedChange?: (checked: boolean) => void;
+  text: string;
+}) {
+  return (
+    <li className="m-0 ps-0">
+      {/* items-start + box offset: keeps the box on the first line when the text wraps (mt-1
+          centers the 16px box in the 24px base line). */}
+      <label className={cn('flex items-start gap-3', onCheckedChange && 'cursor-pointer')}>
+        <Checkbox
+          checked={checked}
+          className="mt-1"
+          onCheckedChange={onCheckedChange}
+          readOnly={!onCheckedChange}
+        />
+        <span className={cn(checked && 'text-foreground-muted line-through')}>{text}</span>
+      </label>
+    </li>
+  );
 }
 
 /**
@@ -24,18 +50,11 @@ function StatefulItem({ item, statePath }: { item: Item; statePath: string }) {
   const checked = typeof stored === 'boolean' ? stored : Boolean(item.checked);
 
   return (
-    <li className="m-0 ps-0">
-      {/* items-start + box offset: keeps the box on the first line when the text wraps (mt-1
-          centers the 16px box in the 24px base line). */}
-      <label className="flex cursor-pointer items-start gap-3">
-        <Checkbox
-          checked={checked}
-          className="mt-1"
-          onCheckedChange={(value) => set(statePath, value === true)}
-        />
-        {itemBody(item.text, checked)}
-      </label>
-    </li>
+    <ChecklistItem
+      checked={checked}
+      onCheckedChange={(value) => set(statePath, value)}
+      text={item.text}
+    />
   );
 }
 
@@ -46,10 +65,7 @@ export function Checklist({ props }: { props: Props }) {
         item.statePath ? (
           <StatefulItem item={item} key={item.id} statePath={item.statePath} />
         ) : (
-          <li className="m-0 flex items-start gap-3 ps-0" key={item.id}>
-            <Checkbox checked={Boolean(item.checked)} className="mt-1" disabled />
-            {itemBody(item.text, Boolean(item.checked))}
-          </li>
+          <ChecklistItem checked={Boolean(item.checked)} key={item.id} text={item.text} />
         ),
       )}
     </ul>

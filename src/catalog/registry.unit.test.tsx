@@ -86,7 +86,7 @@ describe('Checklist state', () => {
     },
   };
 
-  it('writes a toggled statePath item into the store; static items stay disabled', async () => {
+  it('writes a toggled statePath item into the store; static items stay read-only', async () => {
     const user = userEvent.setup();
     const store = createStateStore({});
 
@@ -94,8 +94,9 @@ describe('Checklist state', () => {
 
     const [staticBox, statefulBox] = screen.getAllByRole('checkbox');
 
-    // Base UI renders disabled as data-disabled on the checkbox button.
-    expect(staticBox?.hasAttribute('data-disabled')).toBe(true);
+    // Display-only items are content, not blocked controls: read-only, never disabled.
+    expect(staticBox?.getAttribute('aria-readonly')).toBe('true');
+    expect(staticBox?.hasAttribute('data-disabled')).toBe(false);
     expect(statefulBox?.hasAttribute('data-disabled')).toBe(false);
 
     // userEvent, not fireEvent: a bare synthetic click makes happy-dom forward label activation to

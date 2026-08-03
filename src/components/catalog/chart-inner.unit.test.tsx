@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { cleanup, render } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { CatalogComponentProps } from '@/catalog/catalog';
@@ -39,5 +39,25 @@ describe('CatalogChartInner', () => {
     render(<CatalogChartInner props={props} />);
 
     expect(consoleError).not.toHaveBeenCalled();
+  });
+
+  /** The plotted values are hover-only, so the table is the text alternative. */
+  it('names the chart and repeats its data as a table', () => {
+    const props: CatalogComponentProps<'Chart'> = {
+      kind: 'bar',
+      valueLabel: 'Cost ($)',
+      data: [
+        { label: 'Mon', value: 1 },
+        { label: 'Tue', value: 2 },
+      ],
+    };
+
+    render(<CatalogChartInner props={props} />);
+
+    const table = screen.getByRole('table', { name: 'Cost ($) bar chart, 2 data points' });
+
+    expect(screen.getByRole('rowheader', { name: 'Mon' })).toBeTruthy();
+    expect(screen.getByRole('cell', { name: '2' })).toBeTruthy();
+    expect(table.className).toContain('sr-only');
   });
 });

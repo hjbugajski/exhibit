@@ -1,5 +1,7 @@
 import { createContext, useContext, type ComponentProps } from 'react';
 
+import { mergeProps } from '@base-ui/react/merge-props';
+import { useRender } from '@base-ui/react/use-render';
 import { cva, type VariantProps } from 'class-variance-authority';
 
 import { cn } from '@/lib/utils';
@@ -31,17 +33,23 @@ type AlertVariant = NonNullable<VariantProps<typeof alertVariants>['variant']>;
 /** Lets Description and Action pick up the Root's variant without re-declaring it. */
 const AlertVariantContext = createContext<AlertVariant>('default');
 
-export type AlertRootProps = ComponentProps<'div'> & VariantProps<typeof alertVariants>;
+export type AlertRootProps = useRender.ComponentProps<'div'> & VariantProps<typeof alertVariants>;
 
-function Root({ className, variant = 'default', ...props }: AlertRootProps) {
+/**
+ * No default `role`: most alerts are static content that a live region would make announce on
+ * insertion. Call sites whose message really is dynamic pass `role="alert"` or `role="status"`.
+ */
+function Root({ className, render, variant = 'default', ...props }: AlertRootProps) {
+  const element = useRender({
+    defaultTagName: 'div',
+    render,
+    props: mergeProps<'div'>({ className: cn(alertVariants({ variant }), className) }, props),
+    state: { slot: 'alert' },
+  });
+
   return (
     <AlertVariantContext.Provider value={variant ?? 'default'}>
-      <div
-        data-slot="alert"
-        role="alert"
-        className={cn(alertVariants({ variant }), className)}
-        {...props}
-      />
+      {element}
     </AlertVariantContext.Provider>
   );
 }

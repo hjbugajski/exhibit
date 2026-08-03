@@ -3,6 +3,7 @@ import { createStateStore, StateProvider } from '@json-render/react';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 
+import type { CatalogComponentProps } from '@/catalog/catalog';
 import { Checklist } from '@/components/catalog/checklist';
 
 afterEach(() => {
@@ -39,4 +40,20 @@ describe('Checklist', () => {
       expect(renderChecklist(stored, true).getAttribute('aria-checked')).toBe('true');
     },
   );
+
+  /** Display-only items are content, not blocked controls: readable, not dimmed. */
+  it('renders a display-only item as read-only rather than disabled', () => {
+    const props: CatalogComponentProps<'Checklist'> = {
+      items: [{ id: 'i1', text: 'Order cabinets', checked: true }],
+    };
+
+    render(<Checklist props={props} />);
+
+    const checkbox = screen.getByRole('checkbox', { name: 'Order cabinets' });
+
+    expect(checkbox.getAttribute('aria-checked')).toBe('true');
+    expect(checkbox.getAttribute('aria-disabled')).toBeNull();
+    expect(checkbox.hasAttribute('data-disabled')).toBe(false);
+    expect(checkbox.getAttribute('aria-readonly')).toBe('true');
+  });
 });
