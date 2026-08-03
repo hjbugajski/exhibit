@@ -1,4 +1,4 @@
-import { createContext, use, useEffect, useState, type ReactNode } from 'react';
+import { createContext, use, useEffect, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
 import * as MapLibreGL from 'maplibre-gl';
@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 interface MarkerContextValue {
   marker: MapLibreGL.Marker;
   map: MapLibreGL.Map | null;
+  label?: string;
 }
 
 const MarkerContext = createContext<MarkerContextValue | null>(null);
@@ -28,6 +29,8 @@ export type MarkerRootProps = {
   longitude: number;
   latitude: number;
   children: ReactNode;
+  /** Accessible name for the marker button rendered by `Marker.Content`. */
+  label?: string;
   onClick?: (e: MouseEvent) => void;
   onMouseEnter?: (e: MouseEvent) => void;
   onMouseLeave?: (e: MouseEvent) => void;
@@ -43,6 +46,7 @@ function Root({
   longitude,
   latitude,
   children,
+  label,
   onClick,
   onMouseEnter,
   onMouseLeave,
@@ -68,9 +72,15 @@ function Root({
   // without recreating the marker; `color` and `scale` only affect MapLibre's default marker
   // element anyway, which this component never uses (it always supplies its own `element`).
   const [marker] = useState(() => {
+    const element = document.createElement('div');
+    // MapLibre's setPopup turns its marker element into a tab stop (tabindex="0") unless one is
+    // already set, which would put an unnamed stop in front of the real <button> Marker.Content
+    // renders inside it. Claiming the attribute here keeps the wrapper out of the tab order.
+    element.setAttribute('tabindex', '-1');
+
     const markerInstance = new MapLibreGL.Marker({
       ...markerOptions,
-      element: document.createElement('div'),
+      element,
       draggable,
     }).setLngLat([longitude, latitude]);
 
@@ -146,7 +156,7 @@ function Root({
     }
   }, [marker, longitude, latitude, draggable, offset, rotation, rotationAlignment, pitchAlignment]);
 
-  return <MarkerContext value={{ marker, map }}>{children}</MarkerContext>;
+  return <MarkerContext value={{ marker, map, label }}>{children}</MarkerContext>;
 }
 
 function DefaultMarkerIcon() {
@@ -163,12 +173,34 @@ export interface MarkerContentProps {
 }
 
 function Content({ children, className }: MarkerContentProps) {
-  const { marker } = useMarkerContext();
+  const { marker, label } = useMarkerContext();
+
+  /*
+   * Keyboard activation without MapLibre's two mouse-oriented toggles also firing: canceling
+   * keydown suppresses both the synthetic click (which MapLibre toggles the popup on, via its
+   * map-level click handler) and the legacy keypress its setPopup listens for. Mouse clicks still
+   * flow through MapLibre untouched, so `closeOnClick` on other popups keeps working.
+   */
+  const handleKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
+    if (event.key !== 'Enter' && event.key !== ' ') {
+      return;
+    }
+    event.preventDefault();
+    marker.togglePopup();
+  };
 
   return createPortal(
-    <div className={cn('relative cursor-pointer', className)}>
+    <button
+      aria-label={label}
+      className={cn(
+        'focus-visible:ring-focus relative block cursor-pointer rounded-full outline-none focus-visible:ring-3',
+        className,
+      )}
+      onKeyDown={handleKeyDown}
+      type="button"
+    >
       {children || <DefaultMarkerIcon />}
-    </div>,
+    </button>,
     marker.getElement(),
   );
 }

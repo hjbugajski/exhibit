@@ -180,14 +180,17 @@ export type MapProps = {
   /** Map projection type. Use `{ type: "globe" }` for 3D globe view. */
   projection?: MapLibreGL.ProjectionSpecification;
   /**
-   * Controlled viewport. When provided with onViewportChange, the map becomes controlled and
-   * viewport is driven by this prop.
+   * Controlled viewport: the map is driven by this prop, so it only makes sense paired with
+   * `onViewportChange` (without it the map freezes at these values for the consumer's state, which
+   * never updates). For an initial view you don't intend to control, use `defaultViewport`.
    */
   viewport?: Partial<MapViewport>;
+  /** Uncontrolled initial viewport, read once at map creation and never resynced. */
+  defaultViewport?: Partial<MapViewport>;
   /**
    * Callback fired continuously as the viewport changes (pan, zoom, rotate, pitch). Can be used
-   * standalone to observe changes, or with `viewport` prop to enable controlled mode where the map
-   * viewport is driven by your state.
+   * standalone to observe changes, or with the `viewport` prop to enable controlled mode where the
+   * map viewport is driven by your state.
    */
   onViewportChange?: (viewport: MapViewport) => void;
   loading?: boolean;
@@ -202,6 +205,25 @@ function DefaultLoader() {
         <span className="bg-foreground-subtle size-1.5 animate-pulse rounded-full [animation-delay:300ms]" />
       </div>
     </div>
+  );
+}
+
+let hasWarnedUncontrolledViewport = false;
+
+/**
+ * `viewport` without `onViewportChange` looks controlled but can't be: the map still pans and zooms
+ * on its own, and nothing tells the consumer's state about it. Warn once per session in dev rather
+ * than changing behavior — the map keeps honoring `viewport` as an initial view.
+ */
+function warnUncontrolledViewport() {
+  if (hasWarnedUncontrolledViewport) {
+    return;
+  }
+  hasWarnedUncontrolledViewport = true;
+  console.warn(
+    '<Map> got `viewport` without `onViewportChange`, so it is not controlled and the prop only ' +
+      'seeds the initial view. Pass `onViewportChange` to control it, or `defaultViewport` for an ' +
+      'initial view.',
   );
 }
 
@@ -225,6 +247,7 @@ export function Map({
   blank = false,
   projection,
   viewport,
+  defaultViewport,
   onViewportChange,
   loading = false,
   ...props
@@ -243,6 +266,12 @@ export function Map({
   const styleReady = Boolean(styles) || blank || apiKey !== undefined;
 
   const isControlled = viewport !== undefined && onViewportChange !== undefined;
+
+  useEffect(() => {
+    if (import.meta.env.DEV && viewport !== undefined && onViewportChange === undefined) {
+      warnUncontrolledViewport();
+    }
+  }, [viewport, onViewportChange]);
 
   const onViewportChangeRef = useLatest(onViewportChange);
   // Mount effect below only reads projection through this ref so that changing the prop after mount
@@ -285,7 +314,12 @@ export function Map({
 
   // Latest-ref (not a mount-time snapshot): creation can be deferred past first render by
   // `styleReady`, and the map must be born with the values current at creation time.
-  const initialRef = useLatest({ resolvedTheme, mapStyles, props, viewport });
+  const initialRef = useLatest({
+    resolvedTheme,
+    mapStyles,
+    props,
+    initialViewport: viewport ?? defaultViewport,
+  });
 
   useEffect(() => {
     if (!containerRef.current || !styleReady) {
@@ -296,7 +330,7 @@ export function Map({
       resolvedTheme: initialTheme,
       mapStyles: initialMapStyles,
       props: initialProps,
-      viewport: initialViewport,
+      initialViewport,
     } = initialRef.current;
 
     const initialStyle = initialTheme === 'dark' ? initialMapStyles.dark : initialMapStyles.light;
