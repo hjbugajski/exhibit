@@ -33,6 +33,7 @@ export const Route = createFileRoute('/consent')({
       return null;
     }
   },
+  head: () => ({ meta: [{ title: 'Authorize · Exhibit' }] }),
   component: ConsentRoute,
 });
 

@@ -15,7 +15,15 @@ export function useLocalStorageState<T extends string>(
   isValidValueRef.current = isValidValue;
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(key);
+    // Storage access throws outright when it is disabled (Safari private mode, blocked cookies);
+    // the preference is a nicety, so every failure degrades to in-memory state.
+    let stored: string | null = null;
+
+    try {
+      stored = window.localStorage.getItem(key);
+    } catch {
+      return;
+    }
 
     if (stored !== null && isValidValueRef.current(stored)) {
       setStateValue(stored);
@@ -26,7 +34,12 @@ export function useLocalStorageState<T extends string>(
   const setValue = useCallback(
     (next: T) => {
       setStateValue(next);
-      window.localStorage.setItem(key, next);
+
+      try {
+        window.localStorage.setItem(key, next);
+      } catch {
+        // Quota exceeded or storage disabled — the value still applies for this session.
+      }
     },
     [key],
   );

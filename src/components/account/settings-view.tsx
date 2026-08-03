@@ -5,6 +5,7 @@ import { Link, useRouter } from '@tanstack/react-router';
 import { Identicon } from '@/components/account/identicon';
 import { ConfirmDestructiveAction } from '@/components/blocks/confirm-destructive-action';
 import { FormStatus } from '@/components/blocks/form-status';
+import { RelativeTime } from '@/components/blocks/relative-time';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Field } from '@/components/ui/field';
@@ -13,7 +14,6 @@ import { Input } from '@/components/ui/input';
 import type { McpConnection } from '@/lib/account';
 import { revokeMcpConnectionFn } from '@/lib/account';
 import { authClient } from '@/lib/auth-client';
-import { formatRelativeTime } from '@/lib/format-time';
 import { useFormAction } from '@/lib/use-form-action';
 
 function AvatarCard({ seed }: { seed: string }) {
@@ -219,7 +219,12 @@ function ConnectionRow({ connection }: { connection: McpConnection }) {
           {connection.activeGrants > 0
             ? `${connection.activeGrants} active grant${connection.activeGrants === 1 ? '' : 's'}`
             : 'No active grants'}
-          {lastActivity ? ` · last authorized ${formatRelativeTime(lastActivity)}` : ''}
+          {lastActivity ? (
+            <>
+              {' · last authorized '}
+              <RelativeTime value={lastActivity} />
+            </>
+          ) : null}
           {connection.scopes.length > 0 ? ` · ${connection.scopes.join(', ')}` : ''}
         </p>
       </div>

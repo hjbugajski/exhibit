@@ -26,6 +26,7 @@ interface RenderGalleryOptions {
     sort: ArtifactSort;
     tags: string[];
     view: GalleryView;
+    updating: boolean;
   }>;
   actions?: Partial<{
     setQuery: (query: string) => void;
@@ -53,6 +54,7 @@ function renderGallery(options: RenderGalleryOptions = {}) {
     sort: 'updated-desc' as ArtifactSort,
     tags: [] as string[],
     view: 'grid' as GalleryView,
+    updating: false,
     ...options.state,
   };
   const actions = {
@@ -78,13 +80,15 @@ function renderGallery(options: RenderGalleryOptions = {}) {
         <Gallery.Sort />
         <Gallery.ViewToggle />
       </Gallery.Toolbar>
-      {items.length === 0 ? (
-        <Gallery.Empty />
-      ) : state.view === 'grid' ? (
-        <Gallery.Grid items={items} />
-      ) : (
-        <Gallery.Table items={items} />
-      )}
+      <Gallery.Results>
+        {items.length === 0 ? (
+          <Gallery.Empty />
+        ) : state.view === 'grid' ? (
+          <Gallery.Grid items={items} />
+        ) : (
+          <Gallery.Table items={items} />
+        )}
+      </Gallery.Results>
       {items.length > 0 ? (
         <Gallery.LoadMore hasMore={hasMore} loadingMore={loadingMore} onLoadMore={onLoadMore} />
       ) : null}
@@ -206,6 +210,13 @@ describe('Gallery', () => {
     expect(await screen.findByRole('table')).toBeTruthy();
     expect(screen.getByRole('columnheader', { name: 'Title' })).toBeTruthy();
     expect(screen.getByRole('columnheader', { name: 'Updated' })).toBeTruthy();
+  });
+
+  it('marks the list busy while a filter navigation is in flight', async () => {
+    const { container } = renderGallery({ items: [makeArtifact()], state: { updating: true } });
+
+    expect(await screen.findByText('Kyoto Trip')).toBeTruthy();
+    expect(container.querySelector('[aria-busy="true"]')).toBeTruthy();
   });
 
   it('calls setView when a view toggle tab is clicked', async () => {

@@ -21,6 +21,7 @@ import { TypeBadge } from '@/components/artifacts/type-badge';
 import { ConfirmDestructiveAction } from '@/components/blocks/confirm-destructive-action';
 import { FormStatus } from '@/components/blocks/form-status';
 import { HighlightedCode } from '@/components/blocks/highlighted-code';
+import { RelativeTime } from '@/components/blocks/relative-time';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu } from '@/components/ui/dropdown-menu';
@@ -31,7 +32,6 @@ import { Tabs } from '@/components/ui/tabs';
 import type { ArtifactType, JsonObject } from '@/database/repository';
 import type { ArtifactDetail } from '@/lib/artifacts';
 import { deleteArtifactFn, saveArtifactStateFn, setArtifactArchivedFn } from '@/lib/artifacts';
-import { formatRelativeTime } from '@/lib/format-time';
 import type { HighlightLanguage } from '@/lib/highlight';
 import { useCopyToClipboard } from '@/lib/use-copy-to-clipboard';
 import type { ActionStatus } from '@/lib/use-form-action';
@@ -190,10 +190,12 @@ export function ArtifactDetailView({ id, detail }: { id: string; detail: Artifac
     <div className="mx-auto flex max-w-5xl flex-col gap-8 px-6 py-12">
       <header className="flex flex-col gap-3">
         <div className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight">{artifact.title}</h1>
+          {/* min-w-0 + break-words: titles can be 200 chars of URL-ish tokens and must not push
+              the page into horizontal scroll on a 375px viewport. */}
+          <div className="min-w-0">
+            <h1 className="text-3xl font-semibold tracking-tight break-words">{artifact.title}</h1>
             {artifact.description ? (
-              <p className="text-foreground-muted mt-2">{artifact.description}</p>
+              <p className="text-foreground-muted mt-2 break-words">{artifact.description}</p>
             ) : null}
           </div>
           <div className="flex items-center gap-2">
@@ -202,7 +204,9 @@ export function ArtifactDetailView({ id, detail }: { id: string; detail: Artifac
           </div>
         </div>
         <div className="text-foreground-muted flex flex-wrap items-center gap-2 text-sm">
-          <span>Updated {formatRelativeTime(artifact.updatedAt)}</span>
+          <span>
+            Updated <RelativeTime value={artifact.updatedAt} />
+          </span>
           {artifact.tags.map((tag) => (
             <Badge key={tag}>{tag}</Badge>
           ))}
@@ -236,7 +240,7 @@ export function ArtifactDetailView({ id, detail }: { id: string; detail: Artifac
                             <Select.Item key={v.version} value={String(v.version)}>
                               v{v.version}
                               {v.version === latestVersion ? ' (latest)' : ''} ·{' '}
-                              {formatRelativeTime(v.createdAt)}
+                              <RelativeTime value={v.createdAt} />
                             </Select.Item>
                           ))}
                       </Select.Group>

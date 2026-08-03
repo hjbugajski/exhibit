@@ -20,6 +20,7 @@ export const Route = createFileRoute('/sign-in')({
     }
   },
   loader: () => passwordResetAvailableFn(),
+  head: () => ({ meta: [{ title: 'Sign in · Exhibit' }] }),
   component: SignInRoute,
 });
 

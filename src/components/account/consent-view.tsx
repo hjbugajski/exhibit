@@ -1,11 +1,11 @@
 import { AuthScreen } from '@/components/account/auth-screen';
 import { FormStatus } from '@/components/blocks/form-status';
+import { RelativeTime } from '@/components/blocks/relative-time';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Item } from '@/components/ui/item';
 import type { ConsentClient } from '@/lib/account';
 import { authClient } from '@/lib/auth-client';
-import { formatRelativeTime } from '@/lib/format-time';
 import { useFormAction } from '@/lib/use-form-action';
 
 const RECENT_REGISTRATION_MS = 10 * 60 * 1000;
@@ -79,9 +79,13 @@ export function ConsentView({ client, clientId, scope }: ConsentViewProps) {
         {isRecentlyRegistered(client?.createdAt) ? (
           <Alert.Root variant="warning">
             <Alert.Title>
-              {client?.createdAt == null
-                ? 'Registration unknown'
-                : `Registered ${formatRelativeTime(client.createdAt)}`}
+              {client?.createdAt == null ? (
+                'Registration unknown'
+              ) : (
+                <>
+                  Registered <RelativeTime value={client.createdAt} />
+                </>
+              )}
             </Alert.Title>
             <Alert.Description>
               This is the first time you are seeing this client. Allow it only if you just started

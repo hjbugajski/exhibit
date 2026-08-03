@@ -33,6 +33,14 @@ export const Route = createRootRoute({
         rel: 'stylesheet',
         href: appCss,
       },
+      // Upright Inter carries every above-the-fold string; the italic face stays lazy.
+      {
+        rel: 'preload',
+        href: '/fonts/InterVariable.woff2',
+        as: 'font',
+        type: 'font/woff2',
+        crossOrigin: 'anonymous',
+      },
       // SVG first so capable browsers prefer it; .ico is the fallback.
       {
         rel: 'icon',
@@ -76,6 +84,11 @@ function RootDocument({ children }: { children: ReactNode }) {
     <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
+        {/* Rendered literally, not via head(): the head manager dedupes meta by name and would
+            keep only one theme-color, dropping the other scheme's. Values are --background
+            (gray-1) per scheme — browser chrome can't read tokens. */}
+        <meta content="#ffffff" media="(prefers-color-scheme: light)" name="theme-color" />
+        <meta content="#131518" media="(prefers-color-scheme: dark)" name="theme-color" />
       </head>
       <body>
         {children}

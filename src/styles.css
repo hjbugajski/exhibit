@@ -662,6 +662,18 @@
   .maplibregl-popup-tip {
     @apply hidden!;
   }
+  /* Near-zero rather than `none`: animation/transition end events still fire, so Base UI's
+     exit-animation bookkeeping (which unmounts on animationend) keeps working. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }
 
 /*

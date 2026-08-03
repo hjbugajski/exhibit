@@ -20,6 +20,7 @@ export const Route = createFileRoute('/reset-password')({
       throw redirect({ to: '/' });
     }
   },
+  head: () => ({ meta: [{ title: 'Reset password · Exhibit' }] }),
   component: ResetPasswordRoute,
 });
 

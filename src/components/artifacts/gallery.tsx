@@ -1,11 +1,12 @@
-import { createContext, memo, use, useCallback, useMemo, type ReactNode } from 'react';
+import { createContext, memo, use, useMemo, type ReactNode } from 'react';
 
-import { Link, useNavigate } from '@tanstack/react-router';
+import { Link } from '@tanstack/react-router';
 import { ArrowUpDown, Inbox, LayoutGrid, List, ListFilter, SearchX } from 'lucide-react';
 
 import { ArtifactCard } from '@/components/artifacts/artifact-card';
 import { TagList } from '@/components/artifacts/tag-list';
 import { TypeBadge } from '@/components/artifacts/type-badge';
+import { RelativeTime } from '@/components/blocks/relative-time';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -19,7 +20,7 @@ import { Table as TablePrimitive } from '@/components/ui/table';
 import { Tabs } from '@/components/ui/tabs';
 import type { Artifact, ArtifactType } from '@/database/repository';
 import type { ArtifactSort } from '@/lib/artifact-sorts';
-import { formatRelativeTime } from '@/lib/format-time';
+import { cn } from '@/lib/utils';
 
 export type TypeFilter = ArtifactType | 'all';
 export type GalleryView = 'grid' | 'table';
@@ -51,6 +52,8 @@ export interface GalleryState {
   sort: ArtifactSort;
   tags: string[];
   view: GalleryView;
+  /** A filter/search navigation is in flight and the visible list is stale. */
+  updating: boolean;
 }
 
 interface GalleryActions {
@@ -251,11 +254,13 @@ function ViewToggle() {
 
   return (
     <Tabs.Root onValueChange={(value) => setView(value as GalleryView)} value={view}>
-      <Tabs.List>
-        <Tabs.Trigger aria-label="Grid view" className="w-8" value="grid">
+      {/* Icon-only triggers: 32px is fine for a mouse, so the 44px touch target is coarse-only.
+          The list's own height is a group-data variant, hence the important flag. */}
+      <Tabs.List className="pointer-coarse:h-11!">
+        <Tabs.Trigger aria-label="Grid view" className="w-8 pointer-coarse:w-11" value="grid">
           <LayoutGrid />
         </Tabs.Trigger>
-        <Tabs.Trigger aria-label="Table view" className="w-8" value="table">
+        <Tabs.Trigger aria-label="Table view" className="w-8 pointer-coarse:w-11" value="table">
           <List />
         </Tabs.Trigger>
       </Tabs.List>
@@ -314,6 +319,26 @@ function Empty() {
   );
 }
 
+export interface GalleryResultsProps {
+  children: ReactNode;
+}
+
+/**
+ * Wraps the results so the busy state lives outside memo(Grid)/memo(Table) — dimming a stale list
+ * must not re-render the cards behind it.
+ */
+function Results({ children }: GalleryResultsProps) {
+  const {
+    state: { updating },
+  } = useGalleryContext();
+
+  return (
+    <div aria-busy={updating} className={cn('transition-opacity', updating && 'opacity-60')}>
+      {children}
+    </div>
+  );
+}
+
 export interface GalleryGridProps {
   items: Artifact[];
 }
@@ -335,16 +360,19 @@ export interface GalleryTableProps {
 
 /** Row-level component so each row's `Link` params keep a stable identity, as in ArtifactCard. */
 const TableRow = memo(function TableRow({ artifact }: { artifact: Artifact }) {
-  const navigate = useNavigate();
   const params = useMemo(() => ({ id: artifact.id }), [artifact.id]);
-  const open = useCallback(() => {
-    void navigate({ to: '/a/$id', params });
-  }, [navigate, params]);
 
   return (
-    <TablePrimitive.Row className="cursor-pointer" onClick={open}>
+    // The title link stretches over the whole row (::after), so the row itself carries no click
+    // handler: one accessible target, and the focus ring rides the pseudo-element because a
+    // border-collapse <tr> doesn't paint box-shadow.
+    <TablePrimitive.Row className="relative">
       <TablePrimitive.Cell className="font-medium">
-        <Link onClick={(event) => event.stopPropagation()} params={params} to="/a/$id">
+        <Link
+          className="focus-visible:after:ring-focus outline-none after:absolute after:inset-0 focus-visible:after:ring-3 focus-visible:after:ring-inset"
+          params={params}
+          to="/a/$id"
+        >
           {artifact.title}
         </Link>
       </TablePrimitive.Cell>
@@ -354,8 +382,9 @@ const TableRow = memo(function TableRow({ artifact }: { artifact: Artifact }) {
       <TablePrimitive.Cell>
         <TagList tags={artifact.tags} />
       </TablePrimitive.Cell>
-      <TablePrimitive.Cell className="text-foreground-muted text-xs">
-        {formatRelativeTime(artifact.updatedAt)}
+      {/* Positioned after the stretched overlay in paint order, so its title tooltip survives. */}
+      <TablePrimitive.Cell className="text-foreground-muted relative text-xs">
+        <RelativeTime value={artifact.updatedAt} />
       </TablePrimitive.Cell>
     </TablePrimitive.Row>
   );
@@ -412,6 +441,7 @@ export const Gallery = {
   Sort,
   ViewToggle,
   Empty,
+  Results,
   Grid,
   Table,
   LoadMore,

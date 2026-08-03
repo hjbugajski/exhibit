@@ -78,7 +78,10 @@ describe('ConsentView', () => {
       <ConsentView client={client({ createdAt: Date.now() - 30_000 })} clientId="client-1" />,
     );
 
-    expect(await screen.findByText('Registered just now')).toBeTruthy();
+    // The timestamp is a nested <time>, so the title's text spans several nodes.
+    const title = await screen.findByText(/^Registered/);
+
+    expect(title.textContent).toBe('Registered just now');
   });
 
   /** Lookup failure and "no such registration" are the same story to the owner: nothing vouches. */

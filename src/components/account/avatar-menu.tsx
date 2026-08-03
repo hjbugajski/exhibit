@@ -46,7 +46,7 @@ export function AvatarMenu({ email, seed }: { email: string; seed: string }) {
     <DropdownMenu.Root>
       <DropdownMenu.Trigger
         aria-label="Account"
-        className="focus-visible:ring-focus hover:bg-surface-active inline-flex size-8 items-center rounded-full border p-2 outline-none focus-visible:ring-3"
+        className="focus-visible:ring-focus hover:bg-surface-active inline-flex size-8 items-center rounded-full border p-2 outline-none focus-visible:ring-3 pointer-coarse:size-11 pointer-coarse:p-3"
       >
         <Identicon seed={seed} />
       </DropdownMenu.Trigger>

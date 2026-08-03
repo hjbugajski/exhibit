@@ -1,5 +1,7 @@
 import { createRouter as createTanStackRouter } from '@tanstack/react-router';
 
+import { RouteError, RouteNotFound, RoutePending } from '@/components/blocks/route-fallbacks';
+
 import { routeTree } from './routeTree.gen';
 
 /**
@@ -12,6 +14,13 @@ export function getRouter() {
     routeTree,
     scrollRestoration: true,
     defaultPreload: 'intent',
+    defaultPendingComponent: RoutePending,
+    defaultNotFoundComponent: RouteNotFound,
+    defaultErrorComponent: RouteError,
+    // Touch has no hover, so a tap gets no preload — show the spinner well before the router's
+    // 1000ms default, and hold it long enough that it reads as a state rather than a flash.
+    defaultPendingMs: 300,
+    defaultPendingMinMs: 200,
   });
 
   return router;

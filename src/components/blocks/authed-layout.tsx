@@ -31,7 +31,11 @@ export function AuthedLayout({ children, email, seed }: AuthedLayoutProps) {
           <AvatarMenu email={email} seed={seed} />
         </div>
       </header>
-      <main id="main-content">{children}</main>
+      {/* tabIndex/-1 + scroll-mt: the skip link must move focus here, clear of the sticky h-16
+          header. */}
+      <main className="scroll-mt-16 outline-none" id="main-content" tabIndex={-1}>
+        {children}
+      </main>
     </div>
   );
 }

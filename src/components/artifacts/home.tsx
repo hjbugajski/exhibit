@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { getRouteApi } from '@tanstack/react-router';
+import { getRouteApi, useRouterState } from '@tanstack/react-router';
 
 import type { GalleryState, GalleryView, TypeFilter } from '@/components/artifacts/gallery';
 import { Gallery } from '@/components/artifacts/gallery';
@@ -24,6 +24,10 @@ export function Home() {
   const loaderData = Route.useLoaderData();
   const { tags } = AuthedRoute.useLoaderData();
   const navigate = Route.useNavigate();
+  // Router-wide: a filter/search edit replaces the URL and reruns this route's loader, which keeps
+  // the old data on screen until it resolves. `isLoading` covers that window (the route match's own
+  // status stays 'success' through a stale reload).
+  const updating = useRouterState({ select: (state) => state.isLoading });
 
   const [queryInput, setQueryInput] = useState(search.query ?? '');
   const [prevSearchQuery, setPrevSearchQuery] = useState(search.query);
@@ -142,9 +146,10 @@ export function Home() {
       sort: search.sort ?? 'updated-desc',
       tags: search.tags ?? [],
       type: search.type ?? 'all',
+      updating,
       view,
     }),
-    [search.archived, search.sort, search.tags, search.type, queryInput, view],
+    [search.archived, search.sort, search.tags, search.type, queryInput, updating, view],
   );
 
   function handleLoadMore() {
@@ -175,13 +180,15 @@ export function Home() {
             <Gallery.ViewToggle />
           </div>
         </Gallery.Toolbar>
-        {items.length === 0 ? (
-          <Gallery.Empty />
-        ) : view === 'grid' ? (
-          <Gallery.Grid items={items} />
-        ) : (
-          <Gallery.Table items={items} />
-        )}
+        <Gallery.Results>
+          {items.length === 0 ? (
+            <Gallery.Empty />
+          ) : view === 'grid' ? (
+            <Gallery.Grid items={items} />
+          ) : (
+            <Gallery.Table items={items} />
+          )}
+        </Gallery.Results>
         {items.length > 0 ? (
           <Gallery.LoadMore
             hasMore={hasMore}

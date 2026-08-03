@@ -19,8 +19,17 @@ const { EditArtifactDialog } = await import('@/components/artifacts/edit-artifac
 function Harness({ artifact }: { artifact: Artifact }) {
   const [open, setOpen] = useState(true);
 
-  return <EditArtifactDialog artifact={artifact} onOpenChange={setOpen} open={open} />;
+  return (
+    <>
+      <button onClick={() => setOpen(true)} type="button">
+        Reopen
+      </button>
+      <EditArtifactDialog artifact={artifact} onOpenChange={setOpen} open={open} />
+    </>
+  );
 }
+
+const pressEscape = () => fireEvent.keyDown(document, { key: 'Escape' });
 
 afterEach(() => {
   cleanup();
@@ -103,5 +112,55 @@ describe('EditArtifactDialog', () => {
 
     expect(await screen.findByText('Artifact not found. It may have been deleted.')).toBeTruthy();
     expect(screen.getByLabelText('Title')).toBeTruthy();
+  });
+
+  describe('draft protection', () => {
+    it('closes on Escape without confirming when nothing was edited', async () => {
+      renderWithRouter(<Harness artifact={makeArtifact()} />);
+      await screen.findByLabelText('Title');
+
+      pressEscape();
+
+      await waitFor(() => expect(screen.queryByLabelText('Title')).toBeNull());
+      expect(screen.queryByText('Discard changes?')).toBeNull();
+    });
+
+    it('confirms instead of closing when Escape would drop an edited draft', async () => {
+      renderWithRouter(<Harness artifact={makeArtifact()} />);
+      fireEvent.change(await screen.findByLabelText('Title'), { target: { value: 'Changed' } });
+
+      pressEscape();
+
+      expect(await screen.findByText('Discard changes?')).toBeTruthy();
+      expect((screen.getByLabelText('Title') as HTMLInputElement).value).toBe('Changed');
+    });
+
+    it('keeps the draft intact when the confirm is dismissed', async () => {
+      renderWithRouter(<Harness artifact={makeArtifact()} />);
+      fireEvent.change(await screen.findByLabelText('Title'), { target: { value: 'Changed' } });
+      pressEscape();
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Keep editing' }));
+
+      await waitFor(() => expect(screen.queryByText('Discard changes?')).toBeNull());
+      expect((screen.getByLabelText('Title') as HTMLInputElement).value).toBe('Changed');
+    });
+
+    it('discards the draft and closes, reseeding the form on the next open', async () => {
+      renderWithRouter(<Harness artifact={makeArtifact()} />);
+      fireEvent.change(await screen.findByLabelText('Title'), { target: { value: 'Changed' } });
+      pressEscape();
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Discard' }));
+
+      await waitFor(() => expect(screen.queryByLabelText('Title')).toBeNull());
+      expect(updateArtifactMetadataFn).not.toHaveBeenCalled();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Reopen' }));
+
+      const reopened = (await screen.findByLabelText('Title')) as HTMLInputElement;
+
+      expect(reopened.value).toBe('Kyoto Trip');
+    });
   });
 });
