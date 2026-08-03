@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { getRouteApi } from '@tanstack/react-router';
 
-import type { GalleryView, TypeFilter } from '@/components/artifacts/gallery';
+import type { GalleryState, GalleryView, TypeFilter } from '@/components/artifacts/gallery';
 import { Gallery } from '@/components/artifacts/gallery';
 import type { ArtifactSort } from '@/lib/artifact-sorts';
 import { listArtifactsFn } from '@/lib/artifacts';
@@ -81,33 +81,71 @@ export function Home() {
     void navigate({ search: (prev) => ({ ...prev, query: next }), replace: true });
   }, [debouncedQuery, navigate]);
 
-  function handleTypeChange(type: TypeFilter) {
-    void navigate({
-      search: (prev) => ({ ...prev, type: type === 'all' ? undefined : type }),
-      replace: true,
-    });
-  }
+  const handleTypeChange = useCallback(
+    (type: TypeFilter) => {
+      void navigate({
+        search: (prev) => ({ ...prev, type: type === 'all' ? undefined : type }),
+        replace: true,
+      });
+    },
+    [navigate],
+  );
 
-  function handleSortChange(sort: ArtifactSort) {
-    void navigate({
-      search: (prev) => ({ ...prev, sort: sort === 'updated-desc' ? undefined : sort }),
-      replace: true,
-    });
-  }
+  const handleSortChange = useCallback(
+    (sort: ArtifactSort) => {
+      void navigate({
+        search: (prev) => ({ ...prev, sort: sort === 'updated-desc' ? undefined : sort }),
+        replace: true,
+      });
+    },
+    [navigate],
+  );
 
-  function handleTagsChange(tags: string[]) {
-    void navigate({
-      search: (prev) => ({ ...prev, tags: tags.length > 0 ? tags : undefined }),
-      replace: true,
-    });
-  }
+  const handleTagsChange = useCallback(
+    (tags: string[]) => {
+      void navigate({
+        search: (prev) => ({ ...prev, tags: tags.length > 0 ? tags : undefined }),
+        replace: true,
+      });
+    },
+    [navigate],
+  );
 
-  function handleArchivedChange(archived: boolean) {
-    void navigate({
-      search: (prev) => ({ ...prev, archived: archived ? true : undefined }),
-      replace: true,
-    });
-  }
+  const handleArchivedChange = useCallback(
+    (archived: boolean) => {
+      void navigate({
+        search: (prev) => ({ ...prev, archived: archived ? true : undefined }),
+        replace: true,
+      });
+    },
+    [navigate],
+  );
+
+  // Both halves of the Gallery context are memoized: `actions` never changes, and `state` changes
+  // only on a real filter/search edit — so the card list bails out of unrelated renders.
+  const actions = useMemo(
+    () => ({
+      setArchived: handleArchivedChange,
+      setQuery: setQueryInput,
+      setSort: handleSortChange,
+      setTags: handleTagsChange,
+      setType: handleTypeChange,
+      setView,
+    }),
+    [handleArchivedChange, handleSortChange, handleTagsChange, handleTypeChange, setView],
+  );
+
+  const state = useMemo<GalleryState>(
+    () => ({
+      archived: search.archived ?? false,
+      query: queryInput,
+      sort: search.sort ?? 'updated-desc',
+      tags: search.tags ?? [],
+      type: search.type ?? 'all',
+      view,
+    }),
+    [search.archived, search.sort, search.tags, search.type, queryInput, view],
+  );
 
   function handleLoadMore() {
     loadMore((cursor) =>
@@ -127,24 +165,7 @@ export function Home() {
   return (
     <div className="mx-auto max-w-5xl px-6 py-12">
       <h1 className="mb-8 text-3xl font-semibold tracking-tight">Artifacts</h1>
-      <Gallery.Root
-        actions={{
-          setArchived: handleArchivedChange,
-          setQuery: setQueryInput,
-          setSort: handleSortChange,
-          setTags: handleTagsChange,
-          setType: handleTypeChange,
-          setView,
-        }}
-        state={{
-          archived: search.archived ?? false,
-          query: queryInput,
-          sort: search.sort ?? 'updated-desc',
-          tags: search.tags ?? [],
-          type: search.type ?? 'all',
-          view,
-        }}
-      >
+      <Gallery.Root actions={actions} state={state}>
         <Gallery.Toolbar>
           <Gallery.Search />
           {/* Second toolbar row on mobile, right-aligned; trails the search inline from md up. */}

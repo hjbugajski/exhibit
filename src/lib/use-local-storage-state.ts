@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
  * State backed by `localStorage`, SSR-safe: the hook always returns `initialValue` on the first
@@ -22,10 +22,14 @@ export function useLocalStorageState<T extends string>(
     }
   }, [key]);
 
-  function setValue(next: T) {
-    setStateValue(next);
-    window.localStorage.setItem(key, next);
-  }
+  // Stable identity: consumers memoize action objects around it.
+  const setValue = useCallback(
+    (next: T) => {
+      setStateValue(next);
+      window.localStorage.setItem(key, next);
+    },
+    [key],
+  );
 
   return [value, setValue];
 }

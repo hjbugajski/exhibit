@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 
 import { useFormAction } from '@/lib/use-form-action';
 
@@ -48,7 +48,8 @@ export function usePaginatedList<Item>(firstPage: CursorPage<Item>) {
     });
   }
 
-  const items = pages.flatMap((page) => page.items);
+  // Stable identity so memoized list consumers bail out when only unrelated state changed.
+  const items = useMemo(() => pages.flatMap((page) => page.items), [pages]);
   const hasMore = (pages.at(-1)?.nextCursor ?? null) !== null;
 
   return { items, hasMore, loadingMore: loadMoreAction.pending, loadMore };

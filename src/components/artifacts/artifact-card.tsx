@@ -1,3 +1,5 @@
+import { memo, useMemo } from 'react';
+
 import { Link } from '@tanstack/react-router';
 
 import { TagList } from '@/components/artifacts/tag-list';
@@ -6,9 +8,15 @@ import { Card } from '@/components/ui/card';
 import type { Artifact } from '@/database/repository';
 import { formatRelativeTime } from '@/lib/format-time';
 
-export function ArtifactCard({ artifact }: { artifact: Artifact }) {
+/**
+ * Memoized: gallery list renders are dominated by `Link`'s per-card route build, so the card must
+ * bail out on unrelated parent renders (a search keystroke) and hold an identity-stable `params`.
+ */
+export const ArtifactCard = memo(function ArtifactCard({ artifact }: { artifact: Artifact }) {
+  const params = useMemo(() => ({ id: artifact.id }), [artifact.id]);
+
   return (
-    <Link className="block h-full" params={{ id: artifact.id }} to="/a/$id">
+    <Link className="block h-full" params={params} to="/a/$id">
       <Card.Root className="hover:bg-surface-subtle h-full transition-colors">
         <Card.Content className="flex h-full flex-col gap-3">
           <div className="flex items-start justify-between gap-2">
@@ -26,4 +34,4 @@ export function ArtifactCard({ artifact }: { artifact: Artifact }) {
       </Card.Root>
     </Link>
   );
-}
+});

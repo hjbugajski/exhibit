@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 
 import type { Spec } from '@json-render/core';
 import { createStateStore } from '@json-render/react';
@@ -16,18 +16,17 @@ import {
   X,
 } from 'lucide-react';
 
-import { SpecView } from '@/catalog/registry';
 import { EditArtifactDialog } from '@/components/artifacts/edit-artifact-dialog';
 import { TypeBadge } from '@/components/artifacts/type-badge';
 import { ConfirmDestructiveAction } from '@/components/blocks/confirm-destructive-action';
 import { FormStatus } from '@/components/blocks/form-status';
 import { HighlightedCode } from '@/components/blocks/highlighted-code';
-import { MarkdownView } from '@/components/markdown/markdown-view';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu } from '@/components/ui/dropdown-menu';
 import { Select } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs } from '@/components/ui/tabs';
 import type { ArtifactType, JsonObject } from '@/database/repository';
 import type { ArtifactDetail } from '@/lib/artifacts';
@@ -39,6 +38,20 @@ import type { ActionStatus } from '@/lib/use-form-action';
 import { useFormAction } from '@/lib/use-form-action';
 
 type View = 'rendered' | 'source';
+
+/**
+ * Both rendered views pull the whole catalog — 28 components plus the zod catalog and
+ * @json-render's renderer — so each is its own lazy chunk: an html artifact (which renders as its
+ * own sandboxed page) downloads neither, and a markdown artifact doesn't pay for the spec renderer.
+ */
+const SpecView = lazy(() =>
+  import('@/catalog/registry').then((module) => ({ default: module.SpecView })),
+);
+const MarkdownView = lazy(() =>
+  import('@/components/markdown/markdown-view').then((module) => ({
+    default: module.MarkdownView,
+  })),
+);
 
 /** Highlighter grammar for each type's stored body, shown in the Source tab. */
 const sourceLanguage: Record<ArtifactType, HighlightLanguage> = {
@@ -155,6 +168,8 @@ export function ArtifactDetailView({ id, detail }: { id: string; detail: Artifac
   function handleDelete() {
     void deleteAction.run(async () => {
       await deleteArtifactFn({ data: { id } });
+      // Deleting can retire a tag; without this the cached tag list outlives it (_authed staleTime).
+      await router.invalidate();
       await navigate({ to: '/' });
     });
   }
@@ -163,12 +178,13 @@ export function ArtifactDetailView({ id, detail }: { id: string; detail: Artifac
   // tabs are hidden for them and this stays false whatever `view` says.
   const showRendered = view === 'rendered' && artifact.type !== 'html';
 
-  const sourceText =
-    artifact.type === 'spec'
-      ? parsedSpec === undefined
-        ? version.body
-        : JSON.stringify(parsedSpec, null, 2)
-      : version.body;
+  const sourceText = useMemo(
+    () =>
+      artifact.type === 'spec' && parsedSpec !== undefined
+        ? JSON.stringify(parsedSpec, null, 2)
+        : version.body,
+    [artifact.type, parsedSpec, version.body],
+  );
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-8 px-6 py-12">
@@ -319,15 +335,18 @@ export function ArtifactDetailView({ id, detail }: { id: string; detail: Artifac
 
       {showRendered ? (
         <div>
-          {artifact.type === 'markdown' ? (
-            <MarkdownView markdown={version.body} store={stateStore ?? undefined} />
-          ) : parsedSpec === undefined ? (
-            <p className="text-danger">
-              Could not parse the stored spec JSON. Check the Source tab or republish the artifact.
-            </p>
-          ) : (
-            <SpecView spec={parsedSpec} store={stateStore ?? undefined} />
-          )}
+          <Suspense fallback={<Skeleton className="h-64 w-full" />}>
+            {artifact.type === 'markdown' ? (
+              <MarkdownView markdown={version.body} store={stateStore ?? undefined} />
+            ) : parsedSpec === undefined ? (
+              <p className="text-danger">
+                Could not parse the stored spec JSON. Check the Source tab or republish the
+                artifact.
+              </p>
+            ) : (
+              <SpecView spec={parsedSpec} store={stateStore ?? undefined} />
+            )}
+          </Suspense>
         </div>
       ) : (
         <div className="relative">

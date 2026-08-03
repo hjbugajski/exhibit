@@ -1,4 +1,4 @@
-import { createContext, use, type ReactNode } from 'react';
+import { createContext, memo, use, useCallback, useMemo, type ReactNode } from 'react';
 
 import { Link, useNavigate } from '@tanstack/react-router';
 import { ArrowUpDown, Inbox, LayoutGrid, List, ListFilter, SearchX } from 'lucide-react';
@@ -44,7 +44,7 @@ const sortLabels: Record<ArtifactSort, string> = {
 
 const sortOptions = Object.keys(sortLabels) as ArtifactSort[];
 
-interface GalleryState {
+export interface GalleryState {
   query: string;
   type: TypeFilter;
   archived: boolean;
@@ -84,8 +84,12 @@ export interface GalleryRootProps {
 }
 
 function Root({ state, actions, children }: GalleryRootProps) {
+  // Memoized so a keystroke in Search (which only changes `state`) can't force every consumer —
+  // and every card behind them — to re-render on a fresh context object.
+  const value = useMemo(() => ({ state, actions }), [state, actions]);
+
   return (
-    <GalleryContext value={{ state, actions }}>
+    <GalleryContext value={value}>
       <div className="flex flex-col gap-8">{children}</div>
     </GalleryContext>
   );
@@ -314,7 +318,8 @@ export interface GalleryGridProps {
   items: Artifact[];
 }
 
-function Grid({ items }: GalleryGridProps) {
+/** Memoized: `items` is a stable array (see usePaginatedList), so keystrokes never reach the cards. */
+const Grid = memo(function Grid({ items }: GalleryGridProps) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {items.map((artifact) => (
@@ -322,15 +327,41 @@ function Grid({ items }: GalleryGridProps) {
       ))}
     </div>
   );
-}
+});
 
 export interface GalleryTableProps {
   items: Artifact[];
 }
 
-function Table({ items }: GalleryTableProps) {
+/** Row-level component so each row's `Link` params keep a stable identity, as in ArtifactCard. */
+const TableRow = memo(function TableRow({ artifact }: { artifact: Artifact }) {
   const navigate = useNavigate();
+  const params = useMemo(() => ({ id: artifact.id }), [artifact.id]);
+  const open = useCallback(() => {
+    void navigate({ to: '/a/$id', params });
+  }, [navigate, params]);
 
+  return (
+    <TablePrimitive.Row className="cursor-pointer" onClick={open}>
+      <TablePrimitive.Cell className="font-medium">
+        <Link onClick={(event) => event.stopPropagation()} params={params} to="/a/$id">
+          {artifact.title}
+        </Link>
+      </TablePrimitive.Cell>
+      <TablePrimitive.Cell>
+        <TypeBadge type={artifact.type} />
+      </TablePrimitive.Cell>
+      <TablePrimitive.Cell>
+        <TagList tags={artifact.tags} />
+      </TablePrimitive.Cell>
+      <TablePrimitive.Cell className="text-foreground-muted text-xs">
+        {formatRelativeTime(artifact.updatedAt)}
+      </TablePrimitive.Cell>
+    </TablePrimitive.Row>
+  );
+});
+
+const Table = memo(function Table({ items }: GalleryTableProps) {
   return (
     <TablePrimitive.Root>
       <TablePrimitive.Header>
@@ -343,37 +374,12 @@ function Table({ items }: GalleryTableProps) {
       </TablePrimitive.Header>
       <TablePrimitive.Body>
         {items.map((artifact) => (
-          <TablePrimitive.Row
-            className="cursor-pointer"
-            key={artifact.id}
-            onClick={() => {
-              void navigate({ to: '/a/$id', params: { id: artifact.id } });
-            }}
-          >
-            <TablePrimitive.Cell className="font-medium">
-              <Link
-                onClick={(event) => event.stopPropagation()}
-                params={{ id: artifact.id }}
-                to="/a/$id"
-              >
-                {artifact.title}
-              </Link>
-            </TablePrimitive.Cell>
-            <TablePrimitive.Cell>
-              <TypeBadge type={artifact.type} />
-            </TablePrimitive.Cell>
-            <TablePrimitive.Cell>
-              <TagList tags={artifact.tags} />
-            </TablePrimitive.Cell>
-            <TablePrimitive.Cell className="text-foreground-muted text-xs">
-              {formatRelativeTime(artifact.updatedAt)}
-            </TablePrimitive.Cell>
-          </TablePrimitive.Row>
+          <TableRow artifact={artifact} key={artifact.id} />
         ))}
       </TablePrimitive.Body>
     </TablePrimitive.Root>
   );
-}
+});
 
 export interface GalleryLoadMoreProps {
   hasMore: boolean;

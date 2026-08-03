@@ -9,9 +9,25 @@ import {
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import type { Artifact } from '@/database/repository';
+import { makeArtifact } from '@testing/factories';
+
 /** Home imports the gallery's load-more server fn; nothing here exercises it. */
 vi.mock('@/lib/artifacts', () => ({
   listArtifactsFn: vi.fn(() => Promise.resolve({ items: [], nextCursor: null })),
+}));
+
+/**
+ * Render probe for the card list: TagList sits inside ArtifactCard, so its call count is the real
+ * card's render count — memo and all.
+ */
+const tagListRenders = vi.fn();
+
+vi.mock('@/components/artifacts/tag-list', () => ({
+  TagList: () => {
+    tagListRenders();
+    return null;
+  },
 }));
 
 const { Home } = await import('@/components/artifacts/home');
@@ -20,6 +36,7 @@ afterEach(() => {
   cleanup();
   vi.useRealTimers();
   vi.restoreAllMocks();
+  tagListRenders.mockClear();
   localStorage.clear();
 });
 
@@ -28,7 +45,7 @@ afterEach(() => {
  * ids are what matters, not the app's route tree. The index loader can be blocked to hold a
  * navigation open, which is how the URL round-trip that used to clobber typing is reproduced.
  */
-function renderHome(initialEntry = '/') {
+function renderHome(initialEntry = '/', items: Artifact[] = []) {
   let unblock: (() => void) | undefined;
   let gate: Promise<void> | null = null;
   let loaderRuns = 0;
@@ -53,12 +70,18 @@ function renderHome(initialEntry = '/') {
         await gate;
       }
 
-      return { page: { items: [], nextCursor: null } };
+      return { page: { items, nextCursor: null } };
     },
     component: Home,
   });
+  // Cards link here; the route only needs to exist for the hrefs to resolve.
+  const detailRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/a/$id',
+    component: () => null,
+  });
   const router = createRouter({
-    routeTree: rootRoute.addChildren([authedRoute.addChildren([indexRoute])]),
+    routeTree: rootRoute.addChildren([authedRoute.addChildren([indexRoute]), detailRoute]),
     history: createMemoryHistory({ initialEntries: [initialEntry] }),
   });
 
@@ -85,8 +108,8 @@ function renderHome(initialEntry = '/') {
  * Waits for the router to mount before switching to fake timers: Testing Library's `findBy*` polls
  * on real timers, so installing them earlier hangs the first query.
  */
-async function mountHome(initialEntry?: string) {
-  const harness = renderHome(initialEntry);
+async function mountHome(initialEntry?: string, items?: Artifact[]) {
+  const harness = renderHome(initialEntry, items);
   const input = await screen.findByLabelText<HTMLInputElement>('Search by title');
 
   vi.useFakeTimers();
@@ -171,5 +194,24 @@ describe('Home search sync', () => {
     });
 
     expect(harness.loaderRuns).toBe(1);
+  });
+
+  it('does not re-render the card list while typing', async () => {
+    const { input } = await mountHome('/', [
+      makeArtifact({ id: 'a1', title: 'One' }),
+      makeArtifact({ id: 'a2', title: 'Two' }),
+    ]);
+
+    const before = tagListRenders.mock.calls.length;
+    expect(before).toBeGreaterThan(0);
+
+    fireEvent.change(input, { target: { value: 'k' } });
+    fireEvent.change(input, { target: { value: 'ky' } });
+    fireEvent.change(input, { target: { value: 'kyo' } });
+
+    expect(input.value).toBe('kyo');
+    // Keystrokes stay inside the search input: stable items + memoized context/actions/Grid keep
+    // every card (and its Link's route build) out of the render pass until the debounce lands.
+    expect(tagListRenders.mock.calls.length).toBe(before);
   });
 });
