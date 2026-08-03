@@ -1,8 +1,4 @@
-import type { Spec } from '@json-render/core';
-
-import { SpecView } from '@/catalog/registry';
-import type { LibraryDemo } from '@/components/library/demo';
-import { Playground } from '@/components/library/playground';
+import { catalogDemo } from '@/components/library/catalog-demo';
 
 const kinds = ['bar', 'line'] as const;
 
@@ -16,36 +12,16 @@ const data = [
   { label: 'Jul', value: 21_600 },
 ];
 
-function CatalogChartDemo() {
-  return (
-    <Playground
-      controls={{
-        kind: { kind: 'select', label: 'Kind', options: kinds, defaultValue: 'line' },
-        valueLabel: { kind: 'text', label: 'Value label', defaultValue: 'Revenue ($)' },
-      }}
-      layout="block"
-      render={(values) => {
-        const spec: Spec = {
-          root: 'chart',
-          elements: {
-            chart: {
-              type: 'Chart',
-              props: { kind: values.kind, data, valueLabel: values.valueLabel },
-              children: [],
-            },
-          },
-        };
-
-        return <SpecView spec={spec} />;
-      }}
-    />
-  );
-}
-
-export const catalogChartDemo: LibraryDemo = {
+export const catalogChartDemo = catalogDemo({
   slug: 'catalog-chart',
   title: 'Chart',
   description: 'Simple single-series bar or line chart for a numeric series over time.',
-  group: 'Catalog',
-  render: () => <CatalogChartDemo />,
-};
+  controls: {
+    kind: { kind: 'select', label: 'Kind', options: kinds, defaultValue: 'line' },
+    valueLabel: { kind: 'text', label: 'Value label', defaultValue: 'Revenue ($)' },
+  },
+  element: (values) => ({
+    type: 'Chart',
+    props: { kind: values.kind, data, valueLabel: values.valueLabel },
+  }),
+});

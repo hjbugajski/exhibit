@@ -14,8 +14,14 @@ import {
   softDeleteArtifact,
   updateMetadata,
 } from '@/database/repository';
+import {
+  descriptionField,
+  normalizeTags,
+  requireArtifact,
+  tagsField,
+  titleField,
+} from '@/lib/artifact-metadata';
 import { artifactSorts, artifactTypes } from '@/lib/artifact-sorts';
-import { normalizeTags } from '@/lib/mcp/tags';
 import { sessionMiddleware } from '@/lib/session-middleware';
 
 /**
@@ -87,9 +93,9 @@ export const getArtifactDetailFn = createServerFn({ method: 'GET' })
 
 const updateArtifactMetadataInput = z.object({
   id: z.string(),
-  title: z.string().min(1).max(200),
-  description: z.string().max(2000).nullable(),
-  tags: z.array(z.string().max(50)).max(20),
+  title: titleField,
+  description: descriptionField.nullable(),
+  tags: tagsField,
 });
 
 /** Throws for unknown ids; a null description clears it. */
@@ -97,21 +103,17 @@ export const updateArtifactMetadataFn = createServerFn({ method: 'POST' })
   .middleware([sessionMiddleware])
   .validator(updateArtifactMetadataInput)
   .handler(async ({ data }) => {
-    if (!getArtifact(db, data.id)) {
-      throw new Error('Artifact not found. It may have been deleted.');
-    }
+    // updateMetadata doesn't filter soft-deleted rows, so the live-artifact check has to happen
+    // through getArtifact first.
+    requireArtifact(getArtifact(db, data.id));
 
-    const artifact = updateMetadata(db, data.id, {
-      title: data.title,
-      description: data.description,
-      tags: normalizeTags(data.tags),
-    });
-
-    if (!artifact) {
-      throw new Error('Artifact not found. It may have been deleted.');
-    }
-
-    return artifact;
+    return requireArtifact(
+      updateMetadata(db, data.id, {
+        title: data.title,
+        description: data.description,
+        tags: normalizeTags(data.tags),
+      }),
+    );
   });
 
 const jsonValue: z.ZodType<JsonValue> = z.lazy(() =>
@@ -138,9 +140,7 @@ export const saveArtifactStateFn = createServerFn({ method: 'POST' })
       throw new Error('Interaction state exceeds the 64 KB limit.');
     }
 
-    if (!getArtifact(db, data.id)) {
-      throw new Error('Artifact not found. It may have been deleted.');
-    }
+    requireArtifact(getArtifact(db, data.id));
 
     setArtifactState(db, data.id, data.state);
 
@@ -154,21 +154,20 @@ export const setArtifactArchivedFn = createServerFn({ method: 'POST' })
   .middleware([sessionMiddleware])
   .validator(setArtifactArchivedInput)
   .handler(async ({ data }) => {
-    if (!getArtifact(db, data.id)) {
-      throw new Error('Artifact not found. It may have been deleted.');
-    }
+    // setArtifactArchived doesn't filter soft-deleted rows, so the live-artifact check has to
+    // happen through getArtifact first.
+    requireArtifact(getArtifact(db, data.id));
 
-    const artifact = setArtifactArchived(db, data.id, data.archived);
-
-    if (!artifact) {
-      throw new Error('Artifact not found. It may have been deleted.');
-    }
-
-    return artifact;
+    return requireArtifact(setArtifactArchived(db, data.id, data.archived));
   });
 
 const deleteArtifactInput = z.object({ id: z.string() });
 
+/**
+ * Deliberately unguarded: soft delete is idempotent, so deleting an unknown or already-deleted id
+ * succeeds as a no-op rather than throwing (same contract as the MCP `delete_artifact` tool — see
+ * its `idempotentHint` note in src/lib/mcp/server.ts).
+ */
 export const deleteArtifactFn = createServerFn({ method: 'POST' })
   .middleware([sessionMiddleware])
   .validator(deleteArtifactInput)

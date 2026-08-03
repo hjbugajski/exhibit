@@ -17,10 +17,10 @@ import {
   softDeleteArtifact,
   updateMetadata,
 } from '@/database/repository';
+import { descriptionField, normalizeTags, tagsField, titleField } from '@/lib/artifact-metadata';
 import { artifactSorts, artifactTypes } from '@/lib/artifact-sorts';
 import { buildCatalogSummary } from '@/lib/mcp/catalog-summary';
 import { checkBodySize } from '@/lib/mcp/limits';
-import { normalizeTags } from '@/lib/mcp/tags';
 import type { McpToolName } from '@/lib/mcp/tool-names';
 import { artifactUrl } from '@/lib/mcp/url';
 
@@ -133,9 +133,9 @@ export function buildMcpServer(db: Db): McpServer {
       description:
         'Creates a new artifact from a json-render spec — the preferred format for documents, guides, itineraries, comparisons, checklists, and dashboards, since specs render with the gallery’s native theming. Call get_catalog once first to learn the component vocabulary and wire format. The spec is validated against the catalog; on failure you get per-element errors to fix and resubmit. Returns the artifact id and url — the url opens for the gallery owner only, since it requires their session, so it is not a link to share. To revise the artifact later, call update_artifact with that id instead of publishing again. Use publish_html only when the content needs custom code the catalog cannot express.',
       inputSchema: {
-        title: z.string().min(1).max(200).describe('Artifact title.'),
-        description: z.string().max(2000).optional().describe('Optional short description.'),
-        tags: z.array(z.string().max(50)).max(20).optional().describe('Optional tags.'),
+        title: titleField.describe('Artifact title.'),
+        description: descriptionField.optional().describe('Optional short description.'),
+        tags: tagsField.optional().describe('Optional tags.'),
         spec: z
           .record(z.string(), z.unknown())
           .describe(
@@ -183,9 +183,9 @@ export function buildMcpServer(db: Db): McpServer {
       description:
         'Creates a new artifact from a complete standalone HTML document. Prefer publish_spec — spec artifacts match the gallery’s theming and stay editable at the component level; use HTML only for content the catalog cannot express (custom visualizations, bespoke interactivity). The document renders sandboxed on its own page under a strict CSP: fetch, XHR, and WebSocket connections are blocked entirely, so the page must work with zero network calls; scripts and styles must be inline or loaded from cdnjs.cloudflare.com; images and fonts may come from any https: URL or a data: URI. Include <html>, <head>, and <body>. Returns the artifact id and url — the url opens for the gallery owner only, since it requires their session, so it is not a link to share. Revise later with update_artifact, not a second publish.',
       inputSchema: {
-        title: z.string().min(1).max(200).describe('Artifact title.'),
-        description: z.string().max(2000).optional().describe('Optional short description.'),
-        tags: z.array(z.string().max(50)).max(20).optional().describe('Optional tags.'),
+        title: titleField.describe('Artifact title.'),
+        description: descriptionField.optional().describe('Optional short description.'),
+        tags: tagsField.optional().describe('Optional tags.'),
         html: z
           .string()
           .min(1)
@@ -231,9 +231,9 @@ export function buildMcpServer(db: Db): McpServer {
       description:
         'Creates a new artifact from a markdown document — the quickest format for prose-first content (notes, briefs, explainers, meeting summaries, research write-ups) that does not need spec-level structure. Renders in the gallery with GFM tables, task lists, strikethrough and footnotes, and syntax-highlighted code fences. Two deliberate differences from most markdown renderers: raw HTML is never interpreted (it shows as literal text — do not reach for it), and bare URLs do not autolink, so write explicit [text](https://example.com) links. Links render only for http(s) URLs and images only for https: URLs; anything else is dropped. Catalog components embed two ways. (1) Comment directive — `<!-- ::Divider -->` for a component with no content, or `<!-- ::start:Card title="Budget" -->` … markdown … `<!-- ::end:Card -->` to wrap markdown inside a container component (Section, Card, Itinerary, Day). Directive attributes are flat strings, so they only carry text and enum props — components whose props need numbers or arrays (Grid, Tabs) cannot be driven by a directive; use an exhibit fence or publish_spec for those. (2) An `exhibit` code fence whose body is JSON `{ "type": "Chart", "props": { ... } }` — one component, full prop types, for anything needing numbers, booleans, arrays or objects (Chart, Table, Callout, Checklist, KeyValueList, ...). Call get_catalog for component names and prop shapes. Components with a statePath (Checklist, Choice, Rating, NoteBox) persist the owner’s input exactly as they do in specs, readable back through get_artifact. Prefer publish_spec when the content is mostly structured components rather than prose. Returns the artifact id and url — the url opens for the gallery owner only, since it requires their session, so it is not a link to share. Revise later with update_artifact, not a second publish.',
       inputSchema: {
-        title: z.string().min(1).max(200).describe('Artifact title.'),
-        description: z.string().max(2000).optional().describe('Optional short description.'),
-        tags: z.array(z.string().max(50)).max(20).optional().describe('Optional tags.'),
+        title: titleField.describe('Artifact title.'),
+        description: descriptionField.optional().describe('Optional short description.'),
+        tags: tagsField.optional().describe('Optional tags.'),
         markdown: z.string().min(1).describe('The markdown document body.'),
       },
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
@@ -295,13 +295,9 @@ export function buildMcpServer(db: Db): McpServer {
           .string()
           .optional()
           .describe('New markdown body (for markdown artifacts only).'),
-        title: z.string().min(1).max(200).optional().describe('New title.'),
-        description: z.string().max(2000).optional().describe('New description.'),
-        tags: z
-          .array(z.string().max(50))
-          .max(20)
-          .optional()
-          .describe('New tag list (replaces the existing tags).'),
+        title: titleField.optional().describe('New title.'),
+        description: descriptionField.optional().describe('New description.'),
+        tags: tagsField.optional().describe('New tag list (replaces the existing tags).'),
       },
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
     },

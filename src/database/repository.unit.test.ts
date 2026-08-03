@@ -17,8 +17,8 @@ import {
 } from '@/database/repository';
 import type { ArtifactType, Db } from '@/database/repository';
 import { artifactVersions } from '@/database/schemas/artifact-version';
+import { normalizeTags } from '@/lib/artifact-metadata';
 import { artifactTypes } from '@/lib/artifact-sorts';
-import { normalizeTags } from '@/lib/mcp/tags';
 import { createTestDb } from '@testing/db';
 
 let sqlite: Database.Database;

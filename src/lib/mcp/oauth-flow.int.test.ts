@@ -11,34 +11,26 @@
  * purely as the client-side harness.) The server is fully torn down when the test finishes; this is
  * test-fixture infrastructure, not a long-running dev server.
  */
-import { createHash, randomBytes } from 'node:crypto';
+import { randomBytes } from 'node:crypto';
 import { createServer } from 'node:http';
 import type { IncomingMessage, Server, ServerResponse } from 'node:http';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
+import {
+  authorizeToConsent,
+  base64url,
+  buildAuthorizeUrl,
+  cookieHeader,
+  pkcePair,
+  registerClient,
+  signIn,
+  submitConsent,
+} from '@testing/oauth-client';
+
 const OWNER_EMAIL = 'owner@example.com';
 const OWNER_PASSWORD = 'correct horse battery staple';
 const REDIRECT_URI = 'https://claude.ai/api/mcp/auth_callback';
-
-function base64url(buffer: Buffer): string {
-  return buffer.toString('base64url');
-}
-
-function pkcePair(): { verifier: string; challenge: string } {
-  const verifier = base64url(randomBytes(32));
-  const challenge = base64url(createHash('sha256').update(verifier).digest());
-
-  return { verifier, challenge };
-}
-
-/** Collapses Set-Cookie response headers into a single request Cookie header. */
-function cookieHeader(response: Response): string {
-  return response.headers
-    .getSetCookie()
-    .map((raw) => raw.split(';')[0])
-    .join('; ');
-}
 
 /**
  * Better Auth's built-in rate limiter caps `/sign-in*` at 3 requests per 10s (a special rule, not
@@ -57,30 +49,17 @@ async function getOwnerCookie(): Promise<string> {
 
   await seedOwner(OWNER_EMAIL, OWNER_PASSWORD);
 
-  const signInResponse = await fetch(`${baseURL}/api/auth/sign-in/email`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ email: OWNER_EMAIL, password: OWNER_PASSWORD }),
-  });
-
-  ownerCookie = cookieHeader(signInResponse);
+  ownerCookie = await signIn({ baseURL, email: OWNER_EMAIL, password: OWNER_PASSWORD });
 
   return ownerCookie;
 }
 
-async function registerClient(): Promise<string> {
-  const registerResponse = await fetch(`${baseURL}/api/auth/oauth2/register`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      redirect_uris: [REDIRECT_URI],
-      token_endpoint_auth_method: 'none',
-      client_name: 'exhibit-mcp-test-client',
-    }),
+function newClient(): Promise<string> {
+  return registerClient({
+    baseURL,
+    redirectUri: REDIRECT_URI,
+    clientName: 'exhibit-mcp-test-client',
   });
-  const client = (await registerResponse.json()) as { client_id: string };
-
-  return client.client_id;
 }
 
 /**
@@ -92,31 +71,9 @@ async function registerClient(): Promise<string> {
 let sharedClientId: string | undefined;
 
 async function getSharedClientId(): Promise<string> {
-  sharedClientId ??= await registerClient();
+  sharedClientId ??= await newClient();
 
   return sharedClientId;
-}
-
-/**
- * A PKCE S256 authorize URL. Always sends `prompt=consent` so the consent screen shows even when
- * the (possibly reused) client already has a stored grant from an earlier call.
- */
-function buildAuthorizeUrl(params: { clientId: string; challenge: string; scope?: string }): URL {
-  const authorizeUrl = new URL(`${baseURL}/api/auth/oauth2/authorize`);
-
-  authorizeUrl.searchParams.set('response_type', 'code');
-  authorizeUrl.searchParams.set('client_id', params.clientId);
-  authorizeUrl.searchParams.set('redirect_uri', REDIRECT_URI);
-  authorizeUrl.searchParams.set('code_challenge', params.challenge);
-  authorizeUrl.searchParams.set('code_challenge_method', 'S256');
-  authorizeUrl.searchParams.set('state', base64url(randomBytes(16)));
-  authorizeUrl.searchParams.set('prompt', 'consent');
-
-  if (params.scope) {
-    authorizeUrl.searchParams.set('scope', params.scope);
-  }
-
-  return authorizeUrl;
 }
 
 /**
@@ -125,7 +82,7 @@ function buildAuthorizeUrl(params: { clientId: string; challenge: string; scope?
  * and the consent-denial case below. `scope`, if given, is requested on the authorize call (e.g.
  * `offline_access` to get a refresh token back from the token endpoint).
  */
-async function authorizeToConsent(
+async function startAuthorize(
   scope?: string,
   options: { freshClient?: boolean } = {},
 ): Promise<{
@@ -134,17 +91,16 @@ async function authorizeToConsent(
   verifier: string;
   consentUrl: URL;
 }> {
-  const clientId = options.freshClient ? await registerClient() : await getSharedClientId();
+  const clientId = options.freshClient ? await newClient() : await getSharedClientId();
   const cookie = await getOwnerCookie();
-
-  const { verifier, challenge } = pkcePair();
-  const authorizeUrl = buildAuthorizeUrl({ clientId, challenge, scope });
-
-  const authorizeResponse = await fetch(authorizeUrl, {
-    headers: { cookie, accept: 'application/json' },
+  const { verifier, consentUrl } = await authorizeToConsent({
+    baseURL,
+    clientId,
+    cookie,
+    redirectUri: REDIRECT_URI,
+    scope,
+    prompt: 'consent',
   });
-  const authorizeJson = (await authorizeResponse.json()) as { redirect: boolean; url: string };
-  const consentUrl = new URL(authorizeJson.url, baseURL);
 
   return { clientId, cookie, verifier, consentUrl };
 }
@@ -162,15 +118,9 @@ async function authorizeAndGetCode(
   code: string;
   verifier: string;
 }> {
-  const { clientId, cookie, verifier, consentUrl } = await authorizeToConsent(scope, options);
+  const { clientId, cookie, verifier, consentUrl } = await startAuthorize(scope, options);
 
-  const consentResponse = await fetch(`${baseURL}/api/auth/oauth2/consent`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', cookie },
-    body: JSON.stringify({ accept: true, oauth_query: consentUrl.search.slice(1) }),
-  });
-  const consentJson = (await consentResponse.json()) as { redirect: boolean; url: string };
-  const redirectUrl = new URL(consentJson.url);
+  const redirectUrl = await submitConsent({ baseURL, cookie, consentUrl, accept: true });
   const code = redirectUrl.searchParams.get('code');
 
   return { clientId, code: code ?? '', verifier };
@@ -689,9 +639,10 @@ describe('MCP OAuth flow (DCR -> PKCE authorize -> consent -> token -> /mcp)', (
 
     // No cookie: the /authorize endpoint must not mint anything for a caller who has not proven
     // they are the owner, however well-formed the request is.
-    const authorizeResponse = await fetch(buildAuthorizeUrl({ clientId, challenge }), {
-      headers: { accept: 'application/json' },
-    });
+    const authorizeResponse = await fetch(
+      buildAuthorizeUrl({ baseURL, clientId, redirectUri: REDIRECT_URI, challenge }),
+      { headers: { accept: 'application/json' } },
+    );
     const authorizeJson = (await authorizeResponse.json()) as { redirect: boolean; url: string };
     const target = new URL(authorizeJson.url, baseURL);
 
@@ -700,7 +651,7 @@ describe('MCP OAuth flow (DCR -> PKCE authorize -> consent -> token -> /mcp)', (
   });
 
   it('denying consent redirects with an oauth error instead of a code', async () => {
-    const { cookie, consentUrl } = await authorizeToConsent();
+    const { cookie, consentUrl } = await startAuthorize();
 
     const consentResponse = await fetch(`${baseURL}/api/auth/oauth2/consent`, {
       method: 'POST',

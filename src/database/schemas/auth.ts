@@ -1,4 +1,4 @@
-import { relations, sql } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core';
 
 export const user = sqliteTable('user', {
@@ -205,83 +205,6 @@ export const oauthConsent = sqliteTable(
   ],
 );
 
-export const userRelations = relations(user, ({ many }) => ({
-  sessions: many(session),
-  accounts: many(account),
-  oauthClients: many(oauthClient),
-  oauthRefreshTokens: many(oauthRefreshToken),
-  oauthAccessTokens: many(oauthAccessToken),
-  oauthConsents: many(oauthConsent),
-}));
-
-export const sessionRelations = relations(session, ({ one, many }) => ({
-  user: one(user, {
-    fields: [session.userId],
-    references: [user.id],
-  }),
-  oauthRefreshTokens: many(oauthRefreshToken),
-  oauthAccessTokens: many(oauthAccessToken),
-}));
-
-export const accountRelations = relations(account, ({ one }) => ({
-  user: one(user, {
-    fields: [account.userId],
-    references: [user.id],
-  }),
-}));
-
-export const oauthClientRelations = relations(oauthClient, ({ one, many }) => ({
-  user: one(user, {
-    fields: [oauthClient.userId],
-    references: [user.id],
-  }),
-  oauthRefreshTokens: many(oauthRefreshToken),
-  oauthAccessTokens: many(oauthAccessToken),
-  oauthConsents: many(oauthConsent),
-}));
-
-export const oauthRefreshTokenRelations = relations(oauthRefreshToken, ({ one, many }) => ({
-  oauthClient: one(oauthClient, {
-    fields: [oauthRefreshToken.clientId],
-    references: [oauthClient.clientId],
-  }),
-  session: one(session, {
-    fields: [oauthRefreshToken.sessionId],
-    references: [session.id],
-  }),
-  user: one(user, {
-    fields: [oauthRefreshToken.userId],
-    references: [user.id],
-  }),
-  oauthAccessTokens: many(oauthAccessToken),
-}));
-
-export const oauthAccessTokenRelations = relations(oauthAccessToken, ({ one }) => ({
-  oauthClient: one(oauthClient, {
-    fields: [oauthAccessToken.clientId],
-    references: [oauthClient.clientId],
-  }),
-  session: one(session, {
-    fields: [oauthAccessToken.sessionId],
-    references: [session.id],
-  }),
-  user: one(user, {
-    fields: [oauthAccessToken.userId],
-    references: [user.id],
-  }),
-  oauthRefreshToken: one(oauthRefreshToken, {
-    fields: [oauthAccessToken.refreshId],
-    references: [oauthRefreshToken.id],
-  }),
-}));
-
-export const oauthConsentRelations = relations(oauthConsent, ({ one }) => ({
-  oauthClient: one(oauthClient, {
-    fields: [oauthConsent.clientId],
-    references: [oauthClient.clientId],
-  }),
-  user: one(user, {
-    fields: [oauthConsent.userId],
-    references: [user.id],
-  }),
-}));
+// Drizzle `relations()` are intentionally absent: the drizzle adapter only consults them under
+// `options.experimental.joins` (never enabled in src/lib/auth.ts) and src/database/index.ts builds
+// `drizzle(sqlite)` without a schema, so `db.query` is empty. Regenerate them if either changes.

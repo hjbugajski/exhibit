@@ -2,21 +2,21 @@
  * Phase 5 E2E verification helper: drives the real OAuth 2.1 dance (dynamic client registration ->
  * sign in -> PKCE authorize -> consent -> token exchange) against a *running* instance of this app,
  * then publishes a handful of artifacts through the real /mcp endpoint - exactly what an MCP client
- * (e.g. claude.ai) would do. Mirrors the flow driven in-process by
- * src/lib/mcp/oauth-flow.int.test.ts, but over real HTTP against BASE_URL.
+ * (e.g. claude.ai) would do. The OAuth dance itself lives in testing/oauth-client.ts, shared with
+ * src/lib/mcp/oauth-flow.int.test.ts, which drives it in-process; this script runs it over real
+ * HTTP against BASE_URL.
  *
  * Not part of the app itself - a throwaway dev/verification tool. Run with:
  *   BASE_URL=http://127.0.0.1:PORT OWNER_EMAIL=... OWNER_PASSWORD=... node scripts/dev-publish.ts
  *
  * Prints a JSON summary of the published artifacts (id/title/version) to stdout.
  */
-import { createHash, randomBytes } from 'node:crypto';
-
 import { comparisonFixture } from '../src/catalog/fixtures/comparison.ts';
 import { explainerFixture } from '../src/catalog/fixtures/explainer.ts';
 import { flowFixture } from '../src/catalog/fixtures/flow.ts';
 import { itineraryFixture } from '../src/catalog/fixtures/itinerary.ts';
 import { kitchenSinkFixture } from '../src/catalog/fixtures/kitchen-sink.ts';
+import { getAccessToken } from '../testing/oauth-client.ts';
 import { decisionMemoExample } from './examples/decision-memo.ts';
 import { markdownNotesExample } from './examples/markdown-notes.ts';
 import { researchSummaryExample } from './examples/research-summary.ts';
@@ -37,24 +37,6 @@ function requireEnv(name: string): string {
 const baseURL = requireEnv('BASE_URL');
 const email = requireEnv('OWNER_EMAIL');
 const password = requireEnv('OWNER_PASSWORD');
-
-function base64url(buffer: Buffer): string {
-  return buffer.toString('base64url');
-}
-
-function pkcePair(): { verifier: string; challenge: string } {
-  const verifier = base64url(randomBytes(32));
-  const challenge = base64url(createHash('sha256').update(verifier).digest());
-
-  return { verifier, challenge };
-}
-
-function cookieHeader(response: Response): string {
-  return response.headers
-    .getSetCookie()
-    .map((raw) => raw.split(';')[0])
-    .join('; ');
-}
 
 interface JsonRpcResponse {
   result?: {
@@ -108,99 +90,6 @@ async function callTool(
   return result.result?.structuredContent ?? {};
 }
 
-async function getAccessToken(): Promise<string> {
-  const redirectUri = 'https://claude.ai/api/mcp/auth_callback';
-
-  const registerResponse = await fetch(`${baseURL}/api/auth/oauth2/register`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', origin: baseURL },
-    body: JSON.stringify({
-      redirect_uris: [redirectUri],
-      token_endpoint_auth_method: 'none',
-      client_name: 'exhibit-dev-publish',
-    }),
-  });
-
-  if (!registerResponse.ok) {
-    throw new Error(`client registration failed: ${registerResponse.status}`);
-  }
-
-  const client = (await registerResponse.json()) as { client_id: string };
-
-  const signInResponse = await fetch(`${baseURL}/api/auth/sign-in/email`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', origin: baseURL },
-    body: JSON.stringify({ email, password }),
-  });
-
-  if (!signInResponse.ok) {
-    throw new Error(`sign-in failed: ${signInResponse.status}`);
-  }
-
-  const cookie = cookieHeader(signInResponse);
-
-  const { verifier, challenge } = pkcePair();
-  const state = base64url(randomBytes(16));
-  const authorizeUrl = new URL(`${baseURL}/api/auth/oauth2/authorize`);
-
-  authorizeUrl.searchParams.set('response_type', 'code');
-  authorizeUrl.searchParams.set('client_id', client.client_id);
-  authorizeUrl.searchParams.set('redirect_uri', redirectUri);
-  authorizeUrl.searchParams.set('code_challenge', challenge);
-  authorizeUrl.searchParams.set('code_challenge_method', 'S256');
-  authorizeUrl.searchParams.set('state', state);
-
-  const authorizeResponse = await fetch(authorizeUrl, {
-    headers: { cookie, accept: 'application/json' },
-  });
-
-  if (!authorizeResponse.ok) {
-    throw new Error(`authorize failed: ${authorizeResponse.status}`);
-  }
-
-  const authorizeJson = (await authorizeResponse.json()) as { url: string };
-  const consentUrl = new URL(authorizeJson.url, baseURL);
-
-  const consentResponse = await fetch(`${baseURL}/api/auth/oauth2/consent`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', cookie, origin: baseURL },
-    body: JSON.stringify({ accept: true, oauth_query: consentUrl.search.slice(1) }),
-  });
-
-  if (!consentResponse.ok) {
-    throw new Error(`consent failed: ${consentResponse.status}`);
-  }
-
-  const consentJson = (await consentResponse.json()) as { url: string };
-  const redirectUrl = new URL(consentJson.url);
-  const code = redirectUrl.searchParams.get('code');
-
-  if (!code) {
-    throw new Error('no authorization code returned');
-  }
-
-  const tokenResponse = await fetch(`${baseURL}/api/auth/oauth2/token`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/x-www-form-urlencoded', origin: baseURL },
-    body: new URLSearchParams({
-      grant_type: 'authorization_code',
-      code,
-      redirect_uri: redirectUri,
-      client_id: client.client_id,
-      code_verifier: verifier,
-      resource: `${baseURL}/mcp`,
-    }).toString(),
-  });
-
-  if (!tokenResponse.ok) {
-    throw new Error(`token exchange failed: ${tokenResponse.status}`);
-  }
-
-  const tokenJson = (await tokenResponse.json()) as { access_token: string };
-
-  return tokenJson.access_token;
-}
-
 const sandboxCheckHtml = `<!doctype html>
 <html>
   <head><title>Sandbox Check</title></head>
@@ -233,7 +122,13 @@ const sandboxCheckHtml = `<!doctype html>
 </html>`;
 
 async function main() {
-  const accessToken = await getAccessToken();
+  const accessToken = await getAccessToken({
+    baseURL,
+    email,
+    password,
+    redirectUri: 'https://claude.ai/api/mcp/auth_callback',
+    clientName: 'exhibit-dev-publish',
+  });
 
   const itinerary = await callTool(accessToken, 'publish_spec', {
     title: 'Kyoto Itinerary',
