@@ -17,6 +17,7 @@ vi.mock('@/lib/artifacts', () => ({
   saveArtifactStateFn: vi.fn(() => Promise.resolve()),
   deleteArtifactFn: vi.fn(() => Promise.resolve()),
   setArtifactArchivedFn: vi.fn(() => Promise.resolve()),
+  revertArtifactVersionFn: vi.fn(() => Promise.resolve()),
   updateArtifactMetadataFn: vi.fn(() => Promise.resolve()),
 }));
 
@@ -140,6 +141,45 @@ describe('ArtifactDetailView', () => {
     const options = screen.getAllByRole('option').map((option) => option.textContent);
 
     expect(options).toEqual(['v2 (latest) · 1h ago', 'v1 · 2d ago']);
+  });
+
+  it('offers “Restore this version” only while an older version is on screen, and appends it as a new version', async () => {
+    const { revertArtifactVersionFn } = await import('@/lib/artifacts');
+    const versions = [
+      { version: 1, createdAt: 1000 },
+      { version: 2, createdAt: 2000 },
+    ];
+
+    function renderAt(version: number) {
+      return renderWithRouter(
+        <ArtifactDetailView
+          detail={{
+            artifact: makeArtifact(),
+            version: makeVersion({ version }),
+            versions,
+            state: null,
+          }}
+          id="fixture-id"
+        />,
+        { mountPath: '/a/$id', extraPaths: ['/', '/a/$id/v/$n'], initialEntry: '/a/fixture-id' },
+      );
+    }
+
+    renderAt(2);
+    fireEvent.click(await screen.findByRole('button', { name: 'Artifact actions' }));
+
+    expect(screen.queryByRole('menuitem', { name: 'Restore this version' })).toBeNull();
+
+    cleanup();
+    renderAt(1);
+    fireEvent.click(await screen.findByRole('button', { name: 'Artifact actions' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Restore this version' }));
+
+    await vi.waitFor(() => {
+      expect(revertArtifactVersionFn).toHaveBeenCalledWith({
+        data: { id: 'fixture-id', version: 1 },
+      });
+    });
   });
 
   it('pretty-prints the spec body in the Source view', async () => {

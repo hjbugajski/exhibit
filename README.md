@@ -50,6 +50,7 @@ MCP tools:
 | `publish_html`          | Create an artifact from a standalone HTML document       |
 | `publish_markdown`      | Create an artifact from a markdown document              |
 | `update_artifact`       | Add a version, or update title/description/tags in place |
+| `restore_version`       | Bring an earlier version back as the new latest          |
 | `list_artifacts`        | Browse and filter published artifacts                    |
 | `list_tags`             | List tags in use                                         |
 | `get_artifact`          | Fetch one, including saved interaction state             |

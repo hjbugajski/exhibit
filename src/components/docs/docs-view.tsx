@@ -22,6 +22,8 @@ const MCP_TOOLS: Record<McpToolName, string> = {
   get_catalog: 'Returns the component vocabulary and example specs Claude authors specs against.',
   update_artifact:
     'Revises an existing artifact — appends body versions or edits metadata in place.',
+  restore_version:
+    'Brings an earlier version back as the current one by copying it forward. Nothing is overwritten.',
   list_artifacts: 'Browses published artifacts with search, tag and type filters, and sorting.',
   list_tags: 'Lists the tags already in use so new artifacts reuse them.',
   get_artifact: 'Fetches an artifact’s metadata, body, and your saved interaction state.',

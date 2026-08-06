@@ -319,6 +319,63 @@ describe('update_artifact', () => {
   });
 });
 
+describe('restore_version', () => {
+  it('copies an older version forward as the new latest, byte for byte', async () => {
+    const v1 = '# v1\n\nTrailing spaces  \nand a tab\there. Émoji: 🎏\n';
+    const published = await callTool(client, 'publish_markdown', { title: 'Notes', markdown: v1 });
+    const id = published.structuredContent?.id as string;
+
+    await callTool(client, 'update_artifact', { id, markdown: '# v2' });
+
+    const restored = await callTool(client, 'restore_version', { id, version: 1 });
+
+    expect(restored.isError).toBeFalsy();
+    expect(restored.structuredContent).toMatchObject({ id, version: 3 });
+    expect(textOf(restored)).toContain(`http://localhost:3000/a/${id}`);
+
+    const latest = await callTool(client, 'get_artifact', { id });
+    expect(latest.structuredContent?.body).toBe(v1);
+    // Append-only: the intermediate version is still readable.
+    expect(latest.structuredContent?.versions).toEqual([1, 2, 3]);
+    expect(jsonOf(await callTool(client, 'get_artifact', { id, version: 2 })).body).toBe('# v2');
+  });
+
+  it('leaves the owner’s interaction state untouched', async () => {
+    const published = await callTool(client, 'publish_spec', {
+      title: 'Doc',
+      spec: itineraryFixture,
+    });
+    const id = published.structuredContent?.id as string;
+
+    setArtifactState(db, id, { 'packing/tickets': true });
+    await callTool(client, 'update_artifact', { id, spec: comparisonFixture });
+    await callTool(client, 'restore_version', { id, version: 1 });
+
+    const latest = await callTool(client, 'get_artifact', { id });
+    expect(latest.structuredContent?.state).toEqual({ 'packing/tickets': true });
+  });
+
+  it('reports a missing version distinctly from a missing artifact', async () => {
+    const published = await callTool(client, 'publish_markdown', { title: 'Notes', markdown: '#' });
+    const id = published.structuredContent?.id as string;
+
+    const missingVersion = await callTool(client, 'restore_version', { id, version: 7 });
+    expect(missingVersion.isError).toBe(true);
+    expect(textOf(missingVersion)).toContain('no version 7');
+
+    const missingArtifact = await callTool(client, 'restore_version', {
+      id: 'does-not-exist',
+      version: 1,
+    });
+    expect(missingArtifact.isError).toBe(true);
+    expect(textOf(missingArtifact)).toContain('list_artifacts');
+
+    // Neither failure may append anything.
+    const latest = await callTool(client, 'get_artifact', { id });
+    expect(latest.structuredContent?.versions).toEqual([1]);
+  });
+});
+
 describe('list_artifacts', () => {
   it('filters and paginates', async () => {
     await callTool(client, 'publish_spec', {

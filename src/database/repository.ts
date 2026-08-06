@@ -228,30 +228,70 @@ export function createArtifact(
   });
 }
 
+type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
+
+/** Inserts `body` as the next version number and bumps the artifact's `updatedAt`. */
+function insertNextVersion(tx: Tx, artifactId: string, body: string, now: number): ArtifactVersion {
+  const latest = tx
+    .select({ version: artifactVersions.version })
+    .from(artifactVersions)
+    .where(eq(artifactVersions.artifactId, artifactId))
+    .orderBy(desc(artifactVersions.version))
+    .limit(1)
+    .get();
+
+  const version = tx
+    .insert(artifactVersions)
+    .values({
+      id: nanoid(),
+      artifactId,
+      version: (latest?.version ?? 0) + 1,
+      body,
+      createdAt: now,
+    })
+    .returning()
+    .get();
+
+  tx.update(artifacts).set({ updatedAt: now }).where(eq(artifacts.id, artifactId)).run();
+
+  return version;
+}
+
 /** Inserts the next version number and bumps the artifact's `updatedAt`, in one transaction. */
 export function appendVersion(db: Db, artifactId: string, body: string): ArtifactVersion {
   const now = Date.now();
 
+  return db.transaction((tx) => insertNextVersion(tx, artifactId, body, now));
+}
+
+/**
+ * Copies an older version's body forward as a new latest version — history is append-only, so
+ * nothing is rewritten or removed. The body is copied verbatim (it was validated when it was
+ * stored, and an artifact's type can't change). Read and append share one transaction, so a
+ * concurrent append can't land between them. Returns undefined when the artifact or that version
+ * doesn't exist; like appendVersion, doesn't check `deletedAt`.
+ */
+export function revertToVersion(
+  db: Db,
+  artifactId: string,
+  version: number,
+): ArtifactVersion | undefined {
+  const now = Date.now();
+
   return db.transaction((tx) => {
-    const latest = tx
-      .select({ version: artifactVersions.version })
+    const source = tx
+      .select({ body: artifactVersions.body })
       .from(artifactVersions)
-      .where(eq(artifactVersions.artifactId, artifactId))
-      .orderBy(desc(artifactVersions.version))
-      .limit(1)
+      .where(
+        and(eq(artifactVersions.artifactId, artifactId), eq(artifactVersions.version, version)),
+      )
       .get();
 
-    const nextVersion = (latest?.version ?? 0) + 1;
+    if (!source) {
+      return undefined;
+    }
 
-    const version = tx
-      .insert(artifactVersions)
-      .values({ id: nanoid(), artifactId, version: nextVersion, body, createdAt: now })
-      .returning()
-      .get();
-
-    tx.update(artifacts).set({ updatedAt: now }).where(eq(artifacts.id, artifactId)).run();
-
-    return version;
+    return insertNextVersion(tx, artifactId, source.body, now);
   });
 }
 

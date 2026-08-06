@@ -11,6 +11,7 @@ import {
   listVersions,
   purgeArtifact,
   restoreArtifact,
+  revertToVersion,
   setArtifactArchived,
   setArtifactState,
   softDeleteArtifact,
@@ -148,6 +149,26 @@ export const saveArtifactStateFn = createServerFn({ method: 'POST' })
     setArtifactState(db, data.id, data.state);
 
     return { saved: true };
+  });
+
+const revertArtifactVersionInput = z.object({
+  id: z.string(),
+  version: z.number().int().positive(),
+});
+
+/**
+ * Restores an older version by appending its body as a new latest version; nothing is overwritten.
+ * Throws for unknown/deleted ids and for a version the artifact doesn't have.
+ */
+export const revertArtifactVersionFn = createServerFn({ method: 'POST' })
+  .middleware([sessionMiddleware])
+  .validator(revertArtifactVersionInput)
+  .handler(async ({ data }) => {
+    // revertToVersion doesn't filter soft-deleted rows, so the live-artifact check has to happen
+    // through getArtifact first.
+    requireArtifact(getArtifact(db, data.id));
+
+    return requireArtifact(revertToVersion(db, data.id, data.version));
   });
 
 const setArtifactArchivedInput = z.object({ id: z.string(), archived: z.boolean() });

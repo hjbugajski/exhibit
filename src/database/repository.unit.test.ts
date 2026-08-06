@@ -13,6 +13,7 @@ import {
   listVersions,
   purgeArtifact,
   restoreArtifact,
+  revertToVersion,
   setArtifactArchived,
   setArtifactState,
   softDeleteArtifact,
@@ -98,6 +99,53 @@ describe('appendVersion', () => {
         .values({ id: 'dup-id', artifactId: artifact.id, version: 2, body: 'dup', createdAt: 0 })
         .run(),
     ).toThrow();
+  });
+});
+
+describe('revertToVersion', () => {
+  it('copies an older version body forward as a new latest version, byte for byte', () => {
+    const body = '{"root":"a","weird":"  <tab>\\t & \\u00e9 \\n"}';
+    const { artifact } = createArtifact(db, { title: 'Widget', type: 'spec', body });
+
+    appendVersion(db, artifact.id, '{"root":"b"}');
+
+    const restored = revertToVersion(db, artifact.id, 1);
+
+    expect(restored?.version).toBe(3);
+    expect(restored?.body).toBe(body);
+    expect(getLatestVersion(db, artifact.id)?.body).toBe(body);
+    // Append-only: the older versions are still there, unchanged.
+    expect(listVersions(db, artifact.id).map((v) => v.version)).toEqual([1, 2, 3]);
+  });
+
+  it("bumps the artifact's updatedAt", () => {
+    vi.spyOn(Date, 'now').mockImplementation(() => 1000);
+    const { artifact } = createArtifact(db, { title: 'Widget', type: 'html', body: 'v1' });
+
+    vi.spyOn(Date, 'now').mockImplementation(() => 2000);
+    appendVersion(db, artifact.id, 'v2');
+
+    vi.spyOn(Date, 'now').mockImplementation(() => 3000);
+    revertToVersion(db, artifact.id, 1);
+
+    expect(getArtifact(db, artifact.id)?.artifact.updatedAt).toBe(3000);
+  });
+
+  it('appends a copy when the requested version is already the latest', () => {
+    const { artifact } = createArtifact(db, { title: 'Widget', type: 'html', body: 'v1' });
+
+    expect(revertToVersion(db, artifact.id, 1)).toMatchObject({ version: 2, body: 'v1' });
+  });
+
+  it('returns undefined for a version the artifact does not have', () => {
+    const { artifact } = createArtifact(db, { title: 'Widget', type: 'html', body: 'v1' });
+
+    expect(revertToVersion(db, artifact.id, 7)).toBeUndefined();
+    expect(listVersions(db, artifact.id)).toHaveLength(1);
+  });
+
+  it('returns undefined for an unknown artifact', () => {
+    expect(revertToVersion(db, 'nope', 1)).toBeUndefined();
   });
 });
 

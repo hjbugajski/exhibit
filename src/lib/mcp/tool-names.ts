@@ -10,6 +10,7 @@ export const MCP_TOOL_NAMES = [
   'publish_markdown',
   'get_catalog',
   'update_artifact',
+  'restore_version',
   'list_artifacts',
   'list_tags',
   'get_artifact',

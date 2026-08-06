@@ -46,6 +46,7 @@ let getArtifactDetail: ServerFnCaller;
 let updateArtifactMetadata: ServerFnCaller;
 let listArtifacts: ServerFnCaller;
 let restoreArtifactFn: ServerFnCaller;
+let revertArtifactVersion: ServerFnCaller;
 let purgeArtifactFn: ServerFnCaller;
 
 beforeAll(async () => {
@@ -100,6 +101,13 @@ beforeAll(async () => {
     server,
     '/src/lib/artifacts.ts',
     'restoreArtifactFn',
+    'POST',
+    ORIGIN,
+  );
+  revertArtifactVersion = await serverFnCaller(
+    server,
+    '/src/lib/artifacts.ts',
+    'revertArtifactVersionFn',
     'POST',
     ORIGIN,
   );
@@ -168,6 +176,49 @@ describe('updateArtifactMetadataFn (through the real server-fn RPC route)', () =
         { cookie: ownerCookie },
       ),
     ).rejects.toThrow('Artifact not found. It may have been deleted.');
+  });
+});
+
+describe('revertArtifactVersionFn (through the real server-fn RPC route)', () => {
+  it('appends an older version body as the new latest version', async () => {
+    const { appendVersion, createArtifact } = await import('@/database/repository');
+    const { db } = await import('@/database');
+
+    const { artifact } = createArtifact(db, { title: 'Revised', type: 'markdown', body: '# v1' });
+
+    appendVersion(db, artifact.id, '# v2');
+
+    const restored = (await revertArtifactVersion(
+      { id: artifact.id, version: 1 },
+      { cookie: ownerCookie },
+    )) as { version: number; body: string };
+
+    expect(restored).toMatchObject({ version: 3, body: '# v1' });
+
+    const detail = (await getArtifactDetail({ id: artifact.id }, { cookie: ownerCookie })) as {
+      version: { version: number; body: string };
+      versions: { version: number }[];
+    };
+
+    expect(detail.version).toMatchObject({ version: 3, body: '# v1' });
+    expect(detail.versions.map((v) => v.version)).toEqual([1, 2, 3]);
+  });
+
+  it('rejects a version the artifact does not have', async () => {
+    const { createArtifact } = await import('@/database/repository');
+    const { db } = await import('@/database');
+
+    const { artifact } = createArtifact(db, { title: 'Single', type: 'markdown', body: '# v1' });
+
+    await expect(
+      revertArtifactVersion({ id: artifact.id, version: 9 }, { cookie: ownerCookie }),
+    ).rejects.toThrow('Artifact not found. It may have been deleted.');
+  });
+
+  it('rejects an unauthenticated call', async () => {
+    await expect(revertArtifactVersion({ id: artifactId, version: 1 })).rejects.toThrow(
+      'Unauthorized',
+    );
   });
 });
 

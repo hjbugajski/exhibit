@@ -13,6 +13,7 @@ import {
   listArtifacts,
   listTags,
   listVersions,
+  revertToVersion,
   setArtifactArchived,
   softDeleteArtifact,
   updateMetadata,
@@ -58,6 +59,13 @@ function errorResult(message: string, structuredContent?: Record<string, unknown
 function notFoundResult(id: string): CallToolResult {
   return errorResult(
     `No artifact found with id "${id}". Call list_artifacts to see available artifacts.`,
+  );
+}
+
+/** Shared by every tool that resolves a version number, so the wording can't drift between them. */
+function noSuchVersionResult(id: string, version: number): CallToolResult {
+  return errorResult(
+    `Artifact "${id}" has no version ${version}. Call get_artifact without version to see which versions exist.`,
   );
 }
 
@@ -379,6 +387,42 @@ export function buildMcpServer(db: Db): McpServer {
   );
 
   server.registerTool(
+    toolName('restore_version'),
+    {
+      title: 'Restore an earlier version',
+      description:
+        'Brings an earlier version of an artifact back as the current one, by copying that version’s body forward as a new latest version. Nothing is overwritten or removed — the history stays intact, and the restore itself can be undone by restoring the version that preceded it. Use this instead of fetching an old body with get_artifact and resubmitting it through update_artifact: the copy is exact. Call get_artifact to see which version numbers exist.',
+      inputSchema: {
+        id: z.string().describe('Artifact id.'),
+        version: z.number().int().positive().describe('Version number to restore.'),
+      },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
+    },
+    ({ id, version }) => {
+      const existing = getArtifact(db, id);
+
+      if (!existing) {
+        return notFoundResult(id);
+      }
+
+      const restored = revertToVersion(db, id, version);
+
+      if (!restored) {
+        return noSuchVersionResult(id, version);
+      }
+
+      const url = artifactUrl(id);
+
+      return {
+        content: text(
+          `Restored version ${version} of "${existing.artifact.title}" as version ${restored.version}: ${url}`,
+        ),
+        structuredContent: { id, url, version: restored.version },
+      };
+    },
+  );
+
+  server.registerTool(
     toolName('list_artifacts'),
     {
       title: 'List artifacts',
@@ -482,9 +526,7 @@ export function buildMcpServer(db: Db): McpServer {
         // A version was requested but missed — check whether that's because the artifact itself is
         // missing/deleted, or just that version.
         if (version !== undefined && getArtifact(db, id)) {
-          return errorResult(
-            `Artifact "${id}" has no version ${version}. Omit version to get the latest, or call get_artifact without version first to see how many exist.`,
-          );
+          return noSuchVersionResult(id, version);
         }
 
         return notFoundResult(id);

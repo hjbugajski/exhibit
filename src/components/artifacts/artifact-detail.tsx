@@ -12,6 +12,7 @@ import {
   Ellipsis,
   ExternalLink,
   Pencil,
+  RotateCcw,
   Trash2,
   X,
 } from 'lucide-react';
@@ -31,7 +32,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs } from '@/components/ui/tabs';
 import type { ArtifactType, JsonObject } from '@/database/repository';
 import type { ArtifactDetail } from '@/lib/artifacts';
-import { deleteArtifactFn, saveArtifactStateFn, setArtifactArchivedFn } from '@/lib/artifacts';
+import {
+  deleteArtifactFn,
+  revertArtifactVersionFn,
+  saveArtifactStateFn,
+  setArtifactArchivedFn,
+} from '@/lib/artifacts';
 import type { HighlightLanguage } from '@/lib/highlight';
 import { useCopyToClipboard } from '@/lib/use-copy-to-clipboard';
 import type { ActionStatus } from '@/lib/use-form-action';
@@ -81,6 +87,7 @@ export function ArtifactDetailView({ id, detail }: { id: string; detail: Artifac
   const [deleteOpen, setDeleteOpen] = useState(false);
   const deleteAction = useFormAction();
   const archiveAction = useFormAction();
+  const restoreAction = useFormAction();
   const [saveStatus, setSaveStatus] = useState<ActionStatus | null>(null);
 
   const parsedSpec = useMemo(
@@ -156,6 +163,16 @@ export function ArtifactDetailView({ id, detail }: { id: string; detail: Artifac
     } else {
       void navigate({ to: '/a/$id/v/$n', params: { id, n: String(next) } });
     }
+  }
+
+  // Appends this version's body as a new latest version, so the artifact root is where the result
+  // lives; the old version stays browsable in the Select.
+  function handleRestoreVersion() {
+    void restoreAction.run(async () => {
+      await revertArtifactVersionFn({ data: { id, version: version.version } });
+      await router.invalidate();
+      await navigate({ to: '/a/$id', params: { id } });
+    });
   }
 
   function handleArchiveToggle() {
@@ -291,6 +308,15 @@ export function ArtifactDetailView({ id, detail }: { id: string; detail: Artifac
                       </a>
                     }
                   />
+                  {version.version !== latestVersion ? (
+                    <DropdownMenu.Item
+                      disabled={restoreAction.pending}
+                      onClick={handleRestoreVersion}
+                    >
+                      <RotateCcw data-icon="inline-start" />
+                      Restore this version
+                    </DropdownMenu.Item>
+                  ) : null}
                   <DropdownMenu.Item onClick={() => setEditOpen(true)}>
                     <Pencil data-icon="inline-start" />
                     Edit
@@ -340,6 +366,7 @@ export function ArtifactDetailView({ id, detail }: { id: string; detail: Artifac
 
       <FormStatus status={saveStatus} />
       <FormStatus status={archiveAction.status} />
+      <FormStatus status={restoreAction.status} />
 
       {showRendered ? (
         <div>
