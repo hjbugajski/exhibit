@@ -9,6 +9,8 @@ import {
   listArtifacts,
   listTags,
   listVersions,
+  purgeArtifact,
+  restoreArtifact,
   setArtifactArchived,
   setArtifactState,
   softDeleteArtifact,
@@ -43,6 +45,7 @@ const listArtifactsInput = z.object({
   tags: z.array(z.string()).optional(),
   type: z.enum(artifactTypes).optional(),
   archived: z.boolean().optional(),
+  deleted: z.boolean().optional(),
   sort: z.enum(artifactSorts).optional(),
   cursor: z.string().optional(),
   limit: z.number().int().min(1).max(100).optional(),
@@ -161,7 +164,7 @@ export const setArtifactArchivedFn = createServerFn({ method: 'POST' })
     return requireArtifact(setArtifactArchived(db, data.id, data.archived));
   });
 
-const deleteArtifactInput = z.object({ id: z.string() });
+const artifactIdInput = z.object({ id: z.string() });
 
 /**
  * Deliberately unguarded: soft delete is idempotent, so deleting an unknown or already-deleted id
@@ -170,9 +173,31 @@ const deleteArtifactInput = z.object({ id: z.string() });
  */
 export const deleteArtifactFn = createServerFn({ method: 'POST' })
   .middleware([sessionMiddleware])
-  .validator(deleteArtifactInput)
+  .validator(artifactIdInput)
   .handler(async ({ data }) => {
     softDeleteArtifact(db, data.id);
 
     return { deleted: true };
+  });
+
+/** Throws for unknown ids. Restoring an artifact that isn't deleted is a no-op. */
+export const restoreArtifactFn = createServerFn({ method: 'POST' })
+  .middleware([sessionMiddleware])
+  .validator(artifactIdInput)
+  .handler(async ({ data }) => {
+    // getArtifact resolves live artifacts only, so the guard has to come from restoreArtifact's own
+    // undefined-on-unknown return.
+    return requireArtifact(restoreArtifact(db, data.id));
+  });
+
+/**
+ * Irreversibly removes the artifact, its versions and its interaction state. Unguarded like
+ * `deleteArtifactFn`: purging an id that's already gone reports `purged: false` rather than
+ * throwing, so a stale trash list can't turn a completed purge into an error.
+ */
+export const purgeArtifactFn = createServerFn({ method: 'POST' })
+  .middleware([sessionMiddleware])
+  .validator(artifactIdInput)
+  .handler(async ({ data }) => {
+    return { purged: purgeArtifact(db, data.id) };
   });

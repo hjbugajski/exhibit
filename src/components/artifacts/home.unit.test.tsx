@@ -6,7 +6,8 @@ import {
   createRoute,
   createRouter,
 } from '@tanstack/react-router';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { Artifact } from '@/database/repository';
@@ -15,6 +16,8 @@ import { makeArtifact } from '@testing/factories';
 /** Home imports the gallery's load-more server fn; nothing here exercises it. */
 vi.mock('@/lib/artifacts', () => ({
   listArtifactsFn: vi.fn(() => Promise.resolve({ items: [], nextCursor: null })),
+  restoreArtifactFn: vi.fn(() => Promise.resolve()),
+  purgeArtifactFn: vi.fn(() => Promise.resolve()),
 }));
 
 /**
@@ -31,6 +34,7 @@ vi.mock('@/components/artifacts/tag-list', () => ({
 }));
 
 const { Home } = await import('@/components/artifacts/home');
+const { restoreArtifactFn } = await import('@/lib/artifacts');
 
 afterEach(() => {
   cleanup();
@@ -59,10 +63,17 @@ function renderHome(initialEntry = '/', items: Artifact[] = []) {
   const indexRoute = createRoute({
     getParentRoute: () => authedRoute,
     path: '/',
+    // Deliberately without the real route's archived/deleted precedence: these tests pin the
+    // handlers' own mutual exclusion, not validateSearch's (see _authed/index.unit.test.ts).
     validateSearch: (search: Record<string, unknown>) => ({
       query: typeof search.query === 'string' && search.query ? search.query : undefined,
+      archived: search.archived === true ? true : undefined,
+      deleted: search.deleted === true ? true : undefined,
     }),
-    loaderDeps: ({ search }: { search: { query?: string } }) => ({ query: search.query }),
+    loaderDeps: ({ search }: { search: { query?: string; deleted?: boolean } }) => ({
+      query: search.query,
+      deleted: search.deleted,
+    }),
     loader: async () => {
       loaderRuns += 1;
 
@@ -213,5 +224,39 @@ describe('Home search sync', () => {
     // Keystrokes stay inside the search input: stable items + memoized context/actions/Grid keep
     // every card (and its Link's route build) out of the render pass until the debounce lands.
     expect(tagListRenders.mock.calls.length).toBe(before);
+  });
+});
+
+describe('Home trash view', () => {
+  it('drops the archived filter when the deleted filter is checked', async () => {
+    const user = userEvent.setup();
+    const { router } = renderHome();
+
+    fireEvent.click(await screen.findByLabelText('Filter'));
+    await user.click(await screen.findByRole('checkbox', { name: 'Archived only' }));
+    await waitFor(() => expect(router.state.location.search).toEqual({ archived: true }));
+
+    await user.click(await screen.findByRole('checkbox', { name: 'Deleted only' }));
+    await waitFor(() => expect(router.state.location.search).toEqual({ deleted: true }));
+  });
+
+  it('drops the deleted filter when the archived filter is checked', async () => {
+    const user = userEvent.setup();
+    const { router } = renderHome('/?deleted=true');
+
+    fireEvent.click(await screen.findByLabelText('Filter'));
+    await user.click(await screen.findByRole('checkbox', { name: 'Archived only' }));
+
+    await waitFor(() => expect(router.state.location.search).toEqual({ archived: true }));
+  });
+
+  it('restores a deleted artifact and reloads the list', async () => {
+    const harness = renderHome('/?deleted=true', [makeArtifact({ id: 'a1', title: 'Gone' })]);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Restore' }));
+
+    await waitFor(() => expect(restoreArtifactFn).toHaveBeenCalledWith({ data: { id: 'a1' } }));
+    // router.invalidate() re-runs the loader, so a restored artifact leaves the trash list.
+    await waitFor(() => expect(harness.loaderRuns).toBe(2));
   });
 });

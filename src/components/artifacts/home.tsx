@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { getRouteApi, useRouterState } from '@tanstack/react-router';
+import { getRouteApi, useRouter, useRouterState } from '@tanstack/react-router';
 
 import type { GalleryState, GalleryView, TypeFilter } from '@/components/artifacts/gallery';
 import { Gallery } from '@/components/artifacts/gallery';
 import type { ArtifactSort } from '@/lib/artifact-sorts';
-import { listArtifactsFn } from '@/lib/artifacts';
+import { listArtifactsFn, purgeArtifactFn, restoreArtifactFn } from '@/lib/artifacts';
 import { useDebouncedValue } from '@/lib/use-debounced-value';
 import { useLocalStorageState } from '@/lib/use-local-storage-state';
 import { usePaginatedList } from '@/lib/use-paginated-list';
@@ -24,6 +24,7 @@ export function Home() {
   const loaderData = Route.useLoaderData();
   const { tags } = AuthedRoute.useLoaderData();
   const navigate = Route.useNavigate();
+  const router = useRouter();
   // Router-wide: a filter/search edit replaces the URL and reruns this route's loader, which keeps
   // the old data on screen until it resolves. `isLoading` covers that window (the route match's own
   // status stays 'success' through a stale reload).
@@ -115,14 +116,54 @@ export function Home() {
     [navigate],
   );
 
+  // Archived and Deleted are mutually exclusive: the trash is a flat view that ignores the archived
+  // split, so checking either filter clears the other (validateSearch enforces the same precedence
+  // for hand-written URLs).
   const handleArchivedChange = useCallback(
     (archived: boolean) => {
       void navigate({
-        search: (prev) => ({ ...prev, archived: archived ? true : undefined }),
+        search: (prev) => ({
+          ...prev,
+          archived: archived ? true : undefined,
+          deleted: archived ? undefined : prev.deleted,
+        }),
         replace: true,
       });
     },
     [navigate],
+  );
+
+  const handleDeletedChange = useCallback(
+    (deleted: boolean) => {
+      void navigate({
+        search: (prev) => ({
+          ...prev,
+          deleted: deleted ? true : undefined,
+          archived: deleted ? undefined : prev.archived,
+        }),
+        replace: true,
+      });
+    },
+    [navigate],
+  );
+
+  // One identity-stable object per trash session, so the memoized Grid/Table (and every card behind
+  // them) still bail out of renders driven by search-box keystrokes.
+  const trash = useMemo(
+    () =>
+      search.deleted
+        ? {
+            restore: async (id: string) => {
+              await restoreArtifactFn({ data: { id } });
+              await router.invalidate();
+            },
+            purge: async (id: string) => {
+              await purgeArtifactFn({ data: { id } });
+              await router.invalidate();
+            },
+          }
+        : undefined,
+    [search.deleted, router],
   );
 
   // Both halves of the Gallery context are memoized: `actions` never changes, and `state` changes
@@ -130,18 +171,27 @@ export function Home() {
   const actions = useMemo(
     () => ({
       setArchived: handleArchivedChange,
+      setDeleted: handleDeletedChange,
       setQuery: setQueryInput,
       setSort: handleSortChange,
       setTags: handleTagsChange,
       setType: handleTypeChange,
       setView,
     }),
-    [handleArchivedChange, handleSortChange, handleTagsChange, handleTypeChange, setView],
+    [
+      handleArchivedChange,
+      handleDeletedChange,
+      handleSortChange,
+      handleTagsChange,
+      handleTypeChange,
+      setView,
+    ],
   );
 
   const state = useMemo<GalleryState>(
     () => ({
       archived: search.archived ?? false,
+      deleted: search.deleted ?? false,
       query: queryInput,
       sort: search.sort ?? 'updated-desc',
       tags: search.tags ?? [],
@@ -149,7 +199,16 @@ export function Home() {
       updating,
       view,
     }),
-    [search.archived, search.sort, search.tags, search.type, queryInput, updating, view],
+    [
+      search.archived,
+      search.deleted,
+      search.sort,
+      search.tags,
+      search.type,
+      queryInput,
+      updating,
+      view,
+    ],
   );
 
   function handleLoadMore() {
@@ -160,6 +219,7 @@ export function Home() {
           tags: search.tags,
           type: search.type,
           archived: search.archived,
+          deleted: search.deleted,
           sort: search.sort,
           cursor,
         },
@@ -184,9 +244,9 @@ export function Home() {
           {items.length === 0 ? (
             <Gallery.Empty />
           ) : view === 'grid' ? (
-            <Gallery.Grid items={items} />
+            <Gallery.Grid items={items} trash={trash} />
           ) : (
-            <Gallery.Table items={items} />
+            <Gallery.Table items={items} trash={trash} />
           )}
         </Gallery.Results>
         {items.length > 0 ? (

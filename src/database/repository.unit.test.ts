@@ -1,4 +1,5 @@
 import type Database from 'better-sqlite3';
+import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -10,12 +11,15 @@ import {
   listArtifacts,
   listTags,
   listVersions,
+  purgeArtifact,
+  restoreArtifact,
   setArtifactArchived,
   setArtifactState,
   softDeleteArtifact,
   updateMetadata,
 } from '@/database/repository';
 import type { ArtifactType, Db } from '@/database/repository';
+import { artifactStates } from '@/database/schemas/artifact-state';
 import { artifactVersions } from '@/database/schemas/artifact-version';
 import { normalizeTags } from '@/lib/artifact-metadata';
 import { artifactTypes } from '@/lib/artifact-sorts';
@@ -484,6 +488,76 @@ describe('setArtifactArchived', () => {
     setArtifactArchived(db, artifact.id, true);
 
     expect(getArtifact(db, artifact.id)?.artifact.archivedAt).not.toBeNull();
+  });
+});
+
+describe('restoreArtifact', () => {
+  it('moves an artifact into the trash listing and back out again', () => {
+    const { artifact } = createArtifact(db, { title: 'Widget', type: 'spec', body: 'v1' });
+
+    softDeleteArtifact(db, artifact.id);
+
+    expect(listArtifacts(db).items).toHaveLength(0);
+    expect(listArtifacts(db, { deleted: true }).items.map((item) => item.id)).toEqual([
+      artifact.id,
+    ]);
+
+    expect(restoreArtifact(db, artifact.id)?.deletedAt).toBeNull();
+
+    expect(listArtifacts(db, { deleted: true }).items).toHaveLength(0);
+    expect(listArtifacts(db).items.map((item) => item.id)).toEqual([artifact.id]);
+  });
+
+  it('preserves archived state, so an archived artifact restores as archived', () => {
+    const { artifact } = createArtifact(db, { title: 'Widget', type: 'spec', body: 'v1' });
+
+    setArtifactArchived(db, artifact.id, true);
+    softDeleteArtifact(db, artifact.id);
+
+    // Archived artifacts are still trash: the deleted listing ignores the archived split.
+    expect(listArtifacts(db, { deleted: true }).items.map((item) => item.id)).toEqual([
+      artifact.id,
+    ]);
+
+    expect(restoreArtifact(db, artifact.id)?.archivedAt).not.toBeNull();
+    expect(listArtifacts(db).items).toHaveLength(0);
+    expect(listArtifacts(db, { archived: true }).items.map((item) => item.id)).toEqual([
+      artifact.id,
+    ]);
+  });
+
+  it('returns undefined for an unknown id', () => {
+    expect(restoreArtifact(db, 'missing')).toBeUndefined();
+  });
+});
+
+describe('purgeArtifact', () => {
+  it('hard-deletes the artifact and cascades to its versions and state', () => {
+    const { artifact } = createArtifact(db, { title: 'Widget', type: 'spec', body: 'v1' });
+    const { artifact: survivor } = createArtifact(db, { title: 'Other', type: 'spec', body: 'v1' });
+
+    appendVersion(db, artifact.id, 'v2');
+    setArtifactState(db, artifact.id, { checked: true });
+    setArtifactState(db, survivor.id, { checked: false });
+    softDeleteArtifact(db, artifact.id);
+
+    expect(purgeArtifact(db, artifact.id)).toBe(true);
+
+    expect(listArtifacts(db, { deleted: true }).items).toHaveLength(0);
+    expect(getArtifact(db, artifact.id)).toBeUndefined();
+    expect(
+      db.select().from(artifactVersions).where(eq(artifactVersions.artifactId, artifact.id)).all(),
+    ).toEqual([]);
+    expect(
+      db.select().from(artifactStates).where(eq(artifactStates.artifactId, artifact.id)).all(),
+    ).toEqual([]);
+
+    expect(getArtifactState(db, survivor.id)?.state).toEqual({ checked: false });
+    expect(listVersions(db, survivor.id)).toHaveLength(1);
+  });
+
+  it('returns false for an unknown id', () => {
+    expect(purgeArtifact(db, 'missing')).toBe(false);
   });
 });
 

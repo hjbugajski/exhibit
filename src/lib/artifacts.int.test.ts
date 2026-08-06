@@ -44,6 +44,9 @@ let ownerCookie: string;
 let saveArtifactState: ServerFnCaller;
 let getArtifactDetail: ServerFnCaller;
 let updateArtifactMetadata: ServerFnCaller;
+let listArtifacts: ServerFnCaller;
+let restoreArtifactFn: ServerFnCaller;
+let purgeArtifactFn: ServerFnCaller;
 
 beforeAll(async () => {
   const { createArtifact } = await import('@/database/repository');
@@ -83,6 +86,27 @@ beforeAll(async () => {
     server,
     '/src/lib/artifacts.ts',
     'updateArtifactMetadataFn',
+    'POST',
+    ORIGIN,
+  );
+  listArtifacts = await serverFnCaller(
+    server,
+    '/src/lib/artifacts.ts',
+    'listArtifactsFn',
+    'GET',
+    ORIGIN,
+  );
+  restoreArtifactFn = await serverFnCaller(
+    server,
+    '/src/lib/artifacts.ts',
+    'restoreArtifactFn',
+    'POST',
+    ORIGIN,
+  );
+  purgeArtifactFn = await serverFnCaller(
+    server,
+    '/src/lib/artifacts.ts',
+    'purgeArtifactFn',
     'POST',
     ORIGIN,
   );
@@ -144,5 +168,62 @@ describe('updateArtifactMetadataFn (through the real server-fn RPC route)', () =
         { cookie: ownerCookie },
       ),
     ).rejects.toThrow('Artifact not found. It may have been deleted.');
+  });
+});
+
+describe('restoreArtifactFn / purgeArtifactFn (through the real server-fn RPC route)', () => {
+  async function createDeleted(title: string) {
+    const { createArtifact, softDeleteArtifact } = await import('@/database/repository');
+    const { db } = await import('@/database');
+
+    const { artifact } = createArtifact(db, { title, type: 'spec', body: '{}' });
+
+    softDeleteArtifact(db, artifact.id);
+
+    return artifact.id;
+  }
+
+  it('lists a soft-deleted artifact under deleted: true and restores it back to the live list', async () => {
+    const id = await createDeleted('Trashed');
+
+    const trashed = (await listArtifacts({ deleted: true }, { cookie: ownerCookie })) as {
+      items: { id: string }[];
+    };
+
+    expect(trashed.items.map((item) => item.id)).toContain(id);
+
+    const restored = (await restoreArtifactFn({ id }, { cookie: ownerCookie })) as {
+      deletedAt: number | null;
+    };
+
+    expect(restored.deletedAt).toBeNull();
+
+    const live = (await listArtifacts({}, { cookie: ownerCookie })) as { items: { id: string }[] };
+
+    expect(live.items.map((item) => item.id)).toContain(id);
+  });
+
+  it('rejects a restore of an unknown artifact id', async () => {
+    await expect(
+      restoreArtifactFn({ id: 'nonexistent-id' }, { cookie: ownerCookie }),
+    ).rejects.toThrow('Artifact not found. It may have been deleted.');
+  });
+
+  it('purges an artifact and reports false when there is nothing left to purge', async () => {
+    const id = await createDeleted('Purged');
+
+    expect(await purgeArtifactFn({ id }, { cookie: ownerCookie })).toEqual({ purged: true });
+    expect(await purgeArtifactFn({ id }, { cookie: ownerCookie })).toEqual({ purged: false });
+
+    await expect(restoreArtifactFn({ id }, { cookie: ownerCookie })).rejects.toThrow(
+      'Artifact not found. It may have been deleted.',
+    );
+  });
+
+  it('rejects unauthenticated restore and purge calls', async () => {
+    const id = await createDeleted('Guarded');
+
+    await expect(restoreArtifactFn({ id })).rejects.toThrow('Unauthorized');
+    await expect(purgeArtifactFn({ id })).rejects.toThrow('Unauthorized');
   });
 });

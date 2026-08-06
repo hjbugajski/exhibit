@@ -321,11 +321,11 @@ export function ArtifactDetailView({ id, detail }: { id: string; detail: Artifac
           <ConfirmDestructiveAction
             action={deleteAction}
             actionLabel="Delete"
-            confirmation="I understand this can’t be undone."
             description={
               <>
-                <strong className="text-foreground font-medium">{artifact.title}</strong> and all of
-                its versions are deleted immediately.
+                <strong className="text-foreground font-medium">{artifact.title}</strong> is moved
+                to the trash and hidden from the gallery. Restore it from the gallery’s “Deleted
+                only” filter, or delete it forever from there.
               </>
             }
             onConfirm={handleDelete}

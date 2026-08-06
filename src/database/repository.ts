@@ -71,13 +71,15 @@ export interface UpdateMetadataInput {
 /**
  * `limit` defaults to 20, `sort` to 'updated-desc'. A malformed `cursor`, or one minted under a
  * different `sort`, is ignored (first page). `archived: true` lists only archived artifacts;
- * otherwise archived artifacts are excluded.
+ * otherwise archived artifacts are excluded. `deleted: true` lists only soft-deleted artifacts (the
+ * trash); otherwise they're excluded.
  */
 export interface ListArtifactsInput {
   query?: string;
   tags?: string[];
   type?: ArtifactType;
   archived?: boolean;
+  deleted?: boolean;
   sort?: ArtifactSort;
   limit?: number;
   cursor?: string;
@@ -339,18 +341,23 @@ export function listVersions(db: Db, artifactId: string): { version: number; cre
 }
 
 /**
- * Excludes soft-deleted artifacts. `query` substring-matches the title; `tags` matches ANY listed
- * tag (OR).
+ * Excludes soft-deleted artifacts unless `deleted` is set. `query` substring-matches the title;
+ * `tags` matches ANY listed tag (OR).
  */
 export function listArtifacts(db: Db, input: ListArtifactsInput = {}): ListArtifactsResult {
   const limit = input.limit ?? 20;
   const sort = input.sort ?? 'updated-desc';
   const { field, dir } = sortSpecs[sort];
 
-  const conditions = [
-    isNull(artifacts.deletedAt),
-    input.archived ? isNotNull(artifacts.archivedAt) : isNull(artifacts.archivedAt),
-  ];
+  const conditions = [input.deleted ? isNotNull(artifacts.deletedAt) : isNull(artifacts.deletedAt)];
+
+  // The trash is one flat view: an artifact archived before it was deleted must still be
+  // recoverable, so the archived split applies to live listings only.
+  if (!input.deleted) {
+    conditions.push(
+      input.archived ? isNotNull(artifacts.archivedAt) : isNull(artifacts.archivedAt),
+    );
+  }
 
   if (input.query) {
     conditions.push(sql`${artifacts.title} like ${`%${escapeLike(input.query)}%`} escape '\\'`);
@@ -456,6 +463,30 @@ export function setArtifactArchived(db: Db, id: string, archived: boolean): Arti
 /** Stamps `deletedAt`; no-ops on unknown ids. Version and state rows survive. */
 export function softDeleteArtifact(db: Db, id: string): void {
   db.update(artifacts).set({ deletedAt: Date.now() }).where(eq(artifacts.id, id)).run();
+}
+
+/**
+ * Clears `deletedAt`, undoing a soft delete. Leaves `archivedAt` and `updatedAt` alone, so an
+ * artifact archived before it was deleted comes back archived. Returns undefined when `id` matches
+ * no row.
+ */
+export function restoreArtifact(db: Db, id: string): Artifact | undefined {
+  const artifact = db
+    .update(artifacts)
+    .set({ deletedAt: null })
+    .where(eq(artifacts.id, id))
+    .returning()
+    .get();
+
+  return artifact ? toArtifact(artifact) : undefined;
+}
+
+/**
+ * Hard-deletes the artifact row; the `onDelete: cascade` foreign keys take its versions and
+ * interaction state with it. Irreversible. Returns whether a row was removed.
+ */
+export function purgeArtifact(db: Db, id: string): boolean {
+  return db.delete(artifacts).where(eq(artifacts.id, id)).run().changes > 0;
 }
 
 /**

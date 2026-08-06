@@ -1,10 +1,12 @@
 import { createContext, memo, use, useMemo, type ReactNode } from 'react';
 
 import { Link } from '@tanstack/react-router';
-import { ArrowUpDown, Inbox, LayoutGrid, List, ListFilter, SearchX } from 'lucide-react';
+import { ArrowUpDown, Inbox, LayoutGrid, List, ListFilter, SearchX, Trash2 } from 'lucide-react';
 
 import { ArtifactCard } from '@/components/artifacts/artifact-card';
 import { TagList } from '@/components/artifacts/tag-list';
+import type { TrashActions } from '@/components/artifacts/trash-actions';
+import { ArtifactTrashActions } from '@/components/artifacts/trash-actions';
 import { TypeBadge } from '@/components/artifacts/type-badge';
 import { RelativeTime } from '@/components/blocks/relative-time';
 import { Badge } from '@/components/ui/badge';
@@ -49,6 +51,8 @@ export interface GalleryState {
   query: string;
   type: TypeFilter;
   archived: boolean;
+  /** Trash view: only soft-deleted artifacts, mutually exclusive with `archived`. */
+  deleted: boolean;
   sort: ArtifactSort;
   tags: string[];
   view: GalleryView;
@@ -60,6 +64,7 @@ interface GalleryActions {
   setQuery: (query: string) => void;
   setType: (type: TypeFilter) => void;
   setArchived: (archived: boolean) => void;
+  setDeleted: (deleted: boolean) => void;
   setSort: (sort: ArtifactSort) => void;
   setTags: (tags: string[]) => void;
   setView: (view: GalleryView) => void;
@@ -171,10 +176,11 @@ export interface GalleryFiltersProps {
  */
 function Filters({ availableTags }: GalleryFiltersProps) {
   const {
-    state: { type, tags, archived },
-    actions: { setType, setTags, setArchived },
+    state: { type, tags, archived, deleted },
+    actions: { setType, setTags, setArchived, setDeleted },
   } = useGalleryContext();
-  const activeCount = (type === 'all' ? 0 : 1) + tags.length + (archived ? 1 : 0);
+  const activeCount =
+    (type === 'all' ? 0 : 1) + tags.length + (archived ? 1 : 0) + (deleted ? 1 : 0);
 
   function toggleTag(tag: string, checked: boolean) {
     setTags(checked ? [...tags, tag] : tags.filter((t) => t !== tag));
@@ -230,6 +236,8 @@ function Filters({ availableTags }: GalleryFiltersProps) {
             ) : null}
             <div className="space-y-2">
               <p className="text-foreground-muted text-xs font-medium">Show</p>
+              {/* Mutually exclusive: the trash is a flat view that ignores the archived split, so
+                  checking one filter clears the other (see Home's navigate handlers). */}
               <label className="flex cursor-pointer items-start gap-2 pointer-coarse:py-1">
                 <Checkbox
                   checked={archived}
@@ -237,6 +245,14 @@ function Filters({ availableTags }: GalleryFiltersProps) {
                   onCheckedChange={(checked) => setArchived(checked === true)}
                 />
                 Archived only
+              </label>
+              <label className="flex cursor-pointer items-start gap-2 pointer-coarse:py-1">
+                <Checkbox
+                  checked={deleted}
+                  className="mt-0.5"
+                  onCheckedChange={(checked) => setDeleted(checked === true)}
+                />
+                Deleted only
               </label>
             </div>
           </Popover.Popup>
@@ -270,14 +286,25 @@ function ViewToggle() {
 
 function Empty() {
   const {
-    state: { query, type, tags, archived },
-    actions: { setQuery, setType, setTags, setArchived },
+    state: { query, type, tags, archived, deleted },
+    actions: { setQuery, setType, setTags, setArchived, setDeleted },
   } = useGalleryContext();
-  const hasFilters = query.length > 0 || tags.length > 0 || type !== 'all' || archived;
+  const narrowed = query.length > 0 || tags.length > 0 || type !== 'all';
+  const hasFilters = narrowed || archived || deleted;
 
   return (
     <EmptyPrimitive.Root className="border py-16">
-      {hasFilters ? (
+      {deleted && !narrowed ? (
+        <EmptyPrimitive.Header>
+          <EmptyPrimitive.Media variant="icon">
+            <Trash2 />
+          </EmptyPrimitive.Media>
+          <EmptyPrimitive.Title>Trash is empty</EmptyPrimitive.Title>
+          <EmptyPrimitive.Description>
+            Deleted artifacts stay here until you delete them forever.
+          </EmptyPrimitive.Description>
+        </EmptyPrimitive.Header>
+      ) : hasFilters ? (
         <>
           <EmptyPrimitive.Header>
             <EmptyPrimitive.Media variant="icon">
@@ -295,6 +322,7 @@ function Empty() {
                 setType('all');
                 setTags([]);
                 setArchived(false);
+                setDeleted(false);
               }}
               variant="outline"
             >
@@ -341,14 +369,16 @@ function Results({ children }: GalleryResultsProps) {
 
 export interface GalleryGridProps {
   items: Artifact[];
+  /** Present in the trash view; see ArtifactCard. */
+  trash?: TrashActions;
 }
 
 /** Memoized: `items` is a stable array (see usePaginatedList), so keystrokes never reach the cards. */
-const Grid = memo(function Grid({ items }: GalleryGridProps) {
+const Grid = memo(function Grid({ items, trash }: GalleryGridProps) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {items.map((artifact) => (
-        <ArtifactCard artifact={artifact} key={artifact.id} />
+        <ArtifactCard artifact={artifact} key={artifact.id} trash={trash} />
       ))}
     </div>
   );
@@ -356,10 +386,18 @@ const Grid = memo(function Grid({ items }: GalleryGridProps) {
 
 export interface GalleryTableProps {
   items: Artifact[];
+  /** Present in the trash view; rows link nowhere and gain an actions column. */
+  trash?: TrashActions;
 }
 
 /** Row-level component so each row's `Link` params keep a stable identity, as in ArtifactCard. */
-const TableRow = memo(function TableRow({ artifact }: { artifact: Artifact }) {
+const TableRow = memo(function TableRow({
+  artifact,
+  trash,
+}: {
+  artifact: Artifact;
+  trash?: TrashActions;
+}) {
   const params = useMemo(() => ({ id: artifact.id }), [artifact.id]);
 
   return (
@@ -368,13 +406,17 @@ const TableRow = memo(function TableRow({ artifact }: { artifact: Artifact }) {
     // border-collapse <tr> doesn't paint box-shadow.
     <TablePrimitive.Row className="relative">
       <TablePrimitive.Cell className="font-medium">
-        <Link
-          className="focus-visible:after:ring-focus outline-none after:absolute after:inset-0 focus-visible:after:ring-3 focus-visible:after:ring-inset"
-          params={params}
-          to="/a/$id"
-        >
-          {artifact.title}
-        </Link>
+        {trash ? (
+          artifact.title
+        ) : (
+          <Link
+            className="focus-visible:after:ring-focus outline-none after:absolute after:inset-0 focus-visible:after:ring-3 focus-visible:after:ring-inset"
+            params={params}
+            to="/a/$id"
+          >
+            {artifact.title}
+          </Link>
+        )}
       </TablePrimitive.Cell>
       <TablePrimitive.Cell>
         <TypeBadge type={artifact.type} />
@@ -386,11 +428,16 @@ const TableRow = memo(function TableRow({ artifact }: { artifact: Artifact }) {
       <TablePrimitive.Cell className="text-foreground-muted relative text-xs">
         <RelativeTime value={artifact.updatedAt} />
       </TablePrimitive.Cell>
+      {trash ? (
+        <TablePrimitive.Cell>
+          <ArtifactTrashActions artifact={artifact} trash={trash} />
+        </TablePrimitive.Cell>
+      ) : null}
     </TablePrimitive.Row>
   );
 });
 
-const Table = memo(function Table({ items }: GalleryTableProps) {
+const Table = memo(function Table({ items, trash }: GalleryTableProps) {
   return (
     <TablePrimitive.Root>
       <TablePrimitive.Header>
@@ -399,11 +446,12 @@ const Table = memo(function Table({ items }: GalleryTableProps) {
           <TablePrimitive.Head>Type</TablePrimitive.Head>
           <TablePrimitive.Head>Tags</TablePrimitive.Head>
           <TablePrimitive.Head>Updated</TablePrimitive.Head>
+          {trash ? <TablePrimitive.Head>Actions</TablePrimitive.Head> : null}
         </TablePrimitive.Row>
       </TablePrimitive.Header>
       <TablePrimitive.Body>
         {items.map((artifact) => (
-          <TableRow artifact={artifact} key={artifact.id} />
+          <TableRow artifact={artifact} key={artifact.id} trash={trash} />
         ))}
       </TablePrimitive.Body>
     </TablePrimitive.Root>

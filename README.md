@@ -107,7 +107,7 @@ Auth and proxy notes:
 
 State lives in one SQLite file: `/data/app.db`, bind-mounted to `./data` by the compose file. To back up, stop the container, copy the `data/` directory, and start it again. For an online copy without downtime, run `sqlite3 data/app.db ".backup backup.db"` on the host.
 
-`delete_artifact` is a soft delete: the row is hidden from listings but stays in `app.db`, and so in every backup taken after the delete.
+`delete_artifact` is a soft delete: the row is hidden from listings but stays in `app.db`, and so in every backup taken after the delete. Filter the gallery to "Deleted only" to restore it or delete it forever. Deleting forever removes the artifact and all of its versions from the database, so it leaves later backups — but not the ones you already took.
 
 ## Rotating the secret
 
