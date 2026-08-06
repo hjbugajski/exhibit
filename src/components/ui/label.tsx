@@ -6,6 +6,7 @@ export type LabelProps = ComponentProps<'label'>;
 
 function Label({ className, ...props }: LabelProps) {
   return (
+    // Styling primitive; callers wire the control.
     // oxlint-disable-next-line jsx-a11y/label-has-associated-control
     <label
       data-slot="label"

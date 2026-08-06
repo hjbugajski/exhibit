@@ -123,6 +123,11 @@ function artifactRow(artifact: ArtifactListItem) {
   };
 }
 
+/**
+ * Builds a fresh server for a single request: stateless JSON mode gives each POST its own server and
+ * transport (see src/routes/mcp.ts), so `db` is captured by the tool handlers and nothing may be
+ * cached across requests here.
+ */
 export function buildMcpServer(db: Db): McpServer {
   const server = new McpServer({ name: 'exhibit', version: packageJson.version });
 

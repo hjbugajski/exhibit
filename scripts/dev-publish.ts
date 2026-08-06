@@ -1,5 +1,5 @@
 /**
- * Phase 5 E2E verification helper: drives the real OAuth 2.1 dance (dynamic client registration ->
+ * E2E verification helper: drives the real OAuth 2.1 dance (dynamic client registration ->
  * sign in -> PKCE authorize -> consent -> token exchange) against a *running* instance of this app,
  * then publishes a handful of artifacts through the real /mcp endpoint - exactly what an MCP client
  * (e.g. claude.ai) would do. The OAuth dance itself lives in testing/oauth-client.ts, shared with

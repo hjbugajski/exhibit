@@ -8,7 +8,7 @@ Three artifact types:
 - **Markdown**: prose-first documents rendered in the gallery, with catalog components embeddable inline. Raw HTML is never interpreted.
 - **HTML**: full pages served sandboxed on their own route.
 
-One owner, one container: session-authed UI, OAuth 2.1 (PKCE + dynamic client registration) for MCP, SQLite for storage.
+One owner, one container: session-authed UI, OAuth 2.1 with Proof Key for Code Exchange (PKCE) and dynamic client registration for MCP, and SQLite for storage.
 
 ## Quick start
 
@@ -30,7 +30,7 @@ Edit `.env`:
 docker compose up -d
 ```
 
-Compose pulls the prebuilt image from `ghcr.io/hjbugajski/exhibit`, published from `main` by CI. On Linux, create the data directory first so the non-root container (uid 1000) can write it: `mkdir -p data && sudo chown 1000:1000 data`. Docker Desktop on macOS/Windows handles the ownership itself.
+Compose pulls the prebuilt image from `ghcr.io/hjbugajski/exhibit`, published from `main` by CI for `linux/amd64` and `linux/arm64`. The entrypoint chowns `/data` on boot and then drops to a non-root user, so no host-side setup is needed; under rootless Docker, where the container cannot chown the bind mount, `chown` the `data/` directory to the mapped uid yourself.
 
 Open `BASE_URL` and sign in. Migrations run on boot, and the app seeds the owner account once; the env values are never re-applied. Change email and password in **/settings**.
 
@@ -60,33 +60,32 @@ Connected clients appear in **/settings â†’ MCP connections**, where you can rev
 
 ## Environment
 
-| Variable             | Required   | Purpose                                                                                                             |
-| -------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------- |
-| `BETTER_AUTH_SECRET` | yes        | Signs sessions and encrypts the stored JWKS private key. See [Rotating the secret](#rotating-the-secret).           |
-| `BASE_URL`           | yes        | Public origin; also the OAuth issuer/audience. Must match exactly what browsers and MCP clients use.                |
-| `OWNER_EMAIL`        | first boot | Owner account email, created only when no user exists yet.                                                          |
-| `OWNER_PASSWORD`     | first boot | Owner account password (change it in /settings afterwards).                                                         |
-| `DATABASE_PATH`      | no         | SQLite file. Defaults to `./data/app.db`; the Docker image pins it to `/data/app.db` inside its volume.             |
-| `RESEND_API_KEY`     | no         | Enables outbound email via [Resend](https://resend.com): password reset and email-change verification.              |
-| `EMAIL_FROM`         | no         | Sender for Resend mail, e.g. `Exhibit <exhibit@example.com>`; the domain must be verified in Resend.                |
-| `PROTOMAPS_API_KEY`  | no         | [Protomaps](https://protomaps.com) key: Map blocks render the house-styled basemap; unset falls back to Carto.      |
-| `MIGRATIONS_PATH`    | no         | Only if you relocate the drizzle migrations.                                                                        |
-| `TRUSTED_PROXIES`    | no         | Comma-separated IPs/CIDRs of reverse proxies in front of the app; scopes which forwarded hops rate limiting trusts. |
+| Variable             | Required   | Purpose                                                                                                                      |
+| -------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `BETTER_AUTH_SECRET` | yes        | Signs sessions and encrypts the stored JSON Web Key Set (JWKS) private key. See [Rotating the secret](#rotating-the-secret). |
+| `BASE_URL`           | yes        | Public origin; also the OAuth issuer/audience. Must match exactly what browsers and MCP clients use.                         |
+| `OWNER_EMAIL`        | first boot | Owner account email, created only when no user exists yet.                                                                   |
+| `OWNER_PASSWORD`     | first boot | Owner account password (change it in /settings afterwards).                                                                  |
+| `DATABASE_PATH`      | no         | SQLite file. Defaults to `./data/app.db`; the Docker image pins it to `/data/app.db` inside its volume.                      |
+| `RESEND_API_KEY`     | no         | Enables outbound email via [Resend](https://resend.com): password reset and email-change verification.                       |
+| `EMAIL_FROM`         | no         | Sender for Resend mail, e.g. `Exhibit <exhibit@example.com>`; the domain must be verified in Resend.                         |
+| `PROTOMAPS_API_KEY`  | no         | [Protomaps](https://protomaps.com) key: Map blocks render the house-styled basemap; unset falls back to Carto.               |
+| `MIGRATIONS_PATH`    | no         | Only if you relocate the drizzle migrations.                                                                                 |
+| `TRUSTED_PROXIES`    | no         | Comma-separated IPs/CIDRs of reverse proxies in front of the app; scopes which forwarded hops rate limiting trusts.          |
 
-The app validates all of this at boot and refuses to start on bad config: missing required values, a malformed `BASE_URL`, or one of `RESEND_API_KEY`/`EMAIL_FROM` or `OWNER_EMAIL`/`OWNER_PASSWORD` without its partner.
+The app validates all of this at boot and refuses to start on bad config. That means a missing required value or a malformed `BASE_URL`. It also means a half-set pair: `RESEND_API_KEY` and `EMAIL_FROM` must be set together, as must `OWNER_EMAIL` and `OWNER_PASSWORD`.
 
 Without Resend, everything still works: password changes need the current password, email changes apply immediately, and there is no reset flow. If you lose the password, see [Recovering access](#recovering-access).
 
 ## Deploying (any Docker host)
 
-The image is self-contained: multi-stage build, migrations on boot, `HEALTHCHECK` against `/healthz`, SQLite in the `/data` volume.
+The image is self-contained: multi-stage build, published for `linux/amd64` and `linux/arm64`, migrations on boot, `HEALTHCHECK` against `/healthz`, SQLite in the `/data` volume. The entrypoint chowns `/data` and drops privileges, so the bind-mounted directory needs no host-side ownership fix.
 
 On the server:
 
 1. Copy `compose.yaml` and `.env.example` (renamed to `.env`) into a directory, or clone the repo.
 2. Set the environment variables from the table above, with `BASE_URL=https://exhibit.example.com`.
-3. `mkdir -p data && sudo chown 1000:1000 data` so the non-root container can write the database.
-4. `docker compose up -d`, and point an HTTPS reverse proxy (Caddy, Traefik, nginx) at port 3000.
+3. `docker compose up -d`, and point an HTTPS reverse proxy (Caddy, Traefik, nginx) at port 3000.
 
 To upgrade:
 
@@ -106,11 +105,13 @@ Auth and proxy notes:
 
 ## Backups
 
-State lives in one SQLite file: `/data/app.db`, bind-mounted to `./data` by the compose file. To back up, stop the container, copy the `data/` directory, and start it again. For an online copy without downtime, run `sqlite3 data/app.db ".backup backup.db"` on the host. `delete_artifact` is a soft delete, so deleted rows stay in `app.db` and in every backup taken after the delete.
+State lives in one SQLite file: `/data/app.db`, bind-mounted to `./data` by the compose file. To back up, stop the container, copy the `data/` directory, and start it again. For an online copy without downtime, run `sqlite3 data/app.db ".backup backup.db"` on the host.
+
+`delete_artifact` is a soft delete: the row is hidden from listings but stays in `app.db`, and so in every backup taken after the delete.
 
 ## Rotating the secret
 
-`BETTER_AUTH_SECRET` does two jobs: signing sessions and encrypting the private half of the JSON Web Key Set (JWKS) used to sign MCP access tokens (stored in the `jwks` table). After rotating it:
+`BETTER_AUTH_SECRET` does two jobs: signing sessions and encrypting the private half of the JWKS used to sign MCP access tokens (stored in the `jwks` table). After rotating it:
 
 1. Sessions no longer verify; sign in again.
 2. The stored JWKS can no longer be decrypted. Delete it so a fresh keypair is generated on demand:
@@ -135,7 +136,13 @@ Single-user app, so there is no admin reset path. With Resend configured, use â€
 
 ## Development
 
-Node 26 + pnpm via [mise](https://mise.jdx.dev) (`mise install`). Copy `.env.example` to `.env`, then:
+Node 26 + pnpm via [mise](https://mise.jdx.dev) (`mise install`). Copy `.env.example` to `.env` and fill in the same three values as the quick start:
+
+- `BETTER_AUTH_SECRET`: `openssl rand -base64 32`
+- `BASE_URL`: `http://localhost:3000`
+- `OWNER_EMAIL`/`OWNER_PASSWORD`: the owner account is your sign-in; sign-up is disabled, so without these the app boots with no way in.
+
+Then:
 
 ```sh
 pnpm install
@@ -147,6 +154,12 @@ pnpm db:generate    # drizzle migrations from schema changes
 
 The compose file pulls the published image. To run a local build instead, `docker build -t exhibit .` and point `compose.yaml`'s `image:` at it, or run the container directly.
 
-In dev, `/dev/library` is a component library with a props playground for every house UI component and every catalog component, plus the kitchen-sink example artifact. `scripts/dev-publish.ts` drives the full OAuth + MCP publish flow against a running instance. Run it with plain `node scripts/dev-publish.ts`; scripts stick to relative imports, so Node's native type stripping is enough.
+In dev, `/dev/library` is a component library with a props playground for every house UI component and every catalog component, plus the kitchen-sink example artifact. `scripts/dev-publish.ts` drives the full OAuth + MCP publish flow against a running instance. It takes its config from the environment:
 
-`nitro` is pinned to a dated nightly build (TanStack Start requires nitro v3, which has no stable release yet). `pnpm outdated` won't flag it, so bump the pin manually when updating dependencies.
+```sh
+BASE_URL=http://localhost:3000 OWNER_EMAIL=... OWNER_PASSWORD=... node scripts/dev-publish.ts
+```
+
+Scripts stick to relative imports, so Node's native type stripping runs the TypeScript as-is.
+
+`nitro` is pinned to a dated nightly build (TanStack Start requires nitro v3, which has no stable release yet). `pnpm outdated` reports it as `nitro-nightly`, but the alias spec in `package.json` has to be bumped by hand.

@@ -1,3 +1,11 @@
+/**
+ * Mirrors Better Auth's required schema, plus the tables the oauth-provider and jwt plugins add.
+ * Table and column names are the library's contract - Better Auth queries them by name, so nothing
+ * here is renameable and no column is safe to drop because the app never reads it.
+ *
+ * After upgrading Better Auth or its plugins, re-sync by comparing against the schema the library
+ * documents for the enabled plugins, then `pnpm db:generate` to emit the migration.
+ */
 import { sql } from 'drizzle-orm';
 import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core';
 

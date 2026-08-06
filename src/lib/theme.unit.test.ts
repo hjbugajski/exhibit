@@ -57,6 +57,7 @@ describe('THEME_INIT_SCRIPT', () => {
   it('is executable and stamps the stored scheme', () => {
     localStorage.setItem(THEME_STORAGE_KEY, 'dark');
 
+    // Compiling the script is the assertion: it proves the inlined pre-paint source parses.
     // oxlint-disable-next-line typescript/no-implied-eval
     new Function(THEME_INIT_SCRIPT)();
 

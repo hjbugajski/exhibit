@@ -185,6 +185,7 @@ function decodeCursor(cursor: string): Cursor | null {
   }
 }
 
+/** Inserts the artifact and its first body version in one transaction, minting version 1. */
 export function createArtifact(
   db: Db,
   input: CreateArtifactInput,
@@ -452,6 +453,7 @@ export function setArtifactArchived(db: Db, id: string, archived: boolean): Arti
   return artifact ? toArtifact(artifact) : undefined;
 }
 
+/** Stamps `deletedAt`; no-ops on unknown ids. Version and state rows survive. */
 export function softDeleteArtifact(db: Db, id: string): void {
   db.update(artifacts).set({ deletedAt: Date.now() }).where(eq(artifacts.id, id)).run();
 }

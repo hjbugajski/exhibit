@@ -349,9 +349,10 @@ export function Map({
 
     const styleDataHandler = () => {
       clearStyleTimeout();
-      // Delay to ensure style is fully processed before allowing layer operations This is a
-      // workaround to avoid race conditions with the style loading else we have to force update
-      // every layer on setStyle change
+      // MapLibre emits `styledata` repeatedly while a style loads, so debounce: the timer is reset
+      // on every event and only fires once the burst stops. Layer operations run against a
+      // half-applied style otherwise, and the alternative is force-updating every layer on each
+      // setStyle. 100ms is empirical - long enough for the burst, short enough to not be visible.
       styleTimeoutRef.current = setTimeout(() => {
         setIsStyleLoaded(true);
         if (projectionRef.current) {

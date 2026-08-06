@@ -46,6 +46,8 @@ export function Rating({ props }: { props: Props }) {
         value={value ? String(value) : null}
       >
         {STARS.map((star) => (
+          // The control is the Base UI radio input the linter can't see; keyboard flows through the
+          // radio group.
           // oxlint-disable-next-line jsx-a11y/label-has-associated-control, jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions
           <label
             className="has-focus-visible:ring-focus flex cursor-pointer items-center rounded-sm p-0.5 has-focus-visible:ring-3"

@@ -64,15 +64,15 @@ export function DocsView({ mcpUrl }: { mcpUrl: string }) {
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-10 px-6 py-12">
       <header className="flex flex-col gap-2">
-        <h1 className="text-3xl font-semibold tracking-tight">Docs</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">Connect Claude to your gallery</h1>
         <p className="text-foreground-muted">
           Exhibit is a gallery Claude publishes to over MCP. Connect it once, then ask Claude to
-          publish — artifacts show up here, rendered and versioned.
+          publish: artifacts show up here, rendered and versioned.
         </p>
       </header>
 
       <section className="flex flex-col gap-4">
-        <SectionHeading>Connect Claude</SectionHeading>
+        <SectionHeading>Add the connector</SectionHeading>
         <p className="text-foreground-muted leading-relaxed">
           In the claude.ai web, desktop, or mobile apps, open Settings → Connectors → Add custom
           connector and paste the server URL, then complete the sign-in and consent prompts as the
@@ -92,7 +92,7 @@ export function DocsView({ mcpUrl }: { mcpUrl: string }) {
       <section className="flex flex-col gap-4">
         <SectionHeading>What Claude can do</SectionHeading>
         <p className="text-foreground-muted leading-relaxed">
-          There is nothing to operate — Claude picks the right tool from the conversation. Ask it to
+          There is nothing to operate: Claude picks the right tool from the conversation. Ask it to
           publish a comparison of the apartments you discussed, to turn a conversation into a
           step-by-step guide, to update the Tokyo itinerary with a day trip, or what you checked off
           on the packing list it published.
