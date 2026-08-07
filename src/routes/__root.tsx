@@ -83,12 +83,15 @@ function RootDocument({ children }: { children: ReactNode }) {
     // React hydrates, which is an expected server/client attribute difference.
     <html lang="en" suppressHydrationWarning>
       <head>
+        {/*
+          The theme-color meta is deliberately NOT rendered here. The pre-paint script creates it
+          with the resolved scheme's color and applyTheme rewrites it — a single meta tracking
+          data-theme, where a media-keyed pair would track the OS scheme and paint the wrong chrome
+          whenever the two disagree. It cannot be JSX: React 19 hoists <meta> elements, and a
+          server-rendered tag whose content the script already rewrote fails hydration matching, so
+          React inserts a stale duplicate alongside it.
+        */}
         <HeadContent />
-        {/* Rendered literally, not via head(): the head manager dedupes meta by name and would
-            keep only one theme-color, dropping the other scheme's. Values are --background
-            (gray-1) per scheme — browser chrome can't read tokens. */}
-        <meta content="#ffffff" media="(prefers-color-scheme: light)" name="theme-color" />
-        <meta content="#131518" media="(prefers-color-scheme: dark)" name="theme-color" />
       </head>
       <body>
         {children}

@@ -11,6 +11,24 @@ export type ResolvedTheme = 'light' | 'dark';
 export const THEME_STORAGE_KEY = 'exhibit-theme';
 
 /**
+ * Browser chrome color per scheme — mirrors --background (gray-1) in styles.css. <meta
+ * name="theme-color"> content takes literal colors only, never CSS vars, so the two hexes live
+ * here once and both the pre-paint script and applyTheme read them.
+ */
+export const THEME_COLOR: Record<ResolvedTheme, string> = {
+  light: '#ffffff',
+  dark: '#131518',
+};
+
+/**
+ * Selector for the single theme-color meta. Created by the pre-paint script, never rendered by
+ * React: React 19 hoists <meta> elements and reconciles them at hydration, so a server-rendered
+ * tag whose content the script already rewrote fails to match and React inserts a stale duplicate
+ * (suppressHydrationWarning does not cover hoisted metadata).
+ */
+const THEME_COLOR_META = 'meta[name="theme-color"]';
+
+/**
  * Pre-paint init: runs from an inline <head> script before the body renders, so a stored dark
  * preference never flashes light. Mirrors resolveTheme/getStoredThemePreference; the try/catch
  * covers storage being unavailable.
@@ -22,6 +40,9 @@ export const THEME_INIT_SCRIPT = `(() => {
   } catch {}
   const dark = stored === 'dark' || (stored !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
   document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  const meta = document.querySelector('${THEME_COLOR_META}') ?? document.head.appendChild(document.createElement('meta'));
+  meta.setAttribute('name', 'theme-color');
+  meta.setAttribute('content', dark ? '${THEME_COLOR.dark}' : '${THEME_COLOR.light}');
 })();`;
 
 export function resolveTheme(preference: ThemePreference, systemDark: boolean): ResolvedTheme {
@@ -46,8 +67,10 @@ export function getStoredThemePreference(): ThemePreference {
 
 function applyTheme(preference: ThemePreference): void {
   const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const theme = resolveTheme(preference, systemDark);
 
-  document.documentElement.dataset.theme = resolveTheme(preference, systemDark);
+  document.documentElement.dataset.theme = theme;
+  document.querySelector(THEME_COLOR_META)?.setAttribute('content', THEME_COLOR[theme]);
 }
 
 /** Re-stamps <html> from the stored preference and the current OS scheme. */
