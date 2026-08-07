@@ -1,6 +1,6 @@
 import { catalogDemo } from '@/components/library/catalog-demo';
 
-const kinds = ['bar', 'line', 'area', 'scatter', 'pie', 'donut'] as const;
+const kinds = ['bar', 'line', 'area', 'scatter', 'donut'] as const;
 
 const series = [
   { label: 'Jan', value: 12_400 },
@@ -19,20 +19,19 @@ const shares = [
   { label: 'Referral', value: 12 },
 ];
 
-/** Part-to-whole kinds read badly over a time series, so they get their own sample. */
+/** The part-to-whole kind reads badly over a time series, so it gets its own sample. */
 const data: Record<(typeof kinds)[number], typeof series> = {
   bar: series,
   line: series,
   area: series,
   scatter: series,
-  pie: shares,
   donut: shares,
 };
 
 export const catalogChartDemo = catalogDemo({
   slug: 'catalog-chart',
   title: 'Chart',
-  description: 'Simple single-series chart: bar, line, area, scatter, pie, or donut.',
+  description: 'Simple single-series chart: bar, line, area, scatter, or donut.',
   controls: {
     kind: { kind: 'select', label: 'Kind', options: kinds, defaultValue: 'line' },
     valueLabel: { kind: 'text', label: 'Value label', defaultValue: 'Revenue ($)' },

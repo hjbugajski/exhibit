@@ -1037,3 +1037,25 @@
   font-family: var(--font-sans) !important;
   font-size: var(--text-xs) !important;
 }
+
+/*
+ * The library moves the tooltip by writing pixel `left`/`top` on the same
+ * persistent element, so transitioning those glides it between anchor points.
+ * Showing it un-sets the `hidden` attribute, which makes the element newly
+ * rendered — the one state `@starting-style` can hook — so the fade rides on
+ * that. No `!important` here: the library writes positions, never a transition.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .catalog-chart-tooltip {
+    transition:
+      left 120ms ease-out,
+      top 120ms ease-out,
+      opacity 120ms ease-out;
+  }
+
+  @starting-style {
+    .catalog-chart-tooltip {
+      opacity: 0;
+    }
+  }
+}

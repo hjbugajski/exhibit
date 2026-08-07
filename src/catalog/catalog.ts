@@ -461,11 +461,11 @@ export const catalog = defineCatalog(schema, {
     },
     Chart: {
       description:
-        'Single-series chart over categories or time; ~4-24 points, 4-6 pie/donut slices. Use Table for exact values.',
+        'Single-series chart over categories or time; ~4-24 points, 4-6 donut slices. Use Table for exact values.',
       props: z.object({
         kind: z
-          .enum(['bar', 'line', 'area', 'scatter', 'pie', 'donut'])
-          .describe('bar/scatter categories, line/area trends, pie/donut shares.'),
+          .enum(['bar', 'line', 'area', 'scatter', 'donut'])
+          .describe('bar/scatter categories, line/area trends, donut shares.'),
         data: z
           .array(
             z.object({

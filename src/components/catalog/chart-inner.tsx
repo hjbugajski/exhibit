@@ -40,15 +40,29 @@ export default function CatalogChartInner({ props }: { props: Props }) {
   /* One definition type across kinds: the phantom datum generic differs per branch (polar marks
      carry d3 pie slices), and the Chart prop takes a single definition. */
   const definition = useMemo<ChartDefinition>(() => {
-    /* The x value heads the tooltip; the y row carries the series name. The empty label keeps the
-       library from heading the category row with a literal "x". */
+    /* `content` outranks the automatic item layout, so the category heads the tooltip as a bold
+       title and the value gets a labelled row of its own. */
     const tooltipSpec = {
       use: tooltip,
       className: 'catalog-chart-tooltip',
-      items: [
-        { channel: 'x' as const, label: '' },
-        { channel: 'y' as const, label: seriesName },
-      ],
+      content: (points: readonly ChartPoint<Point>[]) => {
+        const point = points[0];
+
+        if (!point) {
+          return { rows: [] };
+        }
+
+        return {
+          title: point.datum.label,
+          rows: [
+            {
+              label: seriesName,
+              value: point.datum.value.toLocaleString(),
+              color: point.color,
+            },
+          ],
+        };
+      },
     };
     const y = { scale: scaleLinear, nice: true, grid: true };
     /* Categories sit on a point scale for every mark that plots a position rather than a band. */
@@ -84,10 +98,9 @@ export default function CatalogChartInner({ props }: { props: Props }) {
           y,
           tooltip: tooltipSpec,
         });
-      case 'pie':
       case 'donut': {
-        /* d3's pie layout emits the exact angle channels radialArc reads; a donut is the same
-           composition with a nonzero inner radius. Source order is meaningful, hence sort(null). */
+        /* d3's pie layout emits the exact angle channels radialArc reads; the donut hole is just a
+           nonzero inner radius. Source order is meaningful, hence sort(null). */
         const slices = pie<Point>()
           .sort(null)
           .padAngle(0.012)
@@ -101,7 +114,7 @@ export default function CatalogChartInner({ props }: { props: Props }) {
               inset: 8,
               marks: [
                 radialArc(slices, {
-                  innerRadius: kind === 'donut' ? ({ radius }) => radius * 0.58 : 0,
+                  innerRadius: ({ radius }) => radius * 0.58,
                   cornerRadius: 2,
                   color: (slice) => slice.data.label,
                   key: (slice) => slice.data.label,
@@ -114,15 +127,21 @@ export default function CatalogChartInner({ props }: { props: Props }) {
           tooltip: {
             use: tooltip,
             className: 'catalog-chart-tooltip',
-            items: [
-              // The empty label keeps the row from being headed with the item id.
-              { id: 'label', label: '', text: (focused) => sliceOf(focused).label },
-              {
-                id: 'value',
-                label: seriesName,
-                text: (focused) => sliceOf(focused).value.toLocaleString(),
-              },
-            ],
+            content: (points) => {
+              const focused = points[0];
+
+              if (!focused) {
+                return { rows: [] };
+              }
+
+              const slice = sliceOf(focused);
+
+              return {
+                title: slice.label,
+                color: focused.color,
+                rows: [{ label: seriesName, value: slice.value.toLocaleString() }],
+              };
+            },
           },
         });
       }
