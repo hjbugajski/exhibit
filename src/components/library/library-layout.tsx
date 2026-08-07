@@ -47,7 +47,12 @@ export function LibraryLayout() {
           ))}
         </nav>
       </aside>
-      <div className="min-w-0 flex-1 [scrollbar-gutter:stable] overflow-y-auto py-12">
+      {/*
+        `relative` keeps absolutely-positioned descendants (sr-only tables/legends, Base UI radio
+        inputs) inside this scroller's containing block — without it they anchor to the document
+        root, escape the overflow clip, and stretch the page with blank space below the shell.
+      */}
+      <div className="relative min-w-0 flex-1 [scrollbar-gutter:stable] overflow-y-auto py-12">
         <Outlet />
       </div>
     </div>
