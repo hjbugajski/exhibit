@@ -3,7 +3,9 @@ import { createFileRoute, lazyRouteComponent, notFound } from '@tanstack/react-r
 export const Route = createFileRoute('/_authed/dev/library/$slug')({
   // Demos hold render functions, so the loader only validates the slug; the component looks the
   // demo up again from the registry instead of receiving it through (serialized) loader data. Both
-  // edges into the registry are dynamic so the dev-only demos never reach a production chunk.
+  // edges into the registry are dynamic, which keeps the registry and its demo modules out of the
+  // entry chunk — a production build still emits them as assets, but the dev-only gate on the
+  // parent route means nothing ever requests them.
   loader: async ({ params }) => {
     const { getLibraryDemo } = await import('@/components/library/registry');
 

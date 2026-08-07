@@ -30,7 +30,7 @@ function NavGroup({ group }: { group: LibraryGroup }) {
 /**
  * Sidebar shell for `/dev/library`; the matched page renders in the `Outlet`. It is the layout
  * route's component itself (loaded lazily) rather than a wrapper the route file imports, so the
- * registry it pulls in stays out of production chunks. The shell fills the viewport below the
+ * registry it pulls in stays out of the entry chunk. The shell fills the viewport below the
  * fixed 64px header (h-16 in AuthedLayout), and the sidebar and page each scroll their own
  * overflow — the body itself never scrolls.
  */

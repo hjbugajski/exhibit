@@ -1,9 +1,10 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense } from 'react';
 
 import type { CatalogComponentProps } from '@/catalog/catalog';
 import { HighlightedCode } from '@/components/blocks/highlighted-code';
 import { flowBlock } from '@/components/catalog/flow';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useNearViewport } from '@/lib/use-near-viewport';
 
 type Props = CatalogComponentProps<'Mermaid'>;
 
@@ -38,36 +39,13 @@ const MermaidInner = lazy(() =>
 );
 
 export function Mermaid({ props }: { props: Props }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    const container = containerRef.current;
-
-    if (!container || typeof IntersectionObserver === 'undefined') {
-      setMounted(true);
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
-          setMounted(true);
-          observer.disconnect();
-        }
-      },
-      { rootMargin: '200px' },
-    );
-    observer.observe(container);
-
-    return () => observer.disconnect();
-  }, []);
+  const { ref, mounted } = useNearViewport<HTMLDivElement>();
 
   // Also the SSR and pre-mount shape, so hydration swaps a skeleton for a skeleton.
   const fallback = <Skeleton className="h-64 w-full" />;
 
   return (
-    <div ref={containerRef} className={flowBlock}>
+    <div ref={ref} className={flowBlock}>
       {mounted ? (
         <Suspense fallback={fallback}>
           <MermaidInner props={props} />

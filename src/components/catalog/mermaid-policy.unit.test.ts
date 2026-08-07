@@ -10,35 +10,14 @@ import {
 } from '@/components/catalog/mermaid-policy';
 
 /**
- * happy-dom defines `nodeName` on each Node subclass, leaving the getter on Node.prototype
- * returning `''`. DOMPurify caches that getter when it loads and would then see every element as
- * unnamed and strip the whole tree — a shim artifact that browsers don't have. The hoisted patch
- * restores browser behavior before DOMPurify is imported. Two shim gaps remain, so the cases below
- * stay narrow: happy-dom's parser drops the content of an SVG `<style>` (nothing here can assert
- * the diagram keeps its styling), and removing a node skips its next sibling in the walk (so
- * foreignObject gets its own case rather than sharing one).
+ * DOMPurify needs a browser-accurate `nodeName` before it loads (see the helper). The gaps that
+ * survive the patch keep the cases below narrow: nothing here can assert the diagram keeps its
+ * styling, and foreignObject gets its own case rather than sharing one.
  */
-vi.hoisted(() => {
-  const proto = Node.prototype;
+await vi.hoisted(async () => {
+  const { patchNodeName } = await import('@testing/happy-dom-node-name');
 
-  Object.defineProperty(proto, 'nodeName', {
-    configurable: true,
-    get(this: Node) {
-      for (
-        let prototype: object | null = Object.getPrototypeOf(this);
-        prototype && prototype !== proto;
-        prototype = Object.getPrototypeOf(prototype)
-      ) {
-        const descriptor = Object.getOwnPropertyDescriptor(prototype, 'nodeName');
-
-        if (descriptor?.get) {
-          return descriptor.get.call(this) as string;
-        }
-      }
-
-      return '';
-    },
-  });
+  patchNodeName();
 });
 
 /** One sample per allowed family, plus the shorthand spellings that detect as a different id. */
