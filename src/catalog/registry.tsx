@@ -1,7 +1,10 @@
+import { useMemo } from 'react';
+
 import type { Spec, StateStore } from '@json-render/core';
 import { JSONUIProvider, Renderer, defineRegistry } from '@json-render/react';
 
 import { catalog } from '@/catalog/catalog';
+import { withElementPadding } from '@/catalog/validate';
 import { Badge } from '@/components/catalog/badge';
 import { Callout } from '@/components/catalog/callout';
 import { Card } from '@/components/catalog/card';
@@ -79,11 +82,17 @@ export const { registry } = defineRegistry(catalog, { components: catalogCompone
  *
  * `store` (optional) makes the provider controlled: stateful components (Checklist statePath)
  * read/write it, and the caller owns persistence.
+ *
+ * Every spec is padded on the way in (`withElementPadding`): an element written without `props` —
+ * natural for a Divider — kills the renderer, and specs reach here straight from JSON.parse of a
+ * stored artifact body (artifact-detail.tsx), never having passed the validator.
  */
 export function SpecView({ spec, store }: { spec: Spec | null; store?: StateStore }) {
+  const padded = useMemo(() => withElementPadding(spec), [spec]);
+
   return (
     <JSONUIProvider registry={registry} store={store}>
-      <Renderer registry={registry} spec={spec} />
+      <Renderer registry={registry} spec={padded} />
     </JSONUIProvider>
   );
 }

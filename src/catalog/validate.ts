@@ -5,9 +5,9 @@
  * Merges two layers from @json-render/core: catalog.validate(spec), a Zod parse against the
  * catalog's generated schema (root/elements/children shape, unknown component names), and
  * validateSpec(spec), which catches AI-generation mistakes a type-level schema can't (dangling
- * child refs, misplaced `visible`/`on`/etc, orphaned elements). Two workarounds for
- * @json-render/react's bundled schema live at their sites: the per-element props re-parse in
- * validateArtifactSpec and `withVisiblePadding`.
+ * child refs, misplaced `visible`/`on`/etc, orphaned elements). Two compensations for
+ * @json-render's bundled schema and renderer live at their sites: the per-element props re-parse
+ * in validateArtifactSpec and `withElementPadding`.
  */
 
 import type { Spec } from '@json-render/core';
@@ -220,16 +220,26 @@ function findTabsChildCountMismatchErrors(elements: Record<string, unknown>): Ar
 }
 
 /**
- * Pads a `visible: undefined` key onto elements missing it, for the Zod pass only — the structural
- * pass and the returned `spec` use the original input.
+ * Fills in the three element keys @json-render/react's bundled schema declares without
+ * `.optional()` — `visible: s.any()`, `children: s.array(s.string())`, `props:
+ * s.propsOf(...)` — when an element omits them. Under Zod 4 a non-optional field requires the
+ * key to be *present*, so catalog.validate() rejects every naturally-authored spec: leaf
+ * elements carry no `children`, propless components carry no `props`, and most elements carry
+ * no `visible`. For those two, core's own `UIElement` says `children?`/`visible?` and the renderer
+ * reads `children?.map` — the omission is legal everywhere except that one schema.
  *
- * Workaround for @json-render/react's bundled element schema, which declares `visible: s.any()`
- * without `.optional()`. Under Zod 4 a non-optional field requires the key to be *present* (even
- * set to `undefined`), and real specs (including the library's own prompt examples) omit `visible`
- * on most elements — so catalog.validate() would reject every ordinary spec with a spurious
- * "expected nonoptional, received undefined" error.
+ * `props` is the opposite case: core requires it, and resolveElementProps/resolveBindings call
+ * `Object.entries(props)` unguarded, so an element without it throws "Cannot convert undefined or
+ * null to object" during SSR and blanks the subtree. Padding it is deliberate input leniency —
+ * a propless Divider is the natural way to write one — paid for by normalizing before render.
+ *
+ * Hence both boundaries pad: a valid result returns the padded spec rather than the input, and
+ * SpecView (src/catalog/registry.tsx) pads again on the way into the renderer — an artifact page
+ * renders its stored body straight from JSON.parse and never passes through this validator.
+ *
+ * Non-record elements and non-spec input pass through untouched, so the schema still reports them.
  */
-function withVisiblePadding(spec: unknown): unknown {
+export function withElementPadding<T>(spec: T): T {
   if (!isRecord(spec) || !isRecord(spec.elements)) {
     return spec;
   }
@@ -237,11 +247,20 @@ function withVisiblePadding(spec: unknown): unknown {
   const paddedElements: Record<string, unknown> = {};
 
   for (const [key, element] of Object.entries(spec.elements)) {
-    paddedElements[key] =
-      isRecord(element) && !('visible' in element) ? { ...element, visible: undefined } : element;
+    if (!isRecord(element)) {
+      paddedElements[key] = element;
+      continue;
+    }
+
+    paddedElements[key] = {
+      ...('visible' in element ? {} : { visible: undefined }),
+      ...('children' in element ? {} : { children: [] }),
+      ...('props' in element ? {} : { props: {} }),
+      ...element,
+    };
   }
 
-  return { ...spec, elements: paddedElements };
+  return { ...spec, elements: paddedElements } as T;
 }
 
 function fromZodIssues(
@@ -267,12 +286,16 @@ function fromZodIssues(
 /**
  * Validate an unknown value as an artifact spec. Never throws — garbage input (null, primitives,
  * malformed objects) produces a structured failure instead.
+ *
+ * A valid result carries the padded spec (see `withElementPadding`), which is what the render
+ * paths consume; the publish tools store the caller's raw input, so storage stays verbatim.
  */
 export function validateArtifactSpec(spec: unknown): ArtifactValidationResult {
   const errors: ArtifactSpecError[] = [];
   const elements = readElements(spec);
+  const padded = withElementPadding(spec);
 
-  const catalogResult = catalog.validate(withVisiblePadding(spec));
+  const catalogResult = catalog.validate(padded);
 
   if (!catalogResult.success && catalogResult.error) {
     errors.push(...fromZodIssues(catalogResult.error.issues, elements));
@@ -292,7 +315,9 @@ export function validateArtifactSpec(spec: unknown): ArtifactValidationResult {
         continue;
       }
 
-      const props = isRecord(element) ? element.props : undefined;
+      // An omitted `props` is an empty props object, so a propless Divider passes while a Prose
+      // still fails on its required `markdown`.
+      const props = (isRecord(element) ? element.props : undefined) ?? {};
       const propsResult = componentDef.props.safeParse(props);
 
       if (!propsResult.success) {
@@ -330,7 +355,7 @@ export function validateArtifactSpec(spec: unknown): ArtifactValidationResult {
   }
 
   if (errors.length === 0) {
-    return { valid: true, spec: spec as unknown as Spec };
+    return { valid: true, spec: padded as Spec };
   }
 
   return { valid: false, errors };
