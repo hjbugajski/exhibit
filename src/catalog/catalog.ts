@@ -8,7 +8,7 @@
  *
  * Every array and string field carries a generous but finite `.max()`: safety caps against a
  * hostile-but-schema-valid spec (a Chart with millions of points, a multi-megabyte markdown string)
- * hitting React/recharts/the markdown renderer — a real browser-DoS vector for the owner viewing
+ * hitting React/the chart engine/the markdown renderer — a real browser-DoS vector for the owner viewing
  * rendered artifacts. SHORT_MAX covers titles/labels/short strings, LONG_MAX long-form
  * markdown/prose/code; a few array fields use their own bound where that's obviously right
  * (documented inline).
@@ -461,26 +461,28 @@ export const catalog = defineCatalog(schema, {
     },
     Chart: {
       description:
-        'Simple single-series bar or line chart. Use for a numeric series over categories or time; keep to ~4-24 points. For exact values, prefer Table.',
+        'Single-series chart over categories or time; ~4-24 points, 4-6 pie/donut slices. Use Table for exact values.',
       props: z.object({
-        kind: z.enum(['bar', 'line']).describe('bar for categories, line for trends over time.'),
+        kind: z
+          .enum(['bar', 'line', 'area', 'scatter', 'pie', 'donut'])
+          .describe('bar/scatter categories, line/area trends, pie/donut shares.'),
         data: z
           .array(
             z.object({
-              label: z.string().max(SHORT_MAX).describe('Category or time label for the x-axis.'),
-              value: z.number().describe('Numeric value for the y-axis.'),
+              label: z.string().max(SHORT_MAX).describe('Category, time, or slice label.'),
+              value: z.number().describe('Numeric value.'),
             }),
           )
           .min(2)
-          // Recharts renders every point to SVG; 5k is generous for a real series and well short of
-          // a rendering hazard.
+          // Every point becomes an SVG primitive; 5k is generous for a real series and well short
+          // of a rendering hazard.
           .max(5_000)
-          .describe('Ordered data points, left to right.'),
+          .describe('Ordered, left to right.'),
         valueLabel: z
           .string()
           .max(SHORT_MAX)
           .optional()
-          .describe('Name of the series shown in the tooltip, e.g. "Cost ($)".'),
+          .describe('Series name in the tooltip, e.g. "Cost ($)".'),
       }),
     },
 

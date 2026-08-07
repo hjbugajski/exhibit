@@ -101,9 +101,10 @@
  * (components still never use `dark:` variants).
  */
 /*
- * `static` forces every token to emit even without a utility-class usage —
- * chart-inner.tsx and the map bridge read `--color-chart-*`/`--color-accent`
- * from JS strings, which Tailwind's on-use emission cannot see.
+ * `static` forces every token to emit even without a utility-class usage — the
+ * map bridge reads `--color-chart-*`/`--color-accent` from JS strings, and the
+ * `.catalog-chart` rule below reads the chart tokens from plain CSS, neither of
+ * which Tailwind's on-use emission can see.
  */
 @theme inline static {
   --font-heading: var(--font-sans);
@@ -1003,4 +1004,36 @@
   /* 1.25rem matches the code line box (20px + baseline gap ≈ the real 25.5px advance); a taller
      placeholder makes the scrollbar shrink as lines render in. */
   contain-intrinsic-size: 0 1.25rem;
+}
+
+/*
+ * TanStack Charts paints axes, ticks, and grid with `currentColor` and takes its
+ * categorical series from `--ts-chart-*`, so the whole palette is a container
+ * concern: mapping it here (rather than passing paint through the definition)
+ * keeps the chart on house tokens and lets a data-theme switch recolor it with
+ * no re-render. The grid gets its own 0.11 stroke opacity from the library.
+ */
+.catalog-chart {
+  color: var(--color-foreground-muted);
+  --ts-chart-1: var(--color-chart-1);
+  --ts-chart-2: var(--color-chart-2);
+  --ts-chart-3: var(--color-chart-3);
+  --ts-chart-4: var(--color-chart-4);
+  --ts-chart-5: var(--color-chart-5);
+  --ts-chart-6: var(--color-chart-6);
+}
+
+/*
+ * Named through `tooltip.className`. The library owns the tooltip element and
+ * writes its base look — system `Canvas`/`CanvasText`, system-ui — as inline
+ * styles, which no author rule can outrank; `!important` is the only way to put
+ * house tokens on it. Padding, shadow, and layout are left to the library.
+ */
+.catalog-chart-tooltip {
+  background: var(--color-surface-raised) !important;
+  border-color: var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  color: var(--color-foreground) !important;
+  font-family: var(--font-sans) !important;
+  font-size: var(--text-xs) !important;
 }

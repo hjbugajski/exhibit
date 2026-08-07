@@ -21,23 +21,34 @@ describe('CatalogChartInner', () => {
       ],
     };
 
-    render(<CatalogChartInner props={props} />);
+    const { container } = render(<CatalogChartInner props={props} />);
 
+    // One <rect> per bar, so an empty scene cannot pass on the console assertion alone.
+    expect(container.querySelectorAll('svg rect').length).toBeGreaterThanOrEqual(2);
     expect(consoleError).not.toHaveBeenCalled();
   });
 
-  it('renders a line chart without console errors', () => {
+  // Each kind names the SVG primitive it must emit, so an empty scene cannot pass on the console
+  // assertion alone. Polar kinds draw one arc path per slice.
+  it.each([
+    { kind: 'line', selector: 'svg path', minimum: 1 },
+    { kind: 'area', selector: 'svg path', minimum: 2 },
+    { kind: 'scatter', selector: 'svg circle', minimum: 2 },
+    { kind: 'pie', selector: 'svg path', minimum: 2 },
+    { kind: 'donut', selector: 'svg path', minimum: 2 },
+  ] as const)('renders a $kind chart without console errors', ({ kind, selector, minimum }) => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
     const props: CatalogComponentProps<'Chart'> = {
-      kind: 'line',
+      kind,
       data: [
         { label: 'Mon', value: 1 },
         { label: 'Tue', value: 2 },
       ],
     };
 
-    render(<CatalogChartInner props={props} />);
+    const { container } = render(<CatalogChartInner props={props} />);
 
+    expect(container.querySelectorAll(selector).length).toBeGreaterThanOrEqual(minimum);
     expect(consoleError).not.toHaveBeenCalled();
   });
 
