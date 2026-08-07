@@ -1,8 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 const { db } = await import('@/database');
 const { user } = await import('@/database/schemas/auth');
-const { markOwnerEmailVerified, seedOwner } = await import('./seed');
+const { seedOwner, syncOwnerEmailVerified } = await import('./seed');
 
 function verifiedFlags(): boolean[] {
   return db
@@ -33,24 +33,53 @@ describe('seedOwner', () => {
   });
 
   /**
-   * signUpEmail leaves the row unverified, and Better Auth only sends a change-email confirmation
-   * to the CURRENT address when it is verified - otherwise it verifies the address the request
-   * asked to move to, which a session thief chooses. The seed email is trusted by construction.
+   * The flag exists only to steer Better Auth's /change-email: verified takes the confirm-to-the-
+   * OLD-address path (which needs a mailer), unverified takes the apply-immediately path, and
+   * Better Auth refuses that one for a verified user. So without a mailer the row must stay
+   * unverified or email changes 400 outright. No mailer is configured in this suite (see
+   * testing/setup.ts).
    */
-  it('marks the owner verified on creation', async () => {
+  it('leaves the owner unverified without a mailer', async () => {
     await seedOwner('owner@example.com', 'correct horse battery staple');
 
-    expect(verifiedFlags()).toEqual([true]);
+    expect(verifiedFlags()).toEqual([false]);
   });
 
-  it('backfills an owner row that predates the flag, and is a no-op afterwards', async () => {
+  it('marks the owner verified when a mailer is configured', async () => {
+    process.env.RESEND_API_KEY = 're_stub_key';
+    process.env.EMAIL_FROM = 'exhibit@example.com';
+    vi.resetModules();
+
+    try {
+      // Re-imported under the new env: src/lib/env.ts parses once at import time, and the reset
+      // registry brings its own fresh in-memory database along with it.
+      const { db: mailerDb } = await import('@/database');
+      const { user: mailerUser } = await import('@/database/schemas/auth');
+      const { seedOwner: seedWithMailer } = await import('./seed');
+
+      await seedWithMailer('owner@example.com', 'correct horse battery staple');
+
+      expect(
+        mailerDb
+          .select()
+          .from(mailerUser)
+          .all()
+          .map((row) => row.emailVerified),
+      ).toEqual([true]);
+    } finally {
+      delete process.env.RESEND_API_KEY;
+      delete process.env.EMAIL_FROM;
+      vi.resetModules();
+    }
+  });
+
+  it('un-verifies a row left verified by a since-dropped mailer', async () => {
+    // A deployment that had a mailer (row verified) and then removed RESEND_API_KEY/EMAIL_FROM
+    // must sync back down, or /change-email 400s forever ("Verification email isn't enabled").
     await seedOwner('owner@example.com', 'correct horse battery staple');
-    db.update(user).set({ emailVerified: false }).run();
+    db.update(user).set({ emailVerified: true }).run();
 
-    markOwnerEmailVerified();
-    expect(verifiedFlags()).toEqual([true]);
-
-    markOwnerEmailVerified();
-    expect(verifiedFlags()).toEqual([true]);
+    syncOwnerEmailVerified();
+    expect(verifiedFlags()).toEqual([false]);
   });
 });

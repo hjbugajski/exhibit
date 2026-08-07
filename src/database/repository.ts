@@ -76,6 +76,10 @@ export interface UpdateMetadataInput {
  * different `sort`, is ignored (first page). `archived: true` lists only archived artifacts;
  * otherwise archived artifacts are excluded. `deleted: true` lists only soft-deleted artifacts (the
  * trash); otherwise they're excluded.
+ *
+ * `withAnswers` opts into the answered counts, which cost a body fetch and a full markdown/spec
+ * parse per row — only the gallery renders them, so every other caller (MCP `list_artifacts`, up to
+ * 100 rows a call) leaves them off and gets `answers: null`.
  */
 export interface ListArtifactsInput {
   query?: string;
@@ -86,12 +90,14 @@ export interface ListArtifactsInput {
   sort?: ArtifactSort;
   limit?: number;
   cursor?: string;
+  withAnswers?: boolean;
 }
 
 /**
  * A `listArtifacts` row plus owner-response signals: when the artifact's interaction state last
  * changed (null if never touched), and how much of the latest version's body the saved state
- * answers — `null` where the count is unknown (body missing or past `maxAnswerScanBytes`).
+ * answers — `null` where the count is unknown (not requested, body missing, or past
+ * `maxAnswerScanBytes`).
  */
 export type ArtifactListItem = Artifact & {
   stateUpdatedAt: number | null;
@@ -468,9 +474,11 @@ export function listArtifacts(db: Db, input: ListArtifactsInput = {}): ListArtif
       ...getTableColumns(artifacts),
       stateUpdatedAt: artifactStates.updatedAt,
       state: artifactStates.state,
-      // Latest version's body, for the answered count only — never returned to the caller. The
-      // oversized case resolves to null in SQL so a huge body is never even read off the page.
-      body: sql<string | null>`(
+      // Latest version's body, for the answered count only — never returned to the caller, and not
+      // fetched at all unless the caller asked for counts. The oversized case resolves to null in
+      // SQL so a huge body is never even read off the page.
+      body: input.withAnswers
+        ? sql<string | null>`(
         select case
           when length(cast(${artifactVersions.body} as blob)) > ${maxAnswerScanBytes} then null
           else ${artifactVersions.body}
@@ -479,7 +487,8 @@ export function listArtifacts(db: Db, input: ListArtifactsInput = {}): ListArtif
         where ${artifactVersions.artifactId} = ${artifacts.id}
         order by ${artifactVersions.version} desc
         limit 1
-      )`,
+      )`
+        : sql<string | null>`null`,
       sortKey: sortColumnExpr(field),
     })
     .from(artifacts)

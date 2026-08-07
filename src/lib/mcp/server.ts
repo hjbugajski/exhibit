@@ -21,7 +21,13 @@ import {
   softDeleteArtifact,
   updateMetadata,
 } from '@/database/repository';
-import { descriptionField, normalizeTags, tagsField, titleField } from '@/lib/artifact-metadata';
+import {
+  descriptionField,
+  normalizeTags,
+  tagField,
+  tagsField,
+  titleField,
+} from '@/lib/artifact-metadata';
 import { artifactSorts, artifactTypes } from '@/lib/artifact-sorts';
 import { buildCatalogSummary } from '@/lib/mcp/catalog-summary';
 import { checkBodySize } from '@/lib/mcp/limits';
@@ -516,8 +522,7 @@ export function buildMcpServer(db: Db): McpServer {
       inputSchema: {
         action: z.enum(['rename', 'delete']).describe('"rename" a tag, or "delete" it everywhere.'),
         tag: z.string().min(1).describe('The existing tag to rename or delete.'),
-        to: z
-          .string()
+        to: tagField
           .min(1)
           .optional()
           .describe(
@@ -538,19 +543,25 @@ export function buildMcpServer(db: Db): McpServer {
         };
       }
 
-      if (!to?.trim()) {
+      // Normalize before the guard, not after: normalizeTags strips quotes, so a `to` of '""'
+      // passes a non-empty check and then renames the tag into nothing — the tag vanishes from
+      // every artifact while the tool reports a rename. Same guard as renameTagFn in
+      // src/lib/artifacts.ts.
+      const [normalized] = normalizeTags([to ?? '']);
+
+      if (!normalized) {
         return errorResult(
           `action "rename" requires a non-empty "to" — the tag name to rename "${tag}" into. To remove the tag instead, call manage_tags with action "delete".`,
         );
       }
 
-      const affected = renameTag(db, tag, to);
+      const affected = renameTag(db, tag, normalized);
 
       return {
         content: text(
-          `Renamed tag "${tag}" to "${to}" on ${affected} artifact${affected === 1 ? '' : 's'}.`,
+          `Renamed tag "${tag}" to "${normalized}" on ${affected} artifact${affected === 1 ? '' : 's'}.`,
         ),
-        structuredContent: { action, tag, to, affected },
+        structuredContent: { action, tag, to: normalized, affected },
       };
     },
   );

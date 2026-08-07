@@ -8,6 +8,12 @@ import { z } from 'zod';
 
 const envSchema = z
   .object({
+    /**
+     * Set by the toolchain (vite, vitest), not by a deployment. Only used to keep boot-time
+     * operator warnings out of dev and test runs, so anything else — including unset — counts as a
+     * real deployment.
+     */
+    NODE_ENV: z.string().optional(),
     /** Public origin; also the OAuth issuer/audience. */
     BASE_URL: z.url(),
     BETTER_AUTH_SECRET: z.string().min(1),

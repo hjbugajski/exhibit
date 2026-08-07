@@ -12,10 +12,8 @@
  */
 import { Markdown } from '@tanstack/markdown/react';
 
-import {
-  createMarkdownComponents,
-  markdownParseOptions,
-} from '@/components/markdown/markdown-policy';
+import { createMarkdownComponents } from '@/components/markdown/markdown-policy';
+import { markdownParseOptions } from '@/lib/markdown-parse-options';
 import { cn } from '@/lib/utils';
 
 const components = createMarkdownComponents();

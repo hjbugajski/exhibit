@@ -14,7 +14,9 @@ import { z } from 'zod';
 
 export const titleField = z.string().min(1).max(200);
 export const descriptionField = z.string().max(2000);
-export const tagsField = z.array(z.string().max(50)).max(20);
+/** One tag; the bound is the same wherever a tag is written or renamed. */
+export const tagField = z.string().max(50);
+export const tagsField = z.array(tagField).max(20);
 
 /** Message for every unknown/soft-deleted artifact reached through the UI server fns. */
 const ARTIFACT_NOT_FOUND = 'Artifact not found. It may have been deleted.';

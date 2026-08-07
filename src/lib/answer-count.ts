@@ -15,9 +15,10 @@ import { getByPath } from '@json-render/core';
 import { commentComponentsExtension } from '@tanstack/markdown/extensions/comment-components';
 import { parseMarkdown } from '@tanstack/markdown/parser';
 
+import { resolveCatalogDirective } from '@/catalog/directive';
 import { collectStatePaths } from '@/catalog/validate';
-import { markdownParseOptions } from '@/components/markdown/markdown-policy';
 import type { ArtifactType } from '@/database/repository';
+import { markdownParseOptions } from '@/lib/markdown-parse-options';
 
 export interface AnswerCount {
   answered: number;
@@ -83,11 +84,17 @@ function markdownStatePaths(body: string): string[] {
       return;
     }
 
-    if (node.type === 'component' && isRecord(node.attributes)) {
-      const statePath = node.attributes.statePath;
+    if (node.type === 'component') {
+      // The renderer's own acceptance test, not the raw attributes: a directive it refuses to
+      // render asks nothing, and counting it would leave the artifact awaiting a reply no one can
+      // give. Falls through to the walk below — a `::start:Name` wrapper carries children.
+      const resolved = resolveCatalogDirective(
+        typeof node.name === 'string' ? node.name : undefined,
+        isRecord(node.attributes) ? node.attributes : {},
+      );
 
-      if (typeof statePath === 'string') {
-        paths.push(statePath);
+      if (resolved) {
+        paths.push(...collectStatePaths('', resolved.props).map((found) => found.path));
       }
     }
 

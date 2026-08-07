@@ -17,6 +17,7 @@ process.env.TRUSTED_PROXIES = '10.0.0.1, 192.168.0.0/16';
 import { describe, expect, it, vi } from 'vitest';
 
 const CONFIGURED_PROXIES = process.env.TRUSTED_PROXIES;
+const NODE_ENV = process.env.NODE_ENV;
 
 const { auth } = await import('@/lib/auth');
 
@@ -35,6 +36,40 @@ describe('auth configuration', () => {
       '192.168.0.0/16',
     ]);
     expect(auth.options.advanced?.ipAddress?.ipAddressHeaders).toBeUndefined();
+  });
+
+  /**
+   * The collapsed bucket is deliberate (a spoofable per-header bucket defeats the limiter
+   * outright), but it is also a real operational cost: a stranger POSTing /sign-in on a timer keeps
+   * the owner's own bucket exhausted. Nothing in the app surfaces that, so the operator gets told
+   * once at boot - outside dev/test, where it is the intended local behavior.
+   */
+  it('warns once at boot that rate-limit buckets are shared when TRUSTED_PROXIES is unset', async () => {
+    delete process.env.TRUSTED_PROXIES;
+    process.env.NODE_ENV = 'production';
+    vi.resetModules();
+
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    try {
+      await import('@/lib/auth');
+
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn.mock.calls[0]?.[0]).toContain('TRUSTED_PROXIES');
+
+      process.env.TRUSTED_PROXIES = CONFIGURED_PROXIES;
+      warn.mockClear();
+      vi.resetModules();
+
+      await import('@/lib/auth');
+
+      expect(warn).not.toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+      process.env.NODE_ENV = NODE_ENV;
+      process.env.TRUSTED_PROXIES = CONFIGURED_PROXIES;
+      vi.resetModules();
+    }
   });
 
   it('ignores forwarded IP headers entirely when TRUSTED_PROXIES is unset', async () => {

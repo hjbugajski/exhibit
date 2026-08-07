@@ -142,3 +142,16 @@ export function createAuth(options: { disableSignUp?: boolean } = {}) {
 }
 
 export const auth = createAuth();
+
+/**
+ * The cost of the `ipAddressHeaders: []` choice above, stated once at boot: with no trusted proxy
+ * declared there is no believable client IP, so every anonymous caller shares one rate-limit bucket
+ * and a stranger hammering /sign-in can lock the owner out of it. Module scope, so it prints once
+ * per process; skipped under vite/vitest, where the collapsed bucket is the intended local
+ * behavior.
+ */
+if (!env.TRUSTED_PROXIES && env.NODE_ENV !== 'development' && env.NODE_ENV !== 'test') {
+  console.warn(
+    'TRUSTED_PROXIES is unset: no client IP can be trusted, so every request shares one rate-limit bucket and an attacker can lock the owner out of sign-in. Set TRUSTED_PROXIES to the address(es) of the reverse proxy in front of this app.',
+  );
+}

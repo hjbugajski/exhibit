@@ -147,13 +147,16 @@ describe('MarkdownView rendering', () => {
     expect(container.querySelectorAll('table th')).toHaveLength(2);
     expect(container.querySelectorAll('table tbody td')).toHaveLength(2);
 
-    // Task-list checkboxes are the house Checkbox (a button with role=checkbox), disabled like the
-    // catalog Checklist's read-only items.
+    // Task-list checkboxes are the house Checkbox (a button with role=checkbox), read-only like
+    // the catalog Checklist's static items — never disabled, which would dim them while an
+    // equivalent Checklist paints at full strength.
     const checkboxes = container.querySelectorAll('[data-slot="checkbox"]');
 
     expect(checkboxes).toHaveLength(2);
     expect(checkboxes[0]?.getAttribute('aria-checked')).toBe('true');
     expect(checkboxes[1]?.getAttribute('aria-checked')).toBe('false');
+    expect(checkboxes[0]?.hasAttribute('data-disabled')).toBe(false);
+    expect(checkboxes[0]?.hasAttribute('data-readonly')).toBe(true);
     expect(container.querySelector('del')?.textContent).toBe('struck');
   });
 

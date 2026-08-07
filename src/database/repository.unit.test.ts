@@ -540,7 +540,10 @@ describe('listArtifacts', () => {
     appendVersion(db, artifact.id, answerSpecBody);
     setArtifactState(db, artifact.id, { prep: { size: true } });
 
-    expect(listArtifacts(db).items[0]?.answers).toEqual({ answered: 1, total: 2 });
+    expect(listArtifacts(db, { withAnswers: true }).items[0]?.answers).toEqual({
+      answered: 1,
+      total: 2,
+    });
   });
 
   it('counts a markdown body’s questions too', () => {
@@ -552,13 +555,19 @@ describe('listArtifacts', () => {
 
     setArtifactState(db, artifact.id, { rating: 5 });
 
-    expect(listArtifacts(db).items[0]?.answers).toEqual({ answered: 1, total: 1 });
+    expect(listArtifacts(db, { withAnswers: true }).items[0]?.answers).toEqual({
+      answered: 1,
+      total: 1,
+    });
   });
 
   it('reports zeroes for a body that asks nothing', () => {
     createArtifact(db, { title: 'Static', type: 'html', body: '<p>hi</p>' });
 
-    expect(listArtifacts(db).items[0]?.answers).toEqual({ answered: 0, total: 0 });
+    expect(listArtifacts(db, { withAnswers: true }).items[0]?.answers).toEqual({
+      answered: 0,
+      total: 0,
+    });
   });
 
   it('leaves answers unknown for a body past the scan guard', () => {
@@ -568,7 +577,31 @@ describe('listArtifacts', () => {
       body: `${'x'.repeat(200_001)}\n\n<!-- ::Rating label="r" statePath="/r" -->\n`,
     });
 
-    expect(listArtifacts(db).items[0]?.answers).toBeNull();
+    expect(listArtifacts(db, { withAnswers: true }).items[0]?.answers).toBeNull();
+  });
+
+  /**
+   * The MCP list path discards `answers` entirely, and it pages up to 100 rows a call - so the body
+   * has to stay out of the SELECT there, not just out of the parser. Asserted on the SQL the
+   * statement layer actually prepares, since the row-level `answers: null` alone would still pass
+   * if the body were fetched and thrown away.
+   */
+  it('does not fetch a body or count answers unless asked to', () => {
+    const { artifact } = createArtifact(db, {
+      title: 'Sign-off',
+      type: 'spec',
+      body: answerSpecBody,
+    });
+
+    setArtifactState(db, artifact.id, { prep: { size: true } });
+
+    const prepare = vi.spyOn(sqlite, 'prepare');
+    const items = listArtifacts(db).items;
+    const prepared = prepare.mock.calls.map(([query]) => query).join('\n');
+
+    expect(items[0]?.answers).toBeNull();
+    expect(prepared).toContain('"artifacts"');
+    expect(prepared).not.toContain('artifact_versions');
   });
 });
 

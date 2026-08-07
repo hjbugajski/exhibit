@@ -17,9 +17,8 @@ import type { ReactNode } from 'react';
 
 import type { Spec } from '@json-render/core';
 import { Renderer } from '@json-render/react';
-import type { z } from 'zod';
 
-import { catalog } from '@/catalog/catalog';
+import { resolveCatalogDirective } from '@/catalog/directive';
 import { catalogComponents, registry } from '@/catalog/registry';
 import { validateArtifactSpec, type ArtifactSpecError } from '@/catalog/validate';
 import { HighlightedCode } from '@/components/blocks/highlighted-code';
@@ -40,12 +39,6 @@ function EmbedIsland({ children }: { children: ReactNode }) {
   );
 }
 
-/** Widened to an index signature so an arbitrary name from markdown can be looked up. */
-const componentDefinitions = catalog.data.components as Record<
-  string,
-  { props: z.ZodType } | undefined
->;
-
 /**
  * Catalog components are each typed against their own props; widened to one signature so the same
  * lookup works. What flows into `props` is always Zod's output, never the raw attributes.
@@ -54,11 +47,6 @@ const components = catalogComponents as unknown as Record<
   string,
   ((props: { props: unknown; children?: ReactNode }) => ReactNode) | undefined
 >;
-
-/** The comment-component parser lowercases directive names; catalog names are PascalCase. */
-const canonicalNames = new Map(
-  Object.keys(catalog.data.components).map((name) => [name.toLowerCase(), name]),
-);
 
 function parseJson(value: string | undefined): unknown {
   if (value === undefined) {
@@ -88,17 +76,10 @@ export function CatalogDirective({
   'data-attributes'?: string;
   children?: ReactNode;
 }) {
-  const canonical = name ? canonicalNames.get(name.toLowerCase()) : undefined;
-  const definition = canonical ? componentDefinitions[canonical] : undefined;
-  const Component = canonical ? components[canonical] : undefined;
+  const resolved = resolveCatalogDirective(name, parseJson(attributes));
+  const Component = resolved ? components[resolved.name] : undefined;
 
-  if (!definition || !Component) {
-    return null;
-  }
-
-  const parsed = definition.props.safeParse(parseJson(attributes));
-
-  if (!parsed.success) {
+  if (!resolved || !Component) {
     return null;
   }
 
@@ -109,7 +90,7 @@ export function CatalogDirective({
 
   return (
     <EmbedIsland>
-      <Component props={parsed.data}>
+      <Component props={resolved.props}>
         {body == null ? undefined : <div data-md-prose="">{body}</div>}
       </Component>
     </EmbedIsland>

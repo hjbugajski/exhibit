@@ -2,15 +2,13 @@
  * The one markdown security policy. Every markdown surface in the app parses and renders through
  * these options and this components map, so the properties below hold in exactly one place:
  *
- * - `allowHtml` is never set. @tanstack/markdown's parser only produces HTML nodes when it is true,
- *   and `dangerouslySetInnerHTML` only ever appears on those nodes — so with the default, raw
+ * - The parse options are `markdownParseOptions` (src/lib/markdown-parse-options.ts — a
+ *   React-free module so the data layer can parse bodies too). `allowHtml` is never set there:
+ *   @tanstack/markdown's parser only produces HTML nodes when it is true, and
+ *   `dangerouslySetInnerHTML` only ever appears on those nodes — so with the default, raw
  *   `<script>alert(1)</script>` in a body comes back as literal text that React escapes. Never set
  *   it, and never pass a `highlighter` callback either: that option's return value is injected as
  *   raw HTML.
- * - `frontmatter: false` — a `---` line partway down an artifact body must stay a thematic break,
- *   not retroactively turn the top of the document into frontmatter.
- * - `headingIds: false` — ids generated from artifact-authored headings would collide with the
- *   app's own element ids.
  * - The library's URL sanitizer is a floor, not the house policy: it also permits `mailto:`, `tel:`
  *   and relative hrefs, and rewrites an unsafe image src to `src=""` — which makes the browser
  *   refetch the current page URL. So `a` and `img` below re-impose the rule instead. Links render
@@ -29,7 +27,6 @@
  */
 import type { ReactNode } from 'react';
 
-import type { ParseOptions } from '@tanstack/markdown';
 import type { MarkdownComponentProps, MarkdownComponents } from '@tanstack/markdown/react';
 
 import { CodeBlock } from '@/components/catalog/code-block';
@@ -42,8 +39,6 @@ const HTTPS_URL = /^https:\/\//i;
 
 /** The class the renderer puts on a fenced block's `<code>`; the lang is `plaintext` when absent. */
 const FENCE_LANGUAGE = /^language-(.+)$/;
-
-export const markdownParseOptions: ParseOptions = { frontmatter: false, headingIds: false };
 
 /** Renders one fenced code block: its raw text plus the language as the author spelled it. */
 export type FenceRenderer = (code: string, language: string) => ReactNode;
@@ -135,9 +130,12 @@ export function createMarkdownComponents(
     // render it as the house Checkbox so task lists match the catalog Checklist. `data-md-task`
     // is the styles.css hook: layout and the checked strikethrough key on it, so an embedded
     // catalog Checklist (whose boxes lack the marker) is never restyled by task-list rules.
-    input: ({ type, checked, disabled }: MarkdownComponentProps<'input'>) =>
+    // readOnly, not disabled: the renderer hard-codes both true on every task input, and disabled
+    // would paint these dimmed while a static catalog Checklist of the same items paints at full
+    // strength.
+    input: ({ type, checked, readOnly }: MarkdownComponentProps<'input'>) =>
       type === 'checkbox' ? (
-        <Checkbox checked={Boolean(checked)} data-md-task="" disabled={Boolean(disabled)} />
+        <Checkbox checked={Boolean(checked)} data-md-task="" readOnly={Boolean(readOnly)} />
       ) : null,
   };
 }

@@ -112,6 +112,31 @@ describe('countAnswers', () => {
     });
   });
 
+  /**
+   * The renderer resolves a directive through the catalog and parses its attributes before
+   * rendering anything (src/components/markdown/catalog-dispatch.tsx); a directive that fails
+   * either check renders nothing, so counting it would leave the artifact awaiting a reply the
+   * owner has no control to give. Choice can never be satisfied by a directive at all — its
+   * `options` array cannot come from flat string attributes.
+   */
+  it('ignores a directive the renderer would refuse: unknown name, or props that cannot validate', () => {
+    const body = [
+      '<!-- ::Feedback label="Not a catalog component" statePath="/unknown" -->',
+      '',
+      '<!-- ::Choice label="Pick one" statePath="/choice" -->',
+      '',
+      '<!-- ::Rating statePath="/no-label" -->',
+    ].join('\n');
+
+    expect(countAnswers('markdown', body, null)).toEqual({ answered: 0, total: 0 });
+  });
+
+  it('counts a directive whose name differs only in case', () => {
+    const body = '<!-- ::rating label="How was it?" statePath="/rating" -->';
+
+    expect(countAnswers('markdown', body, { rating: 4 })).toEqual({ answered: 1, total: 1 });
+  });
+
   it('ignores an exhibit fence whose JSON does not parse', () => {
     const body = ['```exhibit', '{ "type": "Rating", statePath: /oops', '```'].join('\n');
 

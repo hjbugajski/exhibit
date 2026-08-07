@@ -11,9 +11,9 @@ import { CatalogDirective, ExhibitBlock } from '@/components/markdown/catalog-di
 import {
   createMarkdownComponents,
   highlightFence,
-  markdownParseOptions,
   type FenceRenderer,
 } from '@/components/markdown/markdown-policy';
+import { markdownParseOptions } from '@/lib/markdown-parse-options';
 import { cn } from '@/lib/utils';
 
 /** `exhibit` fences are catalog components and `mermaid` fences are diagrams (either casing, like

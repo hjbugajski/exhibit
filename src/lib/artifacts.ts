@@ -26,6 +26,7 @@ import {
   descriptionField,
   normalizeTags,
   requireArtifact,
+  tagField,
   tagsField,
   titleField,
 } from '@/lib/artifact-metadata';
@@ -61,7 +62,9 @@ export const listArtifactsFn = createServerFn({ method: 'GET' })
   .middleware([sessionMiddleware])
   .validator(listArtifactsInput)
   .handler(async ({ data }) => {
-    return listArtifacts(db, data);
+    // The gallery is the only surface that renders answered counts, so it is the only caller that
+    // pays for them (a body fetch and a parse per row).
+    return listArtifacts(db, { ...data, withAnswers: true });
   });
 
 export const listTagsFn = createServerFn({ method: 'GET' })
@@ -76,7 +79,7 @@ export const listTagsWithCountsFn = createServerFn({ method: 'GET' })
     return listTagsWithCounts(db);
   });
 
-const renameTagInput = z.object({ from: z.string().min(1), to: z.string().max(50) });
+const renameTagInput = z.object({ from: z.string().min(1), to: tagField });
 
 /**
  * Renames a tag across every artifact carrying it, archived and deleted included; renaming into an

@@ -657,6 +657,70 @@ describe('manage_tags', () => {
       'trips',
     ]);
   });
+
+  /**
+   * Tag normalization strips double quotes, so a `to` of '""' is non-empty going in and nothing
+   * coming out - which used to rename the tag into nothing (deleting it everywhere) while the tool
+   * reported a successful rename. Guard on the normalized value, not the raw one.
+   */
+  it('errors on a rename target that normalizes away to nothing, changing no data', async () => {
+    await seedTagged();
+
+    const result = await callTool(client, 'manage_tags', {
+      action: 'rename',
+      tag: 'trips',
+      to: '""',
+    });
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain('requires a non-empty "to"');
+    expect((await callTool(client, 'list_tags')).structuredContent?.tags).toEqual([
+      'food',
+      'travel',
+      'trips',
+    ]);
+  });
+
+  it('rejects a rename target longer than the tag cap', async () => {
+    await seedTagged();
+
+    const result = await callTool(client, 'manage_tags', {
+      action: 'rename',
+      tag: 'trips',
+      to: 'x'.repeat(51),
+    });
+
+    expect(result.isError).toBe(true);
+    expect((await callTool(client, 'list_tags')).structuredContent?.tags).toEqual([
+      'food',
+      'travel',
+      'trips',
+    ]);
+  });
+
+  it('renames into the normalized tag, and echoes that rather than the raw input', async () => {
+    await seedTagged();
+
+    const result = await callTool(client, 'manage_tags', {
+      action: 'rename',
+      tag: 'trips',
+      to: '  "journeys"  ',
+    });
+
+    expect(result.isError).toBeFalsy();
+    expect(result.structuredContent).toEqual({
+      action: 'rename',
+      tag: 'trips',
+      to: 'journeys',
+      affected: 1,
+    });
+    expect(textOf(result)).toContain('Renamed tag "trips" to "journeys" on 1 artifact.');
+    expect((await callTool(client, 'list_tags')).structuredContent?.tags).toEqual([
+      'food',
+      'journeys',
+      'travel',
+    ]);
+  });
 });
 
 describe('get_artifact', () => {
