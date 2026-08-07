@@ -53,6 +53,7 @@ MCP tools:
 | `restore_version`       | Bring an earlier version back as the new latest          |
 | `list_artifacts`        | Browse and filter published artifacts                    |
 | `list_tags`             | List tags in use                                         |
+| `manage_tags`           | Rename a tag everywhere (merging), or delete it          |
 | `get_artifact`          | Fetch one, including saved interaction state             |
 | `set_artifact_archived` | Hide from Claude's default listing, or restore           |
 | `delete_artifact`       | Soft-delete (hidden from listings, kept in the database) |

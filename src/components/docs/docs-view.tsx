@@ -26,6 +26,8 @@ const MCP_TOOLS: Record<McpToolName, string> = {
     'Brings an earlier version back as the current one by copying it forward. Nothing is overwritten.',
   list_artifacts: 'Browses published artifacts with search, tag and type filters, and sorting.',
   list_tags: 'Lists the tags already in use so new artifacts reuse them.',
+  manage_tags:
+    'Renames a tag across every artifact (merging when the target exists) or deletes it, for tidying up near-duplicates.',
   get_artifact: 'Fetches an artifact’s metadata, body, and your saved interaction state.',
   set_artifact_archived:
     'Archives an artifact out of Claude’s default listing, or restores it. Nothing is deleted.',

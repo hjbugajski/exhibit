@@ -15,14 +15,22 @@ vi.mock('@/lib/auth-client', () => ({
 vi.mock('@/lib/account', () => ({
   revokeMcpConnectionFn: vi.fn(),
 }));
+vi.mock('@/lib/artifacts', () => ({
+  renameTagFn: vi.fn(),
+  removeTagFn: vi.fn(),
+}));
 
 const { authClient } = await import('@/lib/auth-client');
 const { revokeMcpConnectionFn } = await import('@/lib/account');
+const { renameTagFn, removeTagFn } = await import('@/lib/artifacts');
 const { SettingsView } = await import('@/components/account/settings-view');
 
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
+  // restoreAllMocks only resets spies; the module-factory vi.fn()s above keep their call history,
+  // which would leak into the "not called" assertions below.
+  vi.clearAllMocks();
 });
 
 function makeConnection(overrides: Partial<McpConnection> = {}): McpConnection {
@@ -45,6 +53,7 @@ describe('SettingsView', () => {
         email="owner@example.com"
         mailerAvailable={false}
         seed="seed-1"
+        tags={[]}
       />,
     );
 
@@ -63,6 +72,7 @@ describe('SettingsView', () => {
           email="owner@example.com"
           mailerAvailable={false}
           seed="seed-1"
+          tags={[]}
         />,
       );
 
@@ -99,6 +109,7 @@ describe('SettingsView', () => {
           email="owner@example.com"
           mailerAvailable={false}
           seed="seed-1"
+          tags={[]}
         />,
       );
 
@@ -134,6 +145,7 @@ describe('SettingsView', () => {
           email="owner@example.com"
           mailerAvailable={false}
           seed="seed-1"
+          tags={[]}
         />,
       );
 
@@ -165,6 +177,7 @@ describe('SettingsView', () => {
           email="owner@example.com"
           mailerAvailable={false}
           seed="seed-1"
+          tags={[]}
         />,
       );
 
@@ -177,6 +190,77 @@ describe('SettingsView', () => {
       fireEvent.click(revokeButtons.at(-1) as HTMLElement);
 
       expect(revokeMcpConnectionFn).toHaveBeenCalledWith({ data: { clientId: 'client-42' } });
+    });
+  });
+
+  describe('TagsCard', () => {
+    function renderTags(tags: { tag: string; count: number }[]) {
+      renderWithRouter(
+        <SettingsView
+          connections={[]}
+          email="owner@example.com"
+          mailerAvailable={false}
+          seed="seed-1"
+          tags={tags}
+        />,
+      );
+    }
+
+    it('renders each tag with its usage count', async () => {
+      renderTags([
+        { tag: 'travel', count: 3 },
+        { tag: 'food', count: 1 },
+      ]);
+
+      expect(await screen.findByText('travel')).toBeTruthy();
+      expect(screen.getByText('3 artifacts')).toBeTruthy();
+      expect(screen.getByText('food')).toBeTruthy();
+      expect(screen.getByText('1 artifact')).toBeTruthy();
+    });
+
+    it('shows an empty state when nothing is tagged', async () => {
+      renderTags([]);
+
+      expect(await screen.findByText('No tags yet.')).toBeTruthy();
+    });
+
+    it('renames a tag through renameTagFn', async () => {
+      vi.mocked(renameTagFn).mockResolvedValue({ affected: 2 } as never);
+
+      renderTags([{ tag: 'trips', count: 2 }]);
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Rename' }));
+      fireEvent.change(screen.getByLabelText('New name'), { target: { value: 'travel' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+      expect(renameTagFn).toHaveBeenCalledWith({ data: { from: 'trips', to: 'travel' } });
+    });
+
+    it('blocks a rename to an empty name with a field error', async () => {
+      renderTags([{ tag: 'trips', count: 2 }]);
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Rename' }));
+      fireEvent.change(screen.getByLabelText('New name'), { target: { value: '' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+      expect(await screen.findByText('Tag name is required.')).toBeTruthy();
+      expect(renameTagFn).not.toHaveBeenCalled();
+    });
+
+    it('deletes a tag through removeTagFn once confirmed', async () => {
+      vi.mocked(removeTagFn).mockResolvedValue({ affected: 2 } as never);
+
+      renderTags([{ tag: 'draft', count: 2 }]);
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Delete' }));
+
+      // The trigger and the dialog's confirm action share the "Delete" label; once the dialog
+      // opens (Base UI portals its content), the confirm action is the second match.
+      const deleteButtons = await screen.findAllByRole('button', { name: 'Delete' });
+
+      fireEvent.click(deleteButtons.at(-1) as HTMLElement);
+
+      expect(removeTagFn).toHaveBeenCalledWith({ data: { tag: 'draft' } });
     });
   });
 });

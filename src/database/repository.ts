@@ -19,6 +19,7 @@ import { z } from 'zod';
 import { artifacts } from '@/database/schemas/artifact';
 import { artifactStates } from '@/database/schemas/artifact-state';
 import { artifactVersions } from '@/database/schemas/artifact-version';
+import { normalizeTags } from '@/lib/artifact-metadata';
 import type { ArtifactSort, artifactTypes } from '@/lib/artifact-sorts';
 import { artifactSorts } from '@/lib/artifact-sorts';
 
@@ -483,6 +484,78 @@ export function listTags(db: Db): string[] {
   }
 
   return [...tagSet].sort((a, b) => a.localeCompare(b));
+}
+
+export interface TagUsage {
+  tag: string;
+  count: number;
+}
+
+/**
+ * Every tag with the number of artifacts carrying it, sorted alphabetically. Unlike `listTags` the
+ * count spans archived and soft-deleted rows too, so it reports exactly what `renameTag`/
+ * `removeTag` would touch.
+ */
+export function listTagsWithCounts(db: Db): TagUsage[] {
+  const rows = db.select({ tags: artifacts.tags }).from(artifacts).all();
+  const counts = new Map<string, number>();
+
+  for (const row of rows) {
+    for (const tag of row.tags ?? []) {
+      counts.set(tag, (counts.get(tag) ?? 0) + 1);
+    }
+  }
+
+  return [...counts]
+    .map(([tag, count]) => ({ tag, count }))
+    .sort((a, b) => a.tag.localeCompare(b.tag));
+}
+
+/**
+ * Rewrites the tag array of every artifact carrying `tag`, one row at a time inside a single
+ * transaction — tags are a denormalized JSON column, so there's no tag table to update.
+ *
+ * Deliberately unfiltered by `deletedAt`/`archivedAt`: a soft-deleted artifact that's later
+ * restored must not resurrect the old tag. `updatedAt` is left alone — a vocabulary fix isn't a
+ * content change and shouldn't reshuffle sort order. Returns the number of rows rewritten.
+ */
+function rewriteTag(db: Db, tag: string, rewrite: (tags: string[]) => string[]): number {
+  return db.transaction((tx) => {
+    const rows = tx
+      .select({ id: artifacts.id, tags: artifacts.tags })
+      .from(artifacts)
+      // Element-wise via JSON1, matching listArtifacts' tag filter: a LIKE over the serialized
+      // column matches across element boundaries.
+      .where(
+        sql`exists (select 1 from json_each(${artifacts.tags}) where json_each.value = ${tag})`,
+      )
+      .all();
+
+    for (const row of rows) {
+      tx.update(artifacts)
+        .set({ tags: normalizeTags(rewrite(row.tags ?? [])) })
+        .where(eq(artifacts.id, row.id))
+        .run();
+    }
+
+    return rows.length;
+  });
+}
+
+/**
+ * Renames `from` to `to` everywhere it appears. When `to` already exists on an artifact this is a
+ * merge, not a duplicate — the rewritten array is normalized. Returns the affected row count (0
+ * when nothing carried `from`, writing nothing).
+ */
+export function renameTag(db: Db, from: string, to: string): number {
+  return rewriteTag(db, from, (tags) =>
+    tags.map((existing) => (existing === from ? to : existing)),
+  );
+}
+
+/** Drops `tag` from every artifact carrying it. Returns the affected row count. */
+export function removeTag(db: Db, tag: string): number {
+  return rewriteTag(db, tag, (tags) => tags.filter((existing) => existing !== tag));
 }
 
 /**

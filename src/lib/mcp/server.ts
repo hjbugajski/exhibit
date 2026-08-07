@@ -13,6 +13,8 @@ import {
   listArtifacts,
   listTags,
   listVersions,
+  removeTag,
+  renameTag,
   revertToVersion,
   setArtifactArchived,
   softDeleteArtifact,
@@ -498,6 +500,54 @@ export function buildMcpServer(db: Db): McpServer {
       return {
         content: text(`${tags.length} tag${tags.length === 1 ? '' : 's'}: ${tags.join(', ')}`),
         structuredContent: { tags },
+      };
+    },
+  );
+
+  server.registerTool(
+    toolName('manage_tags'),
+    {
+      title: 'Rename or delete a tag',
+      description:
+        'Consolidates the tag vocabulary across the whole gallery. Tags are chosen one session at a time with no memory of earlier ones, so near-duplicates accumulate ("trip" / "trips" / "travel"); list_tags only helps you avoid new ones, this fixes the ones already there. action "rename" renames a tag on every artifact that carries it — renaming into a tag that already exists merges the two, leaving no duplicates. action "delete" removes a tag from every artifact; the artifacts themselves are untouched. Both apply to archived and deleted artifacts too, so a restored artifact comes back with the corrected tags. A tag nothing carries is not an error — you get affected 0. Call list_tags first to see the exact spellings.',
+      inputSchema: {
+        action: z.enum(['rename', 'delete']).describe('"rename" a tag, or "delete" it everywhere.'),
+        tag: z.string().min(1).describe('The existing tag to rename or delete.'),
+        to: z
+          .string()
+          .min(1)
+          .optional()
+          .describe(
+            'Required for "rename": the new tag name. If it already exists, the two tags merge.',
+          ),
+      },
+      annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true },
+    },
+    ({ action, tag, to }) => {
+      if (action === 'delete') {
+        const affected = removeTag(db, tag);
+
+        return {
+          content: text(
+            `Deleted tag "${tag}" from ${affected} artifact${affected === 1 ? '' : 's'}.`,
+          ),
+          structuredContent: { action, tag, affected },
+        };
+      }
+
+      if (!to?.trim()) {
+        return errorResult(
+          `action "rename" requires a non-empty "to" — the tag name to rename "${tag}" into. To remove the tag instead, call manage_tags with action "delete".`,
+        );
+      }
+
+      const affected = renameTag(db, tag, to);
+
+      return {
+        content: text(
+          `Renamed tag "${tag}" to "${to}" on ${affected} artifact${affected === 1 ? '' : 's'}.`,
+        ),
+        structuredContent: { action, tag, to, affected },
       };
     },
   );

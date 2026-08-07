@@ -13,6 +13,7 @@ export const MCP_TOOL_NAMES = [
   'restore_version',
   'list_artifacts',
   'list_tags',
+  'manage_tags',
   'get_artifact',
   'set_artifact_archived',
   'delete_artifact',

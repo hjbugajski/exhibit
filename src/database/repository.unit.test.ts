@@ -10,8 +10,11 @@ import {
   getLatestVersion,
   listArtifacts,
   listTags,
+  listTagsWithCounts,
   listVersions,
   purgeArtifact,
+  removeTag,
+  renameTag,
   restoreArtifact,
   revertToVersion,
   setArtifactArchived,
@@ -20,6 +23,7 @@ import {
   updateMetadata,
 } from '@/database/repository';
 import type { ArtifactType, Db } from '@/database/repository';
+import { artifacts } from '@/database/schemas/artifact';
 import { artifactStates } from '@/database/schemas/artifact-state';
 import { artifactVersions } from '@/database/schemas/artifact-version';
 import { normalizeTags } from '@/lib/artifact-metadata';
@@ -623,6 +627,165 @@ describe('listTags', () => {
     softDeleteArtifact(db, deleted.id);
 
     expect(listTags(db)).toEqual(['apple', 'mango', 'zebra']);
+  });
+});
+
+describe('listTagsWithCounts', () => {
+  it('counts every artifact carrying the tag, archived and deleted included', () => {
+    createArtifact(db, { title: 'A', type: 'spec', tags: ['zebra', 'apple'], body: 'v1' });
+    const { artifact: archived } = createArtifact(db, {
+      title: 'B',
+      type: 'spec',
+      tags: ['apple'],
+      body: 'v1',
+    });
+    const { artifact: deleted } = createArtifact(db, {
+      title: 'C',
+      type: 'spec',
+      tags: ['apple', 'gone'],
+      body: 'v1',
+    });
+
+    setArtifactArchived(db, archived.id, true);
+    softDeleteArtifact(db, deleted.id);
+
+    expect(listTagsWithCounts(db)).toEqual([
+      { tag: 'apple', count: 3 },
+      { tag: 'gone', count: 1 },
+      { tag: 'zebra', count: 1 },
+    ]);
+  });
+
+  it('returns an empty list when nothing is tagged', () => {
+    createArtifact(db, { title: 'A', type: 'spec', body: 'v1' });
+
+    expect(listTagsWithCounts(db)).toEqual([]);
+  });
+});
+
+describe('renameTag / removeTag', () => {
+  function tagsOf(id: string): string[] | null | undefined {
+    return db.select({ tags: artifacts.tags }).from(artifacts).where(eq(artifacts.id, id)).get()
+      ?.tags;
+  }
+
+  it('renames a tag across every artifact carrying it', () => {
+    const { artifact: a } = createArtifact(db, {
+      title: 'A',
+      type: 'spec',
+      tags: ['trips', 'food'],
+      body: 'v1',
+    });
+    const { artifact: b } = createArtifact(db, {
+      title: 'B',
+      type: 'spec',
+      tags: ['trips'],
+      body: 'v1',
+    });
+    const { artifact: c } = createArtifact(db, {
+      title: 'C',
+      type: 'spec',
+      tags: ['food'],
+      body: 'v1',
+    });
+
+    expect(renameTag(db, 'trips', 'travel')).toBe(2);
+
+    expect(tagsOf(a.id)).toEqual(['travel', 'food']);
+    expect(tagsOf(b.id)).toEqual(['travel']);
+    expect(tagsOf(c.id)).toEqual(['food']);
+    expect(listTags(db)).toEqual(['food', 'travel']);
+  });
+
+  it('merges rather than duplicating when the target tag already exists', () => {
+    const { artifact } = createArtifact(db, {
+      title: 'A',
+      type: 'spec',
+      tags: ['travel', 'trips', 'food'],
+      body: 'v1',
+    });
+
+    expect(renameTag(db, 'trips', 'travel')).toBe(1);
+
+    expect(tagsOf(artifact.id)).toEqual(['travel', 'food']);
+    expect(listTags(db)).toEqual(['food', 'travel']);
+  });
+
+  it('removes a tag across every artifact carrying it', () => {
+    const { artifact: a } = createArtifact(db, {
+      title: 'A',
+      type: 'spec',
+      tags: ['draft', 'food'],
+      body: 'v1',
+    });
+    const { artifact: b } = createArtifact(db, {
+      title: 'B',
+      type: 'spec',
+      tags: ['draft'],
+      body: 'v1',
+    });
+
+    expect(removeTag(db, 'draft')).toBe(2);
+
+    expect(tagsOf(a.id)).toEqual(['food']);
+    expect(tagsOf(b.id)).toEqual([]);
+    expect(listTags(db)).toEqual(['food']);
+  });
+
+  it('rewrites soft-deleted and archived artifacts, so a restore cannot resurrect the old tag', () => {
+    const { artifact: deleted } = createArtifact(db, {
+      title: 'Deleted',
+      type: 'spec',
+      tags: ['trips'],
+      body: 'v1',
+    });
+    const { artifact: archived } = createArtifact(db, {
+      title: 'Archived',
+      type: 'spec',
+      tags: ['trips'],
+      body: 'v1',
+    });
+
+    softDeleteArtifact(db, deleted.id);
+    setArtifactArchived(db, archived.id, true);
+
+    expect(renameTag(db, 'trips', 'travel')).toBe(2);
+
+    expect(tagsOf(deleted.id)).toEqual(['travel']);
+    expect(tagsOf(archived.id)).toEqual(['travel']);
+
+    restoreArtifact(db, deleted.id);
+    expect(listTags(db)).toEqual(['travel']);
+  });
+
+  it('leaves updatedAt untouched — a vocabulary fix is not a content change', () => {
+    const { artifact } = createArtifact(db, {
+      title: 'A',
+      type: 'spec',
+      tags: ['trips'],
+      body: 'v1',
+    });
+
+    renameTag(db, 'trips', 'travel');
+    expect(getArtifact(db, artifact.id)?.artifact.updatedAt).toBe(artifact.updatedAt);
+
+    removeTag(db, 'travel');
+    expect(getArtifact(db, artifact.id)?.artifact.updatedAt).toBe(artifact.updatedAt);
+  });
+
+  it('reports 0 affected and writes nothing for a tag nothing carries', () => {
+    const { artifact } = createArtifact(db, {
+      title: 'A',
+      type: 'spec',
+      tags: ['food'],
+      body: 'v1',
+    });
+
+    expect(renameTag(db, 'trips', 'travel')).toBe(0);
+    expect(removeTag(db, 'trips')).toBe(0);
+
+    expect(tagsOf(artifact.id)).toEqual(['food']);
+    expect(listTags(db)).toEqual(['food']);
   });
 });
 

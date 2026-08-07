@@ -8,8 +8,11 @@ import {
   getArtifactState,
   listArtifacts,
   listTags,
+  listTagsWithCounts,
   listVersions,
   purgeArtifact,
+  removeTag,
+  renameTag,
   restoreArtifact,
   revertToVersion,
   setArtifactArchived,
@@ -63,6 +66,42 @@ export const listTagsFn = createServerFn({ method: 'GET' })
   .middleware([sessionMiddleware])
   .handler(async () => {
     return listTags(db);
+  });
+
+export const listTagsWithCountsFn = createServerFn({ method: 'GET' })
+  .middleware([sessionMiddleware])
+  .handler(async () => {
+    return listTagsWithCounts(db);
+  });
+
+const renameTagInput = z.object({ from: z.string().min(1), to: z.string().max(50) });
+
+/**
+ * Renames a tag across every artifact carrying it, archived and deleted included; renaming into an
+ * existing tag merges the two. A `to` that normalizes away to nothing is rejected rather than
+ * treated as a delete (same guard as the MCP `manage_tags` tool).
+ */
+export const renameTagFn = createServerFn({ method: 'POST' })
+  .middleware([sessionMiddleware])
+  .validator(renameTagInput)
+  .handler(async ({ data }) => {
+    const [to] = normalizeTags([data.to]);
+
+    if (!to) {
+      throw new Error('Tag name is required.');
+    }
+
+    return { affected: renameTag(db, data.from, to) };
+  });
+
+const removeTagInput = z.object({ tag: z.string().min(1) });
+
+/** Drops a tag from every artifact carrying it; the artifacts themselves are untouched. */
+export const removeTagFn = createServerFn({ method: 'POST' })
+  .middleware([sessionMiddleware])
+  .validator(removeTagInput)
+  .handler(async ({ data }) => {
+    return { affected: removeTag(db, data.tag) };
   });
 
 export interface ArtifactDetail {

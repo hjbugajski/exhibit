@@ -580,6 +580,85 @@ describe('list_tags', () => {
   });
 });
 
+describe('manage_tags', () => {
+  async function seedTagged(): Promise<void> {
+    await callTool(client, 'publish_spec', {
+      title: 'One',
+      tags: ['travel', 'food'],
+      spec: itineraryFixture,
+    });
+    await callTool(client, 'publish_html', {
+      title: 'Two',
+      tags: ['trips'],
+      html: '<html>b</html>',
+    });
+  }
+
+  it('renames a tag into an existing one, merging the vocabulary', async () => {
+    await seedTagged();
+    expect((await callTool(client, 'list_tags')).structuredContent?.tags).toEqual([
+      'food',
+      'travel',
+      'trips',
+    ]);
+
+    const result = await callTool(client, 'manage_tags', {
+      action: 'rename',
+      tag: 'trips',
+      to: 'travel',
+    });
+
+    expect(result.isError).toBeFalsy();
+    expect(result.structuredContent).toEqual({
+      action: 'rename',
+      tag: 'trips',
+      to: 'travel',
+      affected: 1,
+    });
+    expect(textOf(result)).toContain('Renamed tag "trips" to "travel" on 1 artifact.');
+    expect((await callTool(client, 'list_tags')).structuredContent?.tags).toEqual([
+      'food',
+      'travel',
+    ]);
+  });
+
+  it('deletes a tag from every artifact carrying it', async () => {
+    await seedTagged();
+
+    const result = await callTool(client, 'manage_tags', { action: 'delete', tag: 'travel' });
+
+    expect(result.isError).toBeFalsy();
+    expect(result.structuredContent).toEqual({ action: 'delete', tag: 'travel', affected: 1 });
+    expect((await callTool(client, 'list_tags')).structuredContent?.tags).toEqual([
+      'food',
+      'trips',
+    ]);
+  });
+
+  it('reports 0 affected for a tag nothing carries, rather than erroring', async () => {
+    await seedTagged();
+
+    const result = await callTool(client, 'manage_tags', { action: 'delete', tag: 'nope' });
+
+    expect(result.isError).toBeFalsy();
+    expect(result.structuredContent?.affected).toBe(0);
+  });
+
+  it('errors when rename is called without a target tag', async () => {
+    await seedTagged();
+
+    const result = await callTool(client, 'manage_tags', { action: 'rename', tag: 'trips' });
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain('requires a non-empty "to"');
+    expect((await callTool(client, 'list_tags')).structuredContent?.tags).toEqual([
+      'food',
+      'travel',
+      'trips',
+    ]);
+  });
+});
+
 describe('get_artifact', () => {
   it('fetches a specific version and lists all available versions', async () => {
     const published = await callTool(client, 'publish_spec', {
