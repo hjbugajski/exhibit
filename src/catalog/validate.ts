@@ -69,7 +69,10 @@ function formatPath(path: ReadonlyArray<PropertyKey>): string {
  * key. Walking by key name rather than hardcoding component types catches every current and future
  * statePath-bearing field in one place.
  */
-function collectStatePaths(elementKey: string, value: unknown): { key: string; path: string }[] {
+export function collectStatePaths(
+  elementKey: string,
+  value: unknown,
+): { key: string; path: string }[] {
   if (Array.isArray(value)) {
     return value.flatMap((item) => collectStatePaths(elementKey, item));
   }

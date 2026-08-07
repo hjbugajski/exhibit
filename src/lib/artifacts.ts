@@ -20,6 +20,8 @@ import {
   softDeleteArtifact,
   updateMetadata,
 } from '@/database/repository';
+import type { AnswerCount } from '@/lib/answer-count';
+import { countAnswers } from '@/lib/answer-count';
 import {
   descriptionField,
   normalizeTags,
@@ -110,6 +112,8 @@ export interface ArtifactDetail {
   versions: { version: number; createdAt: number }[];
   /** Interaction state for stateful spec components; null until first saved. */
   state: JsonObject | null;
+  /** Questions the *viewed* version's body asks, and how many the saved state answers. */
+  answers: AnswerCount;
 }
 
 const artifactDetailInput = z.object({
@@ -127,10 +131,15 @@ export const getArtifactDetailFn = createServerFn({ method: 'GET' })
       return null;
     }
 
+    const state = getArtifactState(db, data.id)?.state ?? null;
+
     return {
       ...result,
       versions: listVersions(db, data.id),
-      state: getArtifactState(db, data.id)?.state ?? null,
+      state,
+      // State is stored per artifact, not per version, so an older version's count reads today's
+      // answers against the questions that version asked.
+      answers: countAnswers(result.artifact.type, result.version.body, state),
     };
   });
 

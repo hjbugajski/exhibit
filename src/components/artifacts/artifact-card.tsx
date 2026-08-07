@@ -8,7 +8,7 @@ import { ArtifactTrashActions } from '@/components/artifacts/trash-actions';
 import { TypeBadge } from '@/components/artifacts/type-badge';
 import { RelativeTime } from '@/components/blocks/relative-time';
 import { Card } from '@/components/ui/card';
-import type { Artifact } from '@/database/repository';
+import type { ArtifactListItem } from '@/database/repository';
 
 /**
  * Memoized: gallery list renders are dominated by `Link`'s per-card route build, so the card must
@@ -21,10 +21,13 @@ export const ArtifactCard = memo(function ArtifactCard({
   artifact,
   trash,
 }: {
-  artifact: Artifact;
+  artifact: ArtifactListItem;
   trash?: TrashActions;
 }) {
   const params = useMemo(() => ({ id: artifact.id }), [artifact.id]);
+  // Suppressed in the trash: a deleted artifact has no detail page to answer anything on.
+  const awaiting =
+    !trash && artifact.answers !== null && artifact.answers.answered < artifact.answers.total;
 
   const card = (
     <Card.Root className={trash ? 'h-full' : 'hover:bg-surface-subtle h-full transition-colors'}>
@@ -42,10 +45,15 @@ export const ArtifactCard = memo(function ArtifactCard({
           </p>
         ) : null}
         <TagList tags={artifact.tags} />
-        <RelativeTime
-          className="text-foreground-muted mt-auto text-xs"
-          value={artifact.updatedAt}
-        />
+        <div className="text-foreground-muted mt-auto flex flex-wrap items-center gap-2 text-xs">
+          <RelativeTime value={artifact.updatedAt} />
+          {awaiting ? (
+            <span className="text-foreground flex items-center gap-1.5">
+              <span aria-hidden="true" className="bg-foreground size-1.5 rounded-full" />
+              Awaiting your reply
+            </span>
+          ) : null}
+        </div>
         {trash ? <ArtifactTrashActions artifact={artifact} trash={trash} /> : null}
       </Card.Content>
     </Card.Root>

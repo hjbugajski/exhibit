@@ -219,6 +219,24 @@ describe('getArtifact', () => {
   });
 });
 
+/** Two statePaths in one Checklist, for the list row's answered count. */
+const answerSpecBody = JSON.stringify({
+  root: 'root',
+  elements: {
+    root: { type: 'Section', props: { title: 'Sign-off' }, children: ['prep'] },
+    prep: {
+      type: 'Checklist',
+      props: {
+        items: [
+          { id: 'size', text: 'Checked the size', statePath: '/prep/size' },
+          { id: 'cost', text: 'Compared cost', statePath: '/prep/cost' },
+        ],
+      },
+      children: [],
+    },
+  },
+});
+
 describe('listArtifacts', () => {
   it('lists newest-first and paginates by cursor', () => {
     let now = 1000;
@@ -510,6 +528,47 @@ describe('listArtifacts', () => {
 
     expect(items.find((item) => item.id === touched.id)?.stateUpdatedAt).toBe(5000);
     expect(items.find((item) => item.title === 'Untouched')?.stateUpdatedAt).toBeNull();
+  });
+
+  it('counts the latest version’s questions against the saved state', () => {
+    const { artifact } = createArtifact(db, {
+      title: 'Sign-off',
+      type: 'spec',
+      body: JSON.stringify({ root: 'a', elements: { a: { type: 'Section', props: {} } } }),
+    });
+
+    appendVersion(db, artifact.id, answerSpecBody);
+    setArtifactState(db, artifact.id, { prep: { size: true } });
+
+    expect(listArtifacts(db).items[0]?.answers).toEqual({ answered: 1, total: 2 });
+  });
+
+  it('counts a markdown body’s questions too', () => {
+    const { artifact } = createArtifact(db, {
+      title: 'Notes',
+      type: 'markdown',
+      body: '# Notes\n\n<!-- ::Rating label="How was it?" statePath="/rating" -->\n',
+    });
+
+    setArtifactState(db, artifact.id, { rating: 5 });
+
+    expect(listArtifacts(db).items[0]?.answers).toEqual({ answered: 1, total: 1 });
+  });
+
+  it('reports zeroes for a body that asks nothing', () => {
+    createArtifact(db, { title: 'Static', type: 'html', body: '<p>hi</p>' });
+
+    expect(listArtifacts(db).items[0]?.answers).toEqual({ answered: 0, total: 0 });
+  });
+
+  it('leaves answers unknown for a body past the scan guard', () => {
+    createArtifact(db, {
+      title: 'Huge',
+      type: 'markdown',
+      body: `${'x'.repeat(200_001)}\n\n<!-- ::Rating label="r" statePath="/r" -->\n`,
+    });
+
+    expect(listArtifacts(db).items[0]?.answers).toBeNull();
   });
 });
 

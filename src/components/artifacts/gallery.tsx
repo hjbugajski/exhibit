@@ -20,7 +20,7 @@ import { RadioGroup } from '@/components/ui/radio-group';
 import { Spinner } from '@/components/ui/spinner';
 import { Table as TablePrimitive } from '@/components/ui/table';
 import { Tabs } from '@/components/ui/tabs';
-import type { Artifact, ArtifactType } from '@/database/repository';
+import type { ArtifactListItem, ArtifactType } from '@/database/repository';
 import type { ArtifactSort } from '@/lib/artifact-sorts';
 import { cn } from '@/lib/utils';
 
@@ -368,7 +368,7 @@ function Results({ children }: GalleryResultsProps) {
 }
 
 export interface GalleryGridProps {
-  items: Artifact[];
+  items: ArtifactListItem[];
   /** Present in the trash view; see ArtifactCard. */
   trash?: TrashActions;
 }
@@ -385,7 +385,7 @@ const Grid = memo(function Grid({ items, trash }: GalleryGridProps) {
 });
 
 export interface GalleryTableProps {
-  items: Artifact[];
+  items: ArtifactListItem[];
   /** Present in the trash view; rows link nowhere and gain an actions column. */
   trash?: TrashActions;
 }
@@ -395,10 +395,13 @@ const TableRow = memo(function TableRow({
   artifact,
   trash,
 }: {
-  artifact: Artifact;
+  artifact: ArtifactListItem;
   trash?: TrashActions;
 }) {
   const params = useMemo(() => ({ id: artifact.id }), [artifact.id]);
+  // Suppressed in the trash: a deleted artifact has no detail page to answer anything on.
+  const awaiting =
+    trash || !artifact.answers ? 0 : artifact.answers.total - artifact.answers.answered;
 
   return (
     // The title link stretches over the whole row (::after), so the row itself carries no click
@@ -406,17 +409,25 @@ const TableRow = memo(function TableRow({
     // border-collapse <tr> doesn't paint box-shadow.
     <TablePrimitive.Row className="relative">
       <TablePrimitive.Cell className="font-medium">
-        {trash ? (
-          artifact.title
-        ) : (
-          <Link
-            className="focus-visible:after:ring-focus outline-none after:absolute after:inset-0 focus-visible:after:ring-3 focus-visible:after:ring-inset"
-            params={params}
-            to="/a/$id"
-          >
-            {artifact.title}
-          </Link>
-        )}
+        <span className="flex flex-wrap items-center gap-2">
+          {trash ? (
+            artifact.title
+          ) : (
+            <Link
+              className="focus-visible:after:ring-focus outline-none after:absolute after:inset-0 focus-visible:after:ring-3 focus-visible:after:ring-inset"
+              params={params}
+              to="/a/$id"
+            >
+              {artifact.title}
+            </Link>
+          )}
+          {awaiting > 0 ? (
+            <span className="text-foreground-muted flex items-center gap-1.5 text-xs font-normal">
+              <span aria-hidden="true" className="bg-foreground size-1.5 rounded-full" />
+              {awaiting} awaiting
+            </span>
+          ) : null}
+        </span>
       </TablePrimitive.Cell>
       <TablePrimitive.Cell>
         <TypeBadge type={artifact.type} />

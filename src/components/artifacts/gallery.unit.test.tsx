@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { GalleryView, TypeFilter } from '@/components/artifacts/gallery';
 import { Gallery } from '@/components/artifacts/gallery';
 import type { TrashActions } from '@/components/artifacts/trash-actions';
-import type { Artifact } from '@/database/repository';
+import type { ArtifactListItem } from '@/database/repository';
 import type { ArtifactSort } from '@/lib/artifact-sorts';
 import { makeArtifact } from '@testing/factories';
 import { renderWithRouter } from '@testing/router';
@@ -49,7 +49,7 @@ interface RenderGalleryOptions {
     setTags: (tags: string[]) => void;
     setView: (view: GalleryView) => void;
   }>;
-  items?: Artifact[];
+  items?: ArtifactListItem[];
   trash?: TrashActions;
   availableTags?: string[];
   hasMore?: boolean;
@@ -227,6 +227,44 @@ describe('Gallery', () => {
     expect(await screen.findByRole('table')).toBeTruthy();
     expect(screen.getByRole('columnheader', { name: 'Title' })).toBeTruthy();
     expect(screen.getByRole('columnheader', { name: 'Updated' })).toBeTruthy();
+  });
+
+  it('marks a card awaiting a reply only while questions are unanswered', async () => {
+    renderGallery({
+      items: [
+        makeArtifact({ id: 'a1', title: 'Pending', answers: { answered: 1, total: 3 } }),
+        makeArtifact({ id: 'a2', title: 'Complete', answers: { answered: 2, total: 2 } }),
+        // Unknown count (body past the scan guard): no claim either way.
+        makeArtifact({ id: 'a3', title: 'Unknown', answers: null }),
+      ],
+    });
+
+    expect(await screen.findByText('Awaiting your reply')).toBeTruthy();
+    expect(screen.getAllByText('Awaiting your reply')).toHaveLength(1);
+  });
+
+  it('counts the unanswered questions in a table row', async () => {
+    renderGallery({
+      items: [
+        makeArtifact({ id: 'a1', title: 'Pending', answers: { answered: 1, total: 3 } }),
+        makeArtifact({ id: 'a2', title: 'Complete', answers: { answered: 2, total: 2 } }),
+      ],
+      state: { view: 'table' },
+    });
+
+    expect(await screen.findByText('2 awaiting')).toBeTruthy();
+    expect(screen.queryByText('0 awaiting')).toBeNull();
+  });
+
+  it('never marks a trashed artifact as awaiting a reply', async () => {
+    renderGallery({
+      items: [makeArtifact({ id: 'a1', answers: { answered: 0, total: 2 } })],
+      state: { deleted: true },
+      trash: makeTrash(),
+    });
+
+    expect(await screen.findByText('Kyoto Trip')).toBeTruthy();
+    expect(screen.queryByText('Awaiting your reply')).toBeNull();
   });
 
   it('marks the list busy while a filter navigation is in flight', async () => {

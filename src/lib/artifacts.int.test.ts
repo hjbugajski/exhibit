@@ -165,6 +165,44 @@ describe('saveArtifactStateFn (through the real server-fn RPC route)', () => {
     expect(detail.state).toEqual({ checked: true });
   });
 
+  it('counts the viewed version’s questions against the saved state', async () => {
+    const { createArtifact } = await import('@/database/repository');
+    const { db } = await import('@/database');
+
+    const { artifact } = createArtifact(db, {
+      title: 'Checklist',
+      type: 'spec',
+      body: JSON.stringify({
+        root: 'a',
+        elements: {
+          a: {
+            type: 'Checklist',
+            props: {
+              items: [
+                { id: 'i1', text: 'One', statePath: '/tasks/one' },
+                { id: 'i2', text: 'Two', statePath: '/tasks/two' },
+                { id: 'i3', text: 'Three', statePath: '/tasks/three' },
+              ],
+            },
+            children: [],
+          },
+        },
+      }),
+    });
+
+    await saveArtifactState(
+      { id: artifact.id, state: { tasks: { one: true, two: false } } },
+      { cookie: ownerCookie },
+    );
+
+    const detail = (await getArtifactDetail({ id: artifact.id }, { cookie: ownerCookie })) as {
+      answers: unknown;
+    };
+
+    // `false` is a real answer; the untouched third item is not.
+    expect(detail.answers).toEqual({ answered: 2, total: 3 });
+  });
+
   it('rejects a state payload over the 64 KB cap', async () => {
     await expect(
       saveArtifactState(

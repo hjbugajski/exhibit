@@ -54,6 +54,7 @@ function makeChecklistDetail(
       createdAt: 1000 + index,
     })),
     state: overrides.state ?? null,
+    answers: { answered: 0, total: 2 },
   } satisfies ArtifactDetail;
 }
 
@@ -100,6 +101,7 @@ describe('ArtifactDetailView', () => {
       version: makeVersion(),
       versions: [{ version: 1, createdAt: 1000 }],
       state: null,
+      answers: { answered: 0, total: 0 },
     };
 
     renderWithRouter(<ArtifactDetailView detail={detail} id="fixture-id" />, {
@@ -125,6 +127,7 @@ describe('ArtifactDetailView', () => {
         { version: 2, createdAt: now - 3_600_000 },
       ],
       state: null,
+      answers: { answered: 0, total: 0 },
     };
 
     renderWithRouter(<ArtifactDetailView detail={detail} id="fixture-id" />, {
@@ -158,6 +161,7 @@ describe('ArtifactDetailView', () => {
             version: makeVersion({ version }),
             versions,
             state: null,
+            answers: { answered: 0, total: 0 },
           }}
           id="fixture-id"
         />,
@@ -189,6 +193,7 @@ describe('ArtifactDetailView', () => {
       version: makeVersion({ body: JSON.stringify(spec) }),
       versions: [{ version: 1, createdAt: 1000 }],
       state: null,
+      answers: { answered: 0, total: 0 },
     };
 
     renderWithRouter(<ArtifactDetailView detail={detail} id="fixture-id" />, {
@@ -210,6 +215,7 @@ describe('ArtifactDetailView', () => {
       version: makeVersion({ body: '<html><body>hi</body></html>' }),
       versions: [{ version: 1, createdAt: 1000 }],
       state: null,
+      answers: { answered: 0, total: 0 },
     };
 
     renderWithRouter(<ArtifactDetailView detail={detail} id="fixture-id" />, {
@@ -236,6 +242,7 @@ describe('ArtifactDetailView', () => {
       version: makeVersion({ body }),
       versions: [{ version: 1, createdAt: 1000 }],
       state: null,
+      answers: { answered: 0, total: 0 },
     };
 
     renderDetail(detail);
@@ -249,6 +256,20 @@ describe('ArtifactDetailView', () => {
 
     // Unlike a spec body, markdown is stored and shown byte-for-byte.
     expect(document.querySelector('code')?.textContent).toBe(body);
+  });
+
+  it('reports the answered count in the header when the body asks something', async () => {
+    renderDetail({ ...makeChecklistDetail(), answers: { answered: 2, total: 3 } });
+
+    expect(await screen.findByText('2 of 3 answered')).toBeTruthy();
+  });
+
+  it('renders no answered line at all for a body that asks nothing', async () => {
+    renderDetail({ ...makeChecklistDetail(), answers: { answered: 0, total: 0 } });
+
+    await screen.findByRole('checkbox', { name: 'Order cabinets' });
+
+    expect(screen.queryByText(/answered/)).toBeNull();
   });
 });
 

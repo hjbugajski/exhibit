@@ -78,7 +78,7 @@ function parseSpecBody(body: string): Spec | null | undefined {
 export function ArtifactDetailView({ id, detail }: { id: string; detail: ArtifactDetail }) {
   const navigate = useNavigate();
   const router = useRouter();
-  const { artifact, version, versions } = detail;
+  const { artifact, version, versions, answers } = detail;
   const latestVersion = Math.max(...versions.map((v) => v.version));
 
   const [view, setView] = useState<View>('rendered');
@@ -224,6 +224,15 @@ export function ArtifactDetailView({ id, detail }: { id: string; detail: Artifac
           <span>
             Updated <RelativeTime value={artifact.updatedAt} />
           </span>
+          {/* Omitted entirely when the body asks nothing, rather than showing "0 of 0". */}
+          {answers.total > 0 ? (
+            <>
+              <span aria-hidden="true">·</span>
+              <span>
+                {answers.answered} of {answers.total} answered
+              </span>
+            </>
+          ) : null}
           {artifact.tags.map((tag) => (
             <Badge key={tag}>{tag}</Badge>
           ))}

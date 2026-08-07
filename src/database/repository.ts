@@ -19,6 +19,8 @@ import { z } from 'zod';
 import { artifacts } from '@/database/schemas/artifact';
 import { artifactStates } from '@/database/schemas/artifact-state';
 import { artifactVersions } from '@/database/schemas/artifact-version';
+import type { AnswerCount } from '@/lib/answer-count';
+import { countAnswers } from '@/lib/answer-count';
 import { normalizeTags } from '@/lib/artifact-metadata';
 import type { ArtifactSort, artifactTypes } from '@/lib/artifact-sorts';
 import { artifactSorts } from '@/lib/artifact-sorts';
@@ -87,10 +89,14 @@ export interface ListArtifactsInput {
 }
 
 /**
- * A `listArtifacts` row plus a cheap owner-response signal: when the artifact's interaction state
- * last changed, or null if never touched.
+ * A `listArtifacts` row plus owner-response signals: when the artifact's interaction state last
+ * changed (null if never touched), and how much of the latest version's body the saved state
+ * answers — `null` where the count is unknown (body missing or past `maxAnswerScanBytes`).
  */
-export type ArtifactListItem = Artifact & { stateUpdatedAt: number | null };
+export type ArtifactListItem = Artifact & {
+  stateUpdatedAt: number | null;
+  answers: AnswerCount | null;
+};
 
 export interface ListArtifactsResult {
   items: ArtifactListItem[];
@@ -115,10 +121,27 @@ function toArtifact(row: typeof artifacts.$inferSelect): Artifact {
   };
 }
 
+/**
+ * Bodies past this are left uncounted: parsing is linear and a 1 MB body costs ~6 ms, which a
+ * 20-row page would pay 20 times. The row reports `answers: null` — unknown, not "nothing to
+ * answer" — and the gallery renders no marker for it.
+ */
+const maxAnswerScanBytes = 200_000;
+
 function toArtifactListItem(
-  row: typeof artifacts.$inferSelect & { stateUpdatedAt: number | null },
+  row: typeof artifacts.$inferSelect & {
+    stateUpdatedAt: number | null;
+    state: Record<string, unknown> | null;
+    body: string | null;
+  },
 ): ArtifactListItem {
-  return { ...toArtifact(row), stateUpdatedAt: row.stateUpdatedAt };
+  const artifact = toArtifact(row);
+
+  return {
+    ...artifact,
+    stateUpdatedAt: row.stateUpdatedAt,
+    answers: row.body === null ? null : countAnswers(artifact.type, row.body, row.state),
+  };
 }
 
 /**
@@ -444,6 +467,19 @@ export function listArtifacts(db: Db, input: ListArtifactsInput = {}): ListArtif
     .select({
       ...getTableColumns(artifacts),
       stateUpdatedAt: artifactStates.updatedAt,
+      state: artifactStates.state,
+      // Latest version's body, for the answered count only — never returned to the caller. The
+      // oversized case resolves to null in SQL so a huge body is never even read off the page.
+      body: sql<string | null>`(
+        select case
+          when length(cast(${artifactVersions.body} as blob)) > ${maxAnswerScanBytes} then null
+          else ${artifactVersions.body}
+        end
+        from ${artifactVersions}
+        where ${artifactVersions.artifactId} = ${artifacts.id}
+        order by ${artifactVersions.version} desc
+        limit 1
+      )`,
       sortKey: sortColumnExpr(field),
     })
     .from(artifacts)
