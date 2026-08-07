@@ -19,6 +19,7 @@ import { Heading } from '@/components/catalog/heading';
 import { Itinerary } from '@/components/catalog/itinerary';
 import { KeyValueList } from '@/components/catalog/key-value-list';
 import { Map } from '@/components/catalog/map';
+import { Mermaid } from '@/components/catalog/mermaid';
 import { NoteBox } from '@/components/catalog/note-box';
 import { Progress } from '@/components/catalog/progress';
 import { Prose } from '@/components/catalog/prose';
@@ -58,6 +59,7 @@ export const catalogComponents = {
   Figure,
   Progress,
   Chart,
+  Mermaid,
   Map,
   Choice,
   NoteBox,

@@ -34,7 +34,7 @@ describe('validateArtifactSpec', () => {
         {
           "component": "NotAComponent",
           "element": "unknown-el",
-          "message": "Invalid option: expected one of "Section"|"Grid"|"Columns"|"Tabs"|"Divider"|"Heading"|"Prose"|"Callout"|"Quote"|"CodeBlock"|"Card"|"Table"|"KeyValueList"|"Steps"|"Timeline"|"Checklist"|"Details"|"Badge"|"Figure"|"Progress"|"Chart"|"Map"|"Choice"|"NoteBox"|"Rating"|"Itinerary"|"Day"|"Stop"",
+          "message": "Invalid option: expected one of "Section"|"Grid"|"Columns"|"Tabs"|"Divider"|"Heading"|"Prose"|"Callout"|"Quote"|"CodeBlock"|"Card"|"Table"|"KeyValueList"|"Steps"|"Timeline"|"Checklist"|"Details"|"Badge"|"Figure"|"Progress"|"Chart"|"Mermaid"|"Map"|"Choice"|"NoteBox"|"Rating"|"Itinerary"|"Day"|"Stop"",
           "path": "elements.unknown-el.type",
         },
         {

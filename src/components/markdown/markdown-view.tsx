@@ -6,6 +6,7 @@ import type { MarkdownComponents } from '@tanstack/markdown/react';
 import { Markdown } from '@tanstack/markdown/react';
 
 import { registry } from '@/catalog/registry';
+import { Mermaid } from '@/components/catalog/mermaid';
 import { CatalogDirective, ExhibitBlock } from '@/components/markdown/catalog-dispatch';
 import {
   createMarkdownComponents,
@@ -15,14 +16,21 @@ import {
 } from '@/components/markdown/markdown-policy';
 import { cn } from '@/lib/utils';
 
-/** `exhibit` fences (any casing, like fence languages generally) are catalog components; every
- * other fence is code. */
-const renderFence: FenceRenderer = (code, language) =>
-  language.toLowerCase() === 'exhibit' ? (
-    <ExhibitBlock json={code} />
-  ) : (
-    highlightFence(code, language)
-  );
+/** `exhibit` fences are catalog components and `mermaid` fences are diagrams (either casing, like
+ * fence languages generally); every other fence is code. */
+const renderFence: FenceRenderer = (code, language) => {
+  switch (language.toLowerCase()) {
+    case 'exhibit': {
+      return <ExhibitBlock json={code} />;
+    }
+    case 'mermaid': {
+      return <Mermaid props={{ code }} />;
+    }
+    default: {
+      return highlightFence(code, language);
+    }
+  }
+};
 
 const components: MarkdownComponents = {
   ...createMarkdownComponents(renderFence),

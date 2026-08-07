@@ -18,6 +18,8 @@ import { defineCatalog } from '@json-render/core';
 import { schema } from '@json-render/react/schema';
 import { z } from 'zod';
 
+import { ALLOWED_FAMILIES, MERMAID_MAX_CHARS } from '@/components/catalog/mermaid-policy';
+
 /** Generous cap for a title/label/short string field. */
 const SHORT_MAX = 500;
 /** Generous cap for a long-form markdown/prose/code field. */
@@ -479,6 +481,13 @@ export const catalog = defineCatalog(schema, {
           .max(SHORT_MAX)
           .optional()
           .describe('Name of the series shown in the tooltip, e.g. "Cost ($)".'),
+      }),
+    },
+
+    Mermaid: {
+      description: `Diagram from mermaid source (no code fence): ${ALLOWED_FAMILIES}; others show the source with the reason.`,
+      props: z.object({
+        code: z.string().min(1).max(MERMAID_MAX_CHARS),
       }),
     },
 

@@ -1,7 +1,8 @@
 /**
  * Markdown artifact exercising every surface of the markdown renderer at once: GFM constructs, a
  * highlighted code fence, the URL policy (an allowed https link next to a dropped javascript: one),
- * raw HTML that must show as literal text, a comment directive wrapping markdown in a Card, and
+ * raw HTML that must show as literal text, a mermaid fence, a comment directive wrapping markdown
+ * in a Card, and
  * exhibit fences for a chart and a stateful checklist. Doubles as the live verification fixture for
  * plan 07.
  */
@@ -46,6 +47,14 @@ render identically:
 export function greet(name: string): string {
   return \`hello \${name}\`;
 }
+\`\`\`
+
+A \`mermaid\` fence renders as a diagram instead of code:
+
+\`\`\`mermaid
+flowchart LR
+  claude[Claude] -->|publish| exhibit[Exhibit]
+  exhibit --> gallery[Gallery]
 \`\`\`
 
 ## Directives

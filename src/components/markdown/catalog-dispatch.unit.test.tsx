@@ -15,6 +15,14 @@ vi.mock('@/components/catalog/map', () => ({
   Map: () => <div data-testid="catalog-map" />,
 }));
 
+/** Stands in for the real diagram (mermaid needs layout APIs happy-dom lacks) and reports the
+ * fence body it was handed. */
+vi.mock('@/components/catalog/mermaid', () => ({
+  Mermaid: ({ props }: { props: { code: string } }) => (
+    <div data-code={props.code} data-testid="catalog-mermaid" />
+  ),
+}));
+
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
@@ -161,6 +169,16 @@ describe('exhibit fences', () => {
 
     expect(container.querySelector('pre')?.textContent).toBe('{"type":"Heading"}');
     expect(container.querySelector('.text-danger')).toBeNull();
+  });
+});
+
+describe('mermaid fences', () => {
+  it.each(['mermaid', 'Mermaid'])('renders a %s fence as a diagram, not code', (language) => {
+    const code = 'flowchart TD\n  a --> b';
+    const { container } = render(<MarkdownView markdown={`\`\`\`${language}\n${code}\n\`\`\``} />);
+
+    expect(screen.getByTestId('catalog-mermaid').dataset.code).toBe(code);
+    expect(container.querySelector('pre')).toBeNull();
   });
 });
 

@@ -20,6 +20,7 @@ import { catalogHeadingDemo } from '@/components/library/demos/catalog-heading';
 import { catalogItineraryDemo } from '@/components/library/demos/catalog-itinerary';
 import { catalogKeyValueListDemo } from '@/components/library/demos/catalog-key-value-list';
 import { catalogMapDemo } from '@/components/library/demos/catalog-map';
+import { catalogMermaidDemo } from '@/components/library/demos/catalog-mermaid';
 import { catalogNoteBoxDemo } from '@/components/library/demos/catalog-note-box';
 import { catalogProgressDemo } from '@/components/library/demos/catalog-progress';
 import { catalogProseDemo } from '@/components/library/demos/catalog-prose';
@@ -95,6 +96,7 @@ export const libraryDemos: LibraryDemo[] = [
   catalogItineraryDemo,
   catalogKeyValueListDemo,
   catalogMapDemo,
+  catalogMermaidDemo,
   catalogNoteBoxDemo,
   catalogProgressDemo,
   catalogProseDemo,

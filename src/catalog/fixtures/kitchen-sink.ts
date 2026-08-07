@@ -324,7 +324,14 @@ export const kitchenSinkFixture: Spec = {
     'plan-section': {
       type: 'Section',
       props: { title: 'Installation Plan', subtitle: 'Install-day runbook, June 20' },
-      children: ['steps', 'sensor-intro', 'sensor-code'],
+      children: ['steps', 'shutoff-diagram', 'sensor-intro', 'sensor-code'],
+    },
+    'shutoff-diagram': {
+      type: 'Mermaid',
+      props: {
+        code: 'flowchart TD\n  shutoff[Close supply valves] --> drain[Drain the P-trap]\n  drain --> leak{Still dripping?}\n  leak -- yes --> main[Close the main]\n  leak -- no --> pull[Pull the old sink]',
+      },
+      children: [],
     },
     'sensor-intro': {
       type: 'Prose',
