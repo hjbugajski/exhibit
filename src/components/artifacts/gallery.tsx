@@ -439,22 +439,24 @@ const TableRow = memo(function TableRow({
 
 const Table = memo(function Table({ items, trash }: GalleryTableProps) {
   return (
-    <TablePrimitive.Root>
-      <TablePrimitive.Header>
-        <TablePrimitive.Row>
-          <TablePrimitive.Head>Title</TablePrimitive.Head>
-          <TablePrimitive.Head>Type</TablePrimitive.Head>
-          <TablePrimitive.Head>Tags</TablePrimitive.Head>
-          <TablePrimitive.Head>Updated</TablePrimitive.Head>
-          {trash ? <TablePrimitive.Head>Actions</TablePrimitive.Head> : null}
-        </TablePrimitive.Row>
-      </TablePrimitive.Header>
-      <TablePrimitive.Body>
-        {items.map((artifact) => (
-          <TableRow artifact={artifact} key={artifact.id} trash={trash} />
-        ))}
-      </TablePrimitive.Body>
-    </TablePrimitive.Root>
+    <TablePrimitive.Viewport>
+      <TablePrimitive.Root>
+        <TablePrimitive.Header>
+          <TablePrimitive.Row>
+            <TablePrimitive.Head>Title</TablePrimitive.Head>
+            <TablePrimitive.Head>Type</TablePrimitive.Head>
+            <TablePrimitive.Head>Tags</TablePrimitive.Head>
+            <TablePrimitive.Head>Updated</TablePrimitive.Head>
+            {trash ? <TablePrimitive.Head>Actions</TablePrimitive.Head> : null}
+          </TablePrimitive.Row>
+        </TablePrimitive.Header>
+        <TablePrimitive.Body>
+          {items.map((artifact) => (
+            <TableRow artifact={artifact} key={artifact.id} trash={trash} />
+          ))}
+        </TablePrimitive.Body>
+      </TablePrimitive.Root>
+    </TablePrimitive.Viewport>
   );
 });
 
