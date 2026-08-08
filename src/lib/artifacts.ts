@@ -8,14 +8,29 @@ import {
   getArtifactState,
   listArtifacts,
   listTags,
+  listTagsWithCounts,
   listVersions,
+  purgeArtifact,
+  removeTag,
+  renameTag,
+  restoreArtifact,
+  revertToVersion,
   setArtifactArchived,
   setArtifactState,
   softDeleteArtifact,
   updateMetadata,
 } from '@/database/repository';
+import type { AnswerCount } from '@/lib/answer-count';
+import { countAnswers } from '@/lib/answer-count';
+import {
+  descriptionField,
+  normalizeTags,
+  requireArtifact,
+  tagField,
+  tagsField,
+  titleField,
+} from '@/lib/artifact-metadata';
 import { artifactSorts, artifactTypes } from '@/lib/artifact-sorts';
-import { normalizeTags } from '@/lib/mcp/tags';
 import { sessionMiddleware } from '@/lib/session-middleware';
 
 /**
@@ -37,6 +52,7 @@ const listArtifactsInput = z.object({
   tags: z.array(z.string()).optional(),
   type: z.enum(artifactTypes).optional(),
   archived: z.boolean().optional(),
+  deleted: z.boolean().optional(),
   sort: z.enum(artifactSorts).optional(),
   cursor: z.string().optional(),
   limit: z.number().int().min(1).max(100).optional(),
@@ -46,7 +62,9 @@ export const listArtifactsFn = createServerFn({ method: 'GET' })
   .middleware([sessionMiddleware])
   .validator(listArtifactsInput)
   .handler(async ({ data }) => {
-    return listArtifacts(db, data);
+    // The gallery is the only surface that renders answered counts, so it is the only caller that
+    // pays for them (a body fetch and a parse per row).
+    return listArtifacts(db, { ...data, withAnswers: true });
   });
 
 export const listTagsFn = createServerFn({ method: 'GET' })
@@ -55,12 +73,50 @@ export const listTagsFn = createServerFn({ method: 'GET' })
     return listTags(db);
   });
 
+export const listTagsWithCountsFn = createServerFn({ method: 'GET' })
+  .middleware([sessionMiddleware])
+  .handler(async () => {
+    return listTagsWithCounts(db);
+  });
+
+const renameTagInput = z.object({ from: z.string().min(1), to: tagField });
+
+/**
+ * Renames a tag across every artifact carrying it, archived and deleted included; renaming into an
+ * existing tag merges the two. A `to` that normalizes away to nothing is rejected rather than
+ * treated as a delete (same guard as the MCP `manage_tags` tool).
+ */
+export const renameTagFn = createServerFn({ method: 'POST' })
+  .middleware([sessionMiddleware])
+  .validator(renameTagInput)
+  .handler(async ({ data }) => {
+    const [to] = normalizeTags([data.to]);
+
+    if (!to) {
+      throw new Error('Tag name is required.');
+    }
+
+    return { affected: renameTag(db, data.from, to) };
+  });
+
+const removeTagInput = z.object({ tag: z.string().min(1) });
+
+/** Drops a tag from every artifact carrying it; the artifacts themselves are untouched. */
+export const removeTagFn = createServerFn({ method: 'POST' })
+  .middleware([sessionMiddleware])
+  .validator(removeTagInput)
+  .handler(async ({ data }) => {
+    return { affected: removeTag(db, data.tag) };
+  });
+
 export interface ArtifactDetail {
   artifact: Artifact;
   version: ArtifactVersion;
   versions: { version: number; createdAt: number }[];
   /** Interaction state for stateful spec components; null until first saved. */
   state: JsonObject | null;
+  /** Questions the *viewed* version's body asks, and how many the saved state answers. */
+  answers: AnswerCount;
 }
 
 const artifactDetailInput = z.object({
@@ -78,18 +134,23 @@ export const getArtifactDetailFn = createServerFn({ method: 'GET' })
       return null;
     }
 
+    const state = getArtifactState(db, data.id)?.state ?? null;
+
     return {
       ...result,
       versions: listVersions(db, data.id),
-      state: getArtifactState(db, data.id)?.state ?? null,
+      state,
+      // State is stored per artifact, not per version, so an older version's count reads today's
+      // answers against the questions that version asked.
+      answers: countAnswers(result.artifact.type, result.version.body, state),
     };
   });
 
 const updateArtifactMetadataInput = z.object({
   id: z.string(),
-  title: z.string().min(1).max(200),
-  description: z.string().max(2000).nullable(),
-  tags: z.array(z.string().max(50)).max(20),
+  title: titleField,
+  description: descriptionField.nullable(),
+  tags: tagsField,
 });
 
 /** Throws for unknown ids; a null description clears it. */
@@ -97,21 +158,17 @@ export const updateArtifactMetadataFn = createServerFn({ method: 'POST' })
   .middleware([sessionMiddleware])
   .validator(updateArtifactMetadataInput)
   .handler(async ({ data }) => {
-    if (!getArtifact(db, data.id)) {
-      throw new Error('Artifact not found. It may have been deleted.');
-    }
+    // updateMetadata doesn't filter soft-deleted rows, so the live-artifact check has to happen
+    // through getArtifact first.
+    requireArtifact(getArtifact(db, data.id));
 
-    const artifact = updateMetadata(db, data.id, {
-      title: data.title,
-      description: data.description,
-      tags: normalizeTags(data.tags),
-    });
-
-    if (!artifact) {
-      throw new Error('Artifact not found. It may have been deleted.');
-    }
-
-    return artifact;
+    return requireArtifact(
+      updateMetadata(db, data.id, {
+        title: data.title,
+        description: data.description,
+        tags: normalizeTags(data.tags),
+      }),
+    );
   });
 
 const jsonValue: z.ZodType<JsonValue> = z.lazy(() =>
@@ -138,13 +195,31 @@ export const saveArtifactStateFn = createServerFn({ method: 'POST' })
       throw new Error('Interaction state exceeds the 64 KB limit.');
     }
 
-    if (!getArtifact(db, data.id)) {
-      throw new Error('Artifact not found. It may have been deleted.');
-    }
+    requireArtifact(getArtifact(db, data.id));
 
     setArtifactState(db, data.id, data.state);
 
     return { saved: true };
+  });
+
+const revertArtifactVersionInput = z.object({
+  id: z.string(),
+  version: z.number().int().positive(),
+});
+
+/**
+ * Restores an older version by appending its body as a new latest version; nothing is overwritten.
+ * Throws for unknown/deleted ids and for a version the artifact doesn't have.
+ */
+export const revertArtifactVersionFn = createServerFn({ method: 'POST' })
+  .middleware([sessionMiddleware])
+  .validator(revertArtifactVersionInput)
+  .handler(async ({ data }) => {
+    // revertToVersion doesn't filter soft-deleted rows, so the live-artifact check has to happen
+    // through getArtifact first.
+    requireArtifact(getArtifact(db, data.id));
+
+    return requireArtifact(revertToVersion(db, data.id, data.version));
   });
 
 const setArtifactArchivedInput = z.object({ id: z.string(), archived: z.boolean() });
@@ -154,26 +229,47 @@ export const setArtifactArchivedFn = createServerFn({ method: 'POST' })
   .middleware([sessionMiddleware])
   .validator(setArtifactArchivedInput)
   .handler(async ({ data }) => {
-    if (!getArtifact(db, data.id)) {
-      throw new Error('Artifact not found. It may have been deleted.');
-    }
+    // setArtifactArchived doesn't filter soft-deleted rows, so the live-artifact check has to
+    // happen through getArtifact first.
+    requireArtifact(getArtifact(db, data.id));
 
-    const artifact = setArtifactArchived(db, data.id, data.archived);
-
-    if (!artifact) {
-      throw new Error('Artifact not found. It may have been deleted.');
-    }
-
-    return artifact;
+    return requireArtifact(setArtifactArchived(db, data.id, data.archived));
   });
 
-const deleteArtifactInput = z.object({ id: z.string() });
+const artifactIdInput = z.object({ id: z.string() });
 
+/**
+ * Deliberately unguarded: soft delete is idempotent, so deleting an unknown or already-deleted id
+ * succeeds as a no-op rather than throwing (same contract as the MCP `delete_artifact` tool — see
+ * its `idempotentHint` note in src/lib/mcp/server.ts).
+ */
 export const deleteArtifactFn = createServerFn({ method: 'POST' })
   .middleware([sessionMiddleware])
-  .validator(deleteArtifactInput)
+  .validator(artifactIdInput)
   .handler(async ({ data }) => {
     softDeleteArtifact(db, data.id);
 
     return { deleted: true };
+  });
+
+/** Throws for unknown ids. Restoring an artifact that isn't deleted is a no-op. */
+export const restoreArtifactFn = createServerFn({ method: 'POST' })
+  .middleware([sessionMiddleware])
+  .validator(artifactIdInput)
+  .handler(async ({ data }) => {
+    // getArtifact resolves live artifacts only, so the guard has to come from restoreArtifact's own
+    // undefined-on-unknown return.
+    return requireArtifact(restoreArtifact(db, data.id));
+  });
+
+/**
+ * Irreversibly removes the artifact, its versions and its interaction state. Unguarded like
+ * `deleteArtifactFn`: purging an id that's already gone reports `purged: false` rather than
+ * throwing, so a stale trash list can't turn a completed purge into an error.
+ */
+export const purgeArtifactFn = createServerFn({ method: 'POST' })
+  .middleware([sessionMiddleware])
+  .validator(artifactIdInput)
+  .handler(async ({ data }) => {
+    return { purged: purgeArtifact(db, data.id) };
   });

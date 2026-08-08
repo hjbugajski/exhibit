@@ -1,7 +1,9 @@
 /**
- * Revocation cascade against a real migrated :memory: sqlite db (FKs must be ON — see
- * src/database/index.ts's comment pinning `foreign_keys = ON`, since cascades silently no-op
- * otherwise).
+ * Revocation cascade, at two levels. The first suite drives SQL directly against a `:memory:` db
+ * from @testing/db (whose own `foreign_keys = ON` pragma it exercises) to pin the schema's cascade
+ * rules; the second drives the oauth_client-reading server fns through the real server-fn RPC route
+ * against the app's own db — which is where `src/database/index.ts`'s pragma is what's under test,
+ * since a cascade silently no-ops when foreign keys are off.
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -42,7 +44,8 @@ const OWNER_PASSWORD = 'correct horse battery staple';
 let sqlite: Database.Database;
 let db: Db;
 
-function seedClient(db: Db, clientId: string) {
+/** A client registration plus one row in every table that hangs off it by ON DELETE CASCADE. */
+function seedClient(db: Db, clientId: string, userId: string) {
   db.insert(oauthClient)
     .values({
       id: `${clientId}-row`,
@@ -56,7 +59,7 @@ function seedClient(db: Db, clientId: string) {
       id: `${clientId}-refresh`,
       token: `${clientId}-refresh-token`,
       clientId,
-      userId: 'user-1',
+      userId,
       expiresAt: new Date(Date.now() + 60_000),
       createdAt: new Date(),
       scopes: ['openid'],
@@ -68,7 +71,7 @@ function seedClient(db: Db, clientId: string) {
       id: `${clientId}-access`,
       token: `${clientId}-access-token`,
       clientId,
-      userId: 'user-1',
+      userId,
       refreshId: `${clientId}-refresh`,
       expiresAt: new Date(Date.now() + 60_000),
       createdAt: new Date(),
@@ -80,7 +83,7 @@ function seedClient(db: Db, clientId: string) {
     .values({
       id: `${clientId}-consent`,
       clientId,
-      userId: 'user-1',
+      userId,
       scopes: ['openid'],
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -103,8 +106,8 @@ afterAll(() => {
 
 describe('oauth_client FK cascade', () => {
   it('deleting the oauth_client row cascades to its refresh/access/consent rows, sparing other clients', () => {
-    seedClient(db, 'client-a');
-    seedClient(db, 'client-b');
+    seedClient(db, 'client-a', 'user-1');
+    seedClient(db, 'client-b', 'user-1');
 
     db.delete(oauthClient).where(eq(oauthClient.clientId, 'client-a')).run();
 
@@ -136,9 +139,10 @@ describe('oauth_client FK cascade', () => {
   });
 });
 
-describe('revokeMcpConnectionFn (through the real server-fn RPC route)', () => {
+describe('/settings server fns (through the real server-fn RPC route)', () => {
   let server: TestServer;
   let ownerCookie: string;
+  let getConsentClient: ServerFnCaller;
   let revokeMcpConnection: ServerFnCaller;
 
   beforeAll(async () => {
@@ -146,17 +150,24 @@ describe('revokeMcpConnectionFn (through the real server-fn RPC route)', () => {
     const { seedOwner } = await import('@/lib/seed');
 
     await seedOwner(OWNER_EMAIL, OWNER_PASSWORD);
-    appDb
-      .insert(oauthClient)
-      .values({
-        id: 'rpc-client-row',
-        clientId: 'rpc-client',
-        redirectUris: ['https://claude.ai/callback'],
-      })
-      .run();
+
+    const owner = appDb.select().from(user).limit(1).get();
+
+    if (!owner) {
+      throw new Error('seedOwner did not create the owner user');
+    }
+
+    seedClient(appDb, 'rpc-client', owner.id);
 
     server = await bootTestServer(new URL('../../vite.config.ts', import.meta.url));
     ownerCookie = await signInOwner(server, ORIGIN, OWNER_EMAIL, OWNER_PASSWORD);
+    getConsentClient = await serverFnCaller(
+      server,
+      '/src/lib/account.ts',
+      'getConsentClientFn',
+      'GET',
+      ORIGIN,
+    );
     revokeMcpConnection = await serverFnCaller(
       server,
       '/src/lib/account.ts',
@@ -170,14 +181,66 @@ describe('revokeMcpConnectionFn (through the real server-fn RPC route)', () => {
     await server.vite.close();
   });
 
-  it('revokes a real client registration for an authenticated caller', async () => {
+  it('has foreign keys on, without which every cascade below silently no-ops', async () => {
     const { db: appDb } = await import('@/database');
+
+    expect(appDb.$client.pragma('foreign_keys')).toEqual([{ foreign_keys: 1 }]);
+  });
+
+  it('reads the consent screen’s identity facts from the registration itself', async () => {
+    // seedClient stores one redirect URI and no createdAt, so this also pins what the consent
+    // screen shows for a registration of unknown age.
+    expect(await getConsentClient({ clientId: 'rpc-client' }, { cookie: ownerCookie })).toEqual({
+      name: null,
+      redirectHosts: ['claude.ai'],
+      createdAt: null,
+    });
+    expect(
+      await getConsentClient({ clientId: 'no-such-client' }, { cookie: ownerCookie }),
+    ).toBeNull();
+  });
+
+  it('rejects an unauthenticated read of the consent client', async () => {
+    await expect(getConsentClient({ clientId: 'rpc-client' })).rejects.toThrow('Unauthorized');
+  });
+
+  it('revokes a real client registration for an authenticated caller, taking its tokens and consent with it', async () => {
+    const { db: appDb } = await import('@/database');
+
+    expect(
+      appDb
+        .select()
+        .from(oauthRefreshToken)
+        .where(eq(oauthRefreshToken.clientId, 'rpc-client'))
+        .all(),
+    ).toHaveLength(1);
 
     const result = await revokeMcpConnection({ clientId: 'rpc-client' }, { cookie: ownerCookie });
 
     expect(result).toEqual({ revoked: true });
     expect(
       appDb.select().from(oauthClient).where(eq(oauthClient.clientId, 'rpc-client')).all(),
+    ).toEqual([]);
+
+    // revokeMcpConnectionFn only deletes the client row; the promise the settings "Revoke" button
+    // makes — that the connection can no longer reach anything — is kept entirely by these
+    // cascades. Leftovers here would mean a revoked client keeps working.
+    expect(
+      appDb
+        .select()
+        .from(oauthRefreshToken)
+        .where(eq(oauthRefreshToken.clientId, 'rpc-client'))
+        .all(),
+    ).toEqual([]);
+    expect(
+      appDb
+        .select()
+        .from(oauthAccessToken)
+        .where(eq(oauthAccessToken.clientId, 'rpc-client'))
+        .all(),
+    ).toEqual([]);
+    expect(
+      appDb.select().from(oauthConsent).where(eq(oauthConsent.clientId, 'rpc-client')).all(),
     ).toEqual([]);
   });
 

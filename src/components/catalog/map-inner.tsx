@@ -53,33 +53,57 @@ export default function CatalogMapInner({ props }: { props: Props }) {
     [props.paths],
   );
 
+  const markers = props.markers ?? [];
+
   return (
-    // cooperativeGestures: plain scroll keeps scrolling the page; ctrl/cmd+scroll zooms.
-    <MapCanvas cooperativeGestures {...fitOptions(props)}>
-      <MapControls />
-      {routes.map((path) => (
-        <MapRoute
-          color={routeColor}
-          coordinates={path.coordinates}
-          dashArray={path.dashed ? [2, 2] : undefined}
-          interactive={false}
-          key={path.id}
-        />
-      ))}
-      {(props.markers ?? []).map((marker) => (
-        <Marker.Root key={marker.id} latitude={marker.lat} longitude={marker.lng}>
-          <Marker.Content>
-            <span className="border-background bg-accent block size-4 rounded-full border-2 shadow-lg" />
-            <Marker.Label>{marker.label}</Marker.Label>
-          </Marker.Content>
-          {marker.description ? (
-            <Marker.Popup>
-              <p className="text-sm font-medium">{marker.label}</p>
-              <p className="text-foreground-muted text-sm">{marker.description}</p>
-            </Marker.Popup>
-          ) : null}
-        </Marker.Root>
-      ))}
-    </MapCanvas>
+    <>
+      {/* cooperativeGestures: plain scroll keeps scrolling the page; ctrl/cmd+scroll zooms. */}
+      <MapCanvas cooperativeGestures {...fitOptions(props)}>
+        <MapControls />
+        {routes.map((path) => (
+          <MapRoute
+            color={routeColor}
+            coordinates={path.coordinates}
+            dashArray={path.dashed ? [2, 2] : undefined}
+            interactive={false}
+            key={path.id}
+          />
+        ))}
+        {markers.map((marker) => (
+          <Marker.Root
+            key={marker.id}
+            label={marker.label}
+            latitude={marker.lat}
+            longitude={marker.lng}
+          >
+            <Marker.Content>
+              <span className="border-background bg-accent block size-4 rounded-full border-2 shadow-lg" />
+              <Marker.Label>{marker.label}</Marker.Label>
+            </Marker.Content>
+            {marker.description ? (
+              <Marker.Popup>
+                <p className="text-sm font-medium">{marker.label}</p>
+                <p className="text-foreground-muted text-sm">{marker.description}</p>
+              </Marker.Popup>
+            ) : null}
+          </Marker.Root>
+        ))}
+      </MapCanvas>
+      {/*
+       * Text alternative for the canvas: marker popups only exist once WebGL renders, and their
+       * descriptions are otherwise reachable by pointer alone. `sr-only` is absolutely positioned,
+       * so it adds nothing to the map's layout.
+       */}
+      {markers.length > 0 && (
+        <ul aria-label="Map markers" className="sr-only">
+          {markers.map((marker) => (
+            <li key={marker.id}>
+              {marker.label}
+              {marker.description ? `: ${marker.description}` : ''}
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
   );
 }

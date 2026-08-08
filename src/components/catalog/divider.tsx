@@ -1,5 +1,6 @@
+import { flowStandout } from '@/components/catalog/flow';
 import { Separator } from '@/components/ui/separator';
 
 export function Divider() {
-  return <Separator className="my-8 first:mt-0 last:mb-0" />;
+  return <Separator className={flowStandout} />;
 }

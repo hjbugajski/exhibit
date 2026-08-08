@@ -7,8 +7,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 type Props = CatalogComponentProps<'Chart'>;
 
 /**
- * recharts is heavy: the real chart is a lazy chunk so specs without a Chart
- * never download it.
+ * The chart engine and its scales are their own chunk, so specs without a Chart
+ * never download them.
  */
 const ChartInner = lazy(() => import('./chart-inner'));
 

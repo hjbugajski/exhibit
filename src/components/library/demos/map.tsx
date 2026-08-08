@@ -23,7 +23,7 @@ function MapDemo() {
               showFullscreen={values.showFullscreen}
               showLocate={values.showLocate}
             />
-            <Marker.Root latitude={37.77} longitude={-122.42}>
+            <Marker.Root label="San Francisco" latitude={37.77} longitude={-122.42}>
               <Marker.Content />
             </Marker.Root>
           </MapCanvas>

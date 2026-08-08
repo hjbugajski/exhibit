@@ -11,34 +11,26 @@
  * purely as the client-side harness.) The server is fully torn down when the test finishes; this is
  * test-fixture infrastructure, not a long-running dev server.
  */
-import { createHash, randomBytes } from 'node:crypto';
+import { randomBytes } from 'node:crypto';
 import { createServer } from 'node:http';
 import type { IncomingMessage, Server, ServerResponse } from 'node:http';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
+import {
+  authorizeToConsent,
+  base64url,
+  buildAuthorizeUrl,
+  cookieHeader,
+  pkcePair,
+  registerClient,
+  signIn,
+  submitConsent,
+} from '@testing/oauth-client';
+
 const OWNER_EMAIL = 'owner@example.com';
 const OWNER_PASSWORD = 'correct horse battery staple';
 const REDIRECT_URI = 'https://claude.ai/api/mcp/auth_callback';
-
-function base64url(buffer: Buffer): string {
-  return buffer.toString('base64url');
-}
-
-function pkcePair(): { verifier: string; challenge: string } {
-  const verifier = base64url(randomBytes(32));
-  const challenge = base64url(createHash('sha256').update(verifier).digest());
-
-  return { verifier, challenge };
-}
-
-/** Collapses Set-Cookie response headers into a single request Cookie header. */
-function cookieHeader(response: Response): string {
-  return response.headers
-    .getSetCookie()
-    .map((raw) => raw.split(';')[0])
-    .join('; ');
-}
 
 /**
  * Better Auth's built-in rate limiter caps `/sign-in*` at 3 requests per 10s (a special rule, not
@@ -57,30 +49,17 @@ async function getOwnerCookie(): Promise<string> {
 
   await seedOwner(OWNER_EMAIL, OWNER_PASSWORD);
 
-  const signInResponse = await fetch(`${baseURL}/api/auth/sign-in/email`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ email: OWNER_EMAIL, password: OWNER_PASSWORD }),
-  });
-
-  ownerCookie = cookieHeader(signInResponse);
+  ownerCookie = await signIn({ baseURL, email: OWNER_EMAIL, password: OWNER_PASSWORD });
 
   return ownerCookie;
 }
 
-async function registerClient(): Promise<string> {
-  const registerResponse = await fetch(`${baseURL}/api/auth/oauth2/register`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      redirect_uris: [REDIRECT_URI],
-      token_endpoint_auth_method: 'none',
-      client_name: 'exhibit-mcp-test-client',
-    }),
+function newClient(): Promise<string> {
+  return registerClient({
+    baseURL,
+    redirectUri: REDIRECT_URI,
+    clientName: 'exhibit-mcp-test-client',
   });
-  const client = (await registerResponse.json()) as { client_id: string };
-
-  return client.client_id;
 }
 
 /**
@@ -92,7 +71,7 @@ async function registerClient(): Promise<string> {
 let sharedClientId: string | undefined;
 
 async function getSharedClientId(): Promise<string> {
-  sharedClientId ??= await registerClient();
+  sharedClientId ??= await newClient();
 
   return sharedClientId;
 }
@@ -101,11 +80,9 @@ async function getSharedClientId(): Promise<string> {
  * Drives DCR -> sign-in -> PKCE authorize (steps 1-3) and stops at the consent screen, returning
  * everything needed to submit (or deny) consent — the shared setup for both `authorizeAndGetCode`
  * and the consent-denial case below. `scope`, if given, is requested on the authorize call (e.g.
- * `offline_access` to get a refresh token back from the token endpoint). Always sends
- * `prompt=consent` so the consent screen shows even when the (possibly reused) client already has a
- * stored grant from an earlier call.
+ * `offline_access` to get a refresh token back from the token endpoint).
  */
-async function authorizeToConsent(
+async function startAuthorize(
   scope?: string,
   options: { freshClient?: boolean } = {},
 ): Promise<{
@@ -114,30 +91,16 @@ async function authorizeToConsent(
   verifier: string;
   consentUrl: URL;
 }> {
-  const clientId = options.freshClient ? await registerClient() : await getSharedClientId();
+  const clientId = options.freshClient ? await newClient() : await getSharedClientId();
   const cookie = await getOwnerCookie();
-
-  const { verifier, challenge } = pkcePair();
-  const state = base64url(randomBytes(16));
-  const authorizeUrl = new URL(`${baseURL}/api/auth/oauth2/authorize`);
-
-  authorizeUrl.searchParams.set('response_type', 'code');
-  authorizeUrl.searchParams.set('client_id', clientId);
-  authorizeUrl.searchParams.set('redirect_uri', REDIRECT_URI);
-  authorizeUrl.searchParams.set('code_challenge', challenge);
-  authorizeUrl.searchParams.set('code_challenge_method', 'S256');
-  authorizeUrl.searchParams.set('state', state);
-  authorizeUrl.searchParams.set('prompt', 'consent');
-
-  if (scope) {
-    authorizeUrl.searchParams.set('scope', scope);
-  }
-
-  const authorizeResponse = await fetch(authorizeUrl, {
-    headers: { cookie, accept: 'application/json' },
+  const { verifier, consentUrl } = await authorizeToConsent({
+    baseURL,
+    clientId,
+    cookie,
+    redirectUri: REDIRECT_URI,
+    scope,
+    prompt: 'consent',
   });
-  const authorizeJson = (await authorizeResponse.json()) as { redirect: boolean; url: string };
-  const consentUrl = new URL(authorizeJson.url, baseURL);
 
   return { clientId, cookie, verifier, consentUrl };
 }
@@ -155,15 +118,9 @@ async function authorizeAndGetCode(
   code: string;
   verifier: string;
 }> {
-  const { clientId, cookie, verifier, consentUrl } = await authorizeToConsent(scope, options);
+  const { clientId, cookie, verifier, consentUrl } = await startAuthorize(scope, options);
 
-  const consentResponse = await fetch(`${baseURL}/api/auth/oauth2/consent`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', cookie },
-    body: JSON.stringify({ accept: true, oauth_query: consentUrl.search.slice(1) }),
-  });
-  const consentJson = (await consentResponse.json()) as { redirect: boolean; url: string };
-  const redirectUrl = new URL(consentJson.url);
+  const redirectUrl = await submitConsent({ baseURL, cookie, consentUrl, accept: true });
   const code = redirectUrl.searchParams.get('code');
 
   return { clientId, code: code ?? '', verifier };
@@ -572,7 +529,7 @@ describe('MCP OAuth flow (DCR -> PKCE authorize -> consent -> token -> /mcp)', (
     expect(toolNames).toEqual(expect.arrayContaining(['publish_spec', 'get_artifact']));
   });
 
-  it('rejects refresh-token reuse once the client registration is revoked', async () => {
+  it('rejects both the outstanding access-token JWT and refresh-token reuse once the client registration is revoked', async () => {
     // A dedicated (not shared) client: this test deletes it, which must not affect the shared
     // client other cases in this file reuse.
     const { clientId, code, verifier } = await authorizeAndGetCode('offline_access', {
@@ -592,8 +549,19 @@ describe('MCP OAuth flow (DCR -> PKCE authorize -> consent -> token -> /mcp)', (
       }).toString(),
     });
 
-    const tokenJson = (await tokenResponse.json()) as { refresh_token?: string };
+    const tokenJson = (await tokenResponse.json()) as {
+      access_token: string;
+      refresh_token?: string;
+    };
     expect(tokenJson.refresh_token).toBeTruthy();
+
+    const beforeRevocation = await mcpCall(tokenJson.access_token, {
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'tools/list',
+    });
+
+    expect(beforeRevocation.status).toBe(200);
 
     // Mirrors revokeMcpConnectionFn's deletion (see src/lib/account.ts): deleting the client
     // registration cascades (ON DELETE CASCADE) to its refresh tokens — the safety promise behind
@@ -603,6 +571,17 @@ describe('MCP OAuth flow (DCR -> PKCE authorize -> consent -> token -> /mcp)', (
     const { eq } = await import('drizzle-orm');
 
     db.delete(oauthClient).where(eq(oauthClient.clientId, clientId)).run();
+
+    // The access token is a stateless JWT that is still unexpired and still verifies against the
+    // JWKS: only the `azp` client-registration check (see verifyMcpBearer) makes revocation bite
+    // now rather than up to an hour from now.
+    const afterRevocation = await mcpCall(tokenJson.access_token, {
+      jsonrpc: '2.0',
+      id: 2,
+      method: 'tools/list',
+    });
+
+    expect(afterRevocation.status).toBe(401);
 
     const refreshResponse = await fetch(`${baseURL}/api/auth/oauth2/token`, {
       method: 'POST',
@@ -620,8 +599,59 @@ describe('MCP OAuth flow (DCR -> PKCE authorize -> consent -> token -> /mcp)', (
     expect(refreshJson.access_token).toBeUndefined();
   });
 
+  it('refuses to exchange an authorization code a second time', async () => {
+    // A dedicated client: the provider may punish a replayed code by revoking the grant, which must
+    // not disturb the shared client the other cases reuse.
+    const { clientId, code, verifier } = await authorizeAndGetCode(undefined, {
+      freshClient: true,
+    });
+
+    const exchange = () =>
+      fetch(`${baseURL}/api/auth/oauth2/token`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'authorization_code',
+          code,
+          redirect_uri: REDIRECT_URI,
+          client_id: clientId,
+          code_verifier: verifier,
+          resource: `${baseURL}/mcp`,
+        }).toString(),
+      });
+
+    const firstResponse = await exchange();
+
+    expect(firstResponse.status).toBe(200);
+
+    // Authorization codes are single-use (OAuth 2.1 §4.1.3): a code intercepted from the redirect
+    // must be worthless once the legitimate client has redeemed it.
+    const secondResponse = await exchange();
+
+    expect(secondResponse.ok).toBe(false);
+    const secondJson = (await secondResponse.json()) as { access_token?: string };
+    expect(secondJson.access_token).toBeUndefined();
+  });
+
+  it('sends an unauthenticated authorize request to sign-in, never to consent or a code', async () => {
+    const clientId = await getSharedClientId();
+    const { challenge } = pkcePair();
+
+    // No cookie: the /authorize endpoint must not mint anything for a caller who has not proven
+    // they are the owner, however well-formed the request is.
+    const authorizeResponse = await fetch(
+      buildAuthorizeUrl({ baseURL, clientId, redirectUri: REDIRECT_URI, challenge }),
+      { headers: { accept: 'application/json' } },
+    );
+    const authorizeJson = (await authorizeResponse.json()) as { redirect: boolean; url: string };
+    const target = new URL(authorizeJson.url, baseURL);
+
+    expect(target.pathname).toBe('/sign-in');
+    expect(target.searchParams.get('code')).toBeNull();
+  });
+
   it('denying consent redirects with an oauth error instead of a code', async () => {
-    const { cookie, consentUrl } = await authorizeToConsent();
+    const { cookie, consentUrl } = await startAuthorize();
 
     const consentResponse = await fetch(`${baseURL}/api/auth/oauth2/consent`, {
       method: 'POST',
@@ -635,5 +665,37 @@ describe('MCP OAuth flow (DCR -> PKCE authorize -> consent -> token -> /mcp)', (
 
     expect(redirectUrl.searchParams.get('code')).toBeNull();
     expect(redirectUrl.searchParams.get('error')).toBe('access_denied');
+  });
+});
+
+describe('single-owner guarantee', () => {
+  it('refuses public sign-up, leaving the seeded owner as the only user', async () => {
+    const { seedOwner } = await import('@/lib/seed');
+    const { db } = await import('@/database');
+    const { user } = await import('@/database/schemas/auth');
+
+    await seedOwner(OWNER_EMAIL, OWNER_PASSWORD);
+
+    // Exhibit is a single-owner app: /sign-up must be closed in Better Auth's own config
+    // (`disableSignUp`), not merely hidden from the UI, or anyone who can reach the origin can mint
+    // themselves an account with full access to every artifact.
+    const signUpResponse = await fetch(`${baseURL}/api/auth/sign-up/email`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        email: 'intruder@example.com',
+        password: 'another correct horse battery staple',
+        name: 'Intruder',
+      }),
+    });
+
+    expect(signUpResponse.ok).toBe(false);
+    expect(
+      db
+        .select()
+        .from(user)
+        .all()
+        .map((row) => row.email),
+    ).toEqual([OWNER_EMAIL]);
   });
 });

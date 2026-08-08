@@ -1,11 +1,12 @@
 import { itineraryFixture } from '@/catalog/fixtures/itinerary';
-import type { Artifact, ArtifactVersion } from '@/database/repository';
+import type { ArtifactListItem, ArtifactVersion } from '@/database/repository';
 
 /**
- * Fixture Artifact; the default id matches makeVersion's default artifactId so the two compose
- * without overrides.
+ * Fixture artifact list row; the default id matches makeVersion's default artifactId so the two
+ * compose without overrides. Typed as the wider list row (an `Artifact` plus the gallery's
+ * interaction signals) so it serves both surfaces; the signals default to "nothing to report".
  */
-export function makeArtifact(overrides: Partial<Artifact> = {}): Artifact {
+export function makeArtifact(overrides: Partial<ArtifactListItem> = {}): ArtifactListItem {
   return {
     id: 'fixture-id',
     title: 'Kyoto Trip',
@@ -16,6 +17,8 @@ export function makeArtifact(overrides: Partial<Artifact> = {}): Artifact {
     updatedAt: 2000,
     archivedAt: null,
     deletedAt: null,
+    stateUpdatedAt: null,
+    answers: null,
     ...overrides,
   };
 }

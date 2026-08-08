@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import type { Spec } from '@json-render/core';
 import { createStateStore } from '@json-render/react';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -9,6 +10,7 @@ import { explainerFixture } from '@/catalog/fixtures/explainer';
 import { itineraryFixture } from '@/catalog/fixtures/itinerary';
 import { kitchenSinkFixture } from '@/catalog/fixtures/kitchen-sink';
 import { SpecView } from '@/catalog/registry';
+import { validateArtifactSpec } from '@/catalog/validate';
 
 /**
  * maplibre-gl needs WebGL, which happy-dom lacks; the catalog Map is validated visually in the
@@ -16,6 +18,11 @@ import { SpecView } from '@/catalog/registry';
  */
 vi.mock('@/components/catalog/map', () => ({
   Map: () => <div data-testid="catalog-map" />,
+}));
+
+/** mermaid needs layout APIs happy-dom lacks; the diagram is validated in the browser instead. */
+vi.mock('@/components/catalog/mermaid', () => ({
+  Mermaid: () => <div data-testid="catalog-mermaid" />,
 }));
 
 afterEach(() => {
@@ -67,6 +74,57 @@ describe('Renderer with the catalog registry', () => {
     expect(screen.getByText('Licensed & insured')).toBeTruthy();
     expect(consoleError).not.toHaveBeenCalled();
   });
+
+  /**
+   * A naturally-authored spec omits `children` on leaves and `props` on propless components. The
+   * renderer tolerates the first (`children?.map`) but not the second: resolveElementProps calls
+   * `Object.entries(props)` unguarded and throws, blanking the page.
+   *
+   * Two independent layers keep that from happening, so both are pinned: SpecView pads whatever it
+   * is handed (below), which is the artifact page's path — it renders a stored body straight from
+   * JSON.parse — and validateArtifactSpec returns a padded spec to its own render callers.
+   */
+  it('renders a raw spec whose elements omit children and props', () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    // Cast as the artifact page does: a stored body is JSON.parse'd straight to `Spec`, so an
+    // element without `props` never met core's type that requires one.
+    const stored = {
+      root: 'root',
+      elements: {
+        root: { type: 'Section', children: ['prose', 'divider'] },
+        prose: { type: 'Prose', props: { markdown: 'Straight from storage.' } },
+        divider: { type: 'Divider' },
+      },
+    } as unknown as Spec;
+    const { container } = render(<SpecView spec={stored} />);
+
+    expect(screen.getByText('Straight from storage.')).toBeTruthy();
+    expect(container.querySelector('[role="separator"]')).toBeTruthy();
+    expect(consoleError).not.toHaveBeenCalled();
+  });
+
+  it('renders a validated spec whose elements omit children and props', () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const result = validateArtifactSpec({
+      root: 'root',
+      elements: {
+        root: { type: 'Section', children: ['prose', 'divider'] },
+        prose: { type: 'Prose', props: { markdown: 'Body copy.' } },
+        divider: { type: 'Divider' },
+      },
+    });
+
+    expect(result.valid).toBe(true);
+    if (!result.valid) {
+      throw new Error('expected valid result');
+    }
+
+    const { container } = render(<SpecView spec={result.spec} />);
+
+    expect(screen.getByText('Body copy.')).toBeTruthy();
+    expect(container.querySelector('[role="separator"]')).toBeTruthy();
+    expect(consoleError).not.toHaveBeenCalled();
+  });
 });
 
 describe('Checklist state', () => {
@@ -86,7 +144,7 @@ describe('Checklist state', () => {
     },
   };
 
-  it('writes a toggled statePath item into the store; static items stay disabled', async () => {
+  it('writes a toggled statePath item into the store; static items stay read-only', async () => {
     const user = userEvent.setup();
     const store = createStateStore({});
 
@@ -94,8 +152,9 @@ describe('Checklist state', () => {
 
     const [staticBox, statefulBox] = screen.getAllByRole('checkbox');
 
-    // Base UI renders disabled as data-disabled on the checkbox button.
-    expect(staticBox?.hasAttribute('data-disabled')).toBe(true);
+    // Display-only items are content, not blocked controls: read-only, never disabled.
+    expect(staticBox?.getAttribute('aria-readonly')).toBe('true');
+    expect(staticBox?.hasAttribute('data-disabled')).toBe(false);
     expect(statefulBox?.hasAttribute('data-disabled')).toBe(false);
 
     // userEvent, not fireEvent: a bare synthetic click makes happy-dom forward label activation to

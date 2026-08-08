@@ -84,6 +84,9 @@
  *                foreground-faint (empty-state glyphs)
  *   lines        border → border-strong (inputs) → border-active (selected) ·
  *                ring (focused border) · focus / focus-danger (3px halo)
+ *   scrims       overlay (dialog backdrop, always darkens) · scrim-subtle /
+ *                scrim / scrim-strong (translucent background for blurred
+ *                chrome floating over content)
  *   accent       inverted gray (soft black on light, soft white on dark);
  *                accent-hover, accent-subtle tint
  *   status       danger / info / success / warning as text on the matching
@@ -98,9 +101,10 @@
  * (components still never use `dark:` variants).
  */
 /*
- * `static` forces every token to emit even without a utility-class usage —
- * chart-inner.tsx and the map bridge read `--color-chart-*`/`--color-accent`
- * from JS strings, which Tailwind's on-use emission cannot see.
+ * `static` forces every token to emit even without a utility-class usage — the
+ * map bridge reads `--color-chart-*`/`--color-accent` from JS strings, and the
+ * `.catalog-chart` rule below reads the chart tokens from plain CSS, neither of
+ * which Tailwind's on-use emission can see.
  */
 @theme inline static {
   --font-heading: var(--font-sans);
@@ -141,6 +145,11 @@
   --color-focus: var(--focus);
   --color-focus-danger: var(--focus-danger);
   --color-overlay: var(--overlay);
+  --color-scrim-subtle: var(--scrim-subtle);
+  --color-scrim: var(--scrim);
+  --color-scrim-strong: var(--scrim-strong);
+  --color-compass-north-shade: var(--compass-north-shade);
+  --color-compass-south-shade: var(--compass-south-shade);
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
   --color-accent-subtle: var(--accent-subtle);
@@ -371,6 +380,24 @@
   --focus-danger: var(--red-6);
   /* dialog scrim — always darkens, so it cannot key off foreground */
   --overlay: oklch(0 0 0 / 10%);
+  /*
+   * Blur scrims — translucent --background for chrome that floats over live
+   * content behind a backdrop-blur. Derived from the background so they follow
+   * the scheme; the alpha is the whole token, so it never appears in a class.
+   * subtle veils content that must stay readable through it (map loading
+   * state); the base tier backs the sticky header; strong is for a control
+   * sitting directly on arbitrary content (artifact copy button).
+   */
+  --scrim-subtle: oklch(from var(--background) l c h / 50%);
+  --scrim: oklch(from var(--background) l c h / 75%);
+  --scrim-strong: oklch(from var(--background) l c h / 90%);
+  /*
+   * Compass needle: the lit facets use danger / foreground-muted, these are the
+   * shaded ones. Step 8 recedes from the 10/11 anchors in both schemes (lighter
+   * on light, darker on dark), which is what the old alpha steps approximated.
+   */
+  --compass-north-shade: var(--red-8);
+  --compass-south-shade: var(--gray-8);
   --accent: var(--gray-12);
   --accent-hover: var(--gray-11);
   --accent-subtle: var(--gray-5);
@@ -396,6 +423,22 @@
   --warning-muted: var(--amber-4);
   --warning-body: var(--amber-12);
   --warning-line: var(--amber-6);
+  /*
+   * Mermaid palette — the one sanctioned hex exception. mermaid's themeVariables
+   * go through khroma, which cannot parse oklch (mermaid #6677), so these mirror
+   * the gray scale by hand: background 1, primary 5, primary-border 8,
+   * secondary 3, tertiary 2, line 9, text 12. Plain rules, not @theme: no
+   * utilities are wanted, and mermaid-inner.tsx resolves them with
+   * getComputedStyle(document.documentElement).
+   */
+  --mermaid-background: #ffffff; /* gray-1 */
+  --mermaid-primary: #e4e4e4; /* gray-5 */
+  --mermaid-primary-text: #090909; /* gray-12 */
+  --mermaid-primary-border: #a0a0a0; /* gray-8 */
+  --mermaid-secondary: #f2f2f2; /* gray-3 */
+  --mermaid-tertiary: #f8f8f8; /* gray-2 */
+  --mermaid-line: #868686; /* gray-9 */
+  --mermaid-text: #090909; /* gray-12 */
   --radius: 0.375rem;
 }
 
@@ -544,6 +587,15 @@
    */
   --overlay: oklch(0 0 0 / 45%);
   --danger-strong: var(--red-8);
+  /* Mermaid palette — same roles, dark gray scale, hand-mirrored in hex. */
+  --mermaid-background: #131518; /* gray-1 */
+  --mermaid-primary: #303234; /* gray-5 */
+  --mermaid-primary-text: #ebebeb; /* gray-12 */
+  --mermaid-primary-border: #5d5e5f; /* gray-8 */
+  --mermaid-secondary: #212326; /* gray-3 */
+  --mermaid-tertiary: #1a1c1f; /* gray-2 */
+  --mermaid-line: #747474; /* gray-9 */
+  --mermaid-text: #ebebeb; /* gray-12 */
 }
 
 /*
@@ -636,6 +688,18 @@
   .maplibregl-popup-tip {
     @apply hidden!;
   }
+  /* Near-zero rather than `none`: animation/transition end events still fire, so Base UI's
+     exit-animation bookkeeping (which unmounts on animationend) keeps working. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }
 
 /*
@@ -681,20 +745,93 @@
   letter-spacing: -0.01em;
 }
 
+/* Line-heights pair with the house scale (24/32, 20/28, 18/28, 16/24) — without them,
+   typography's leadings for its original oversized fonts stay behind and h1/h2 collapse to the
+   same computed line box. */
 .prose h1 {
   font-size: 1.5em;
+  line-height: calc(4 / 3);
 }
 
 .prose h2 {
   font-size: 1.25em;
+  line-height: 1.4;
 }
 
 .prose h3 {
   font-size: 1.125em;
+  line-height: calc(28 / 18);
 }
 
 .prose h4 {
   font-size: 1em;
+  line-height: 1.5;
+}
+
+/*
+ * Inline code as a chip, not typography's quoted style: the backtick
+ * pseudo-content reads as literal backticks in rendered prose, and the house
+ * look for code-at-rest is a muted surface (CodeBlock, Source view). Scoped to
+ * inline spans — fenced code renders through CodeBlock, whose <pre> internals
+ * this must not restyle.
+ */
+.prose :where(code):not(:where(pre *))::before,
+.prose :where(code):not(:where(pre *))::after {
+  content: none;
+}
+
+.prose :where(code):not(:where(pre *)) {
+  background: var(--color-surface-muted);
+  border-radius: var(--radius-sm);
+  padding: 0.125rem 0.375rem;
+  font-weight: 500;
+}
+
+/*
+ * GFM task lists render through the house Checkbox (markdown-policy.tsx maps
+ * `input`), and these rules line them up with the catalog Checklist: no
+ * bullets, flush list, hanging indent of box + gap, muted when checked. Keyed
+ * on the explicit `data-md-task` marker the input mapping sets — never on
+ * structure alone: the static catalog Checklist also puts its box as a direct
+ * li child, so a structural :has() would restyle embedded Checklists. The
+ * `> p >` variants cover loose (blank-line-separated) items, whose content the
+ * renderer wraps in a paragraph; `:is(ul, ol)` covers `1. [ ]` task lists.
+ */
+.prose :is(ul, ol):has(> li > [data-md-task], > li > p > [data-md-task]) {
+  list-style: none;
+  padding-inline-start: 0;
+}
+
+.prose li:has(> [data-md-task], > p > [data-md-task]) {
+  padding-inline-start: 1.75rem;
+}
+
+/*
+ * Inline-flow variant of Checklist's `items-start gap-3`: the checkbox hangs
+ * into the li padding; the margin plus the renderer's literal space after the
+ * box adds up to the same 12px gap. vertical-align seats the 16px box on the
+ * text line the way Checklist's mt-1 does.
+ */
+.prose li > [data-md-task],
+.prose li > p > [data-md-task] {
+  display: inline-flex;
+  margin-inline-start: -1.75rem;
+  margin-inline-end: 0.5rem;
+  vertical-align: -0.125em;
+}
+
+/*
+ * Muted color only, no line-through: a struck li decorates its whole subtree
+ * (nested lists included) and the decoration draws across the box-to-text gap.
+ * The unchecked rule is the color's inverse so a nested unchecked item under a
+ * checked parent reads at full strength again.
+ */
+.prose li:has(> [data-md-task][data-checked], > p > [data-md-task][data-checked]) {
+  color: var(--color-foreground-muted);
+}
+
+.prose li:has(> [data-md-task]:not([data-checked]), > p > [data-md-task]:not([data-checked])) {
+  color: var(--color-foreground);
 }
 
 /*
@@ -713,23 +850,212 @@
 }
 
 /*
- * Shiki syntax colors (see src/lib/shiki-theme.ts, the strato port): the
- * highlighter emits `var(--shiki-*)` references, resolved here onto the house
- * scales. Defined once — the step-11 hue tokens are redeclared per scheme, so
- * code recolors with data-theme without re-tokenizing. Backgrounds stay the
- * app's own (bg-background on the <pre>), never the theme's.
+ * House blocks embedded in markdown own their interiors. Typography's element
+ * rules tie with component utility classes at 0,1,0 and can win on emission
+ * order, so `my-0`-style utilities cannot defend a component inside `.prose`.
+ * Everything here is unlayered and ≥ 0,1,1 specificity, which outranks the
+ * typography plugin regardless of how it is layered.
  */
-:root {
-  --shiki-foreground: var(--color-foreground);
-  --shiki-token-comment: var(--color-foreground-muted);
-  --shiki-token-punctuation: var(--color-foreground-muted);
-  --shiki-token-string: var(--green-11);
-  --shiki-token-constant: var(--orange-11);
-  --shiki-token-keyword: var(--pink-11);
-  --shiki-token-function: var(--blue-11);
-  --shiki-token-operator: var(--violet-11);
-  --shiki-token-heading: var(--amber-11);
-  --shiki-token-inserted: var(--green-11);
-  --shiki-token-deleted: var(--red-11);
-  --shiki-token-changed: var(--orange-11);
+
+/* The house table shell: the wrapper carries the flow rhythm; the inner
+   <table> must sit flush against its bordered container. */
+.prose [data-slot='table'] {
+  margin-block: 0;
+}
+
+/* Every <pre> inside prose is component chrome (CodeBlock, HighlightedCode) —
+   markdown fences never reach the DOM as bare pre. The component's container
+   owns padding and rhythm; typography's pre margin would open a dead band
+   inside the border. */
+.prose pre {
+  margin-block: 0;
+}
+
+/*
+ * Catalog components dispatched from markdown (exhibit fences and directives)
+ * render inside a [data-md-embed] island (catalog-dispatch.tsx). The island
+ * carries the flow rhythm; inside it, list layout and line-height belong to
+ * the component, not to prose. Markdown that re-enters a component — directive
+ * children ([data-md-prose]) and MarkdownBody props (.prose) — is exempt: it
+ * is prose again.
+ */
+.prose [data-md-embed] {
+  line-height: 1.5;
+}
+
+.prose [data-md-embed] ul:not(:where([data-md-embed] :is(.prose, [data-md-prose]) *)),
+.prose [data-md-embed] ol:not(:where([data-md-embed] :is(.prose, [data-md-prose]) *)) {
+  margin-block: 0;
+  padding-inline-start: 0;
+  list-style: none;
+}
+
+.prose [data-md-embed] li:not(:where([data-md-embed] :is(.prose, [data-md-prose]) *)) {
+  margin-block: 0;
+  padding-inline-start: 0;
+}
+
+.prose [data-md-embed] [data-md-prose] {
+  line-height: 1.75;
+}
+
+/* Directive children sit inside component chrome that already pads itself —
+   trim the first/last prose margins exactly like `.prose`'s own edge rule. */
+.prose [data-md-prose] > :first-child {
+  margin-top: 0;
+}
+
+.prose [data-md-prose] > :last-child {
+  margin-bottom: 0;
+}
+
+/*
+ * Markdown blockquotes speak the catalog Quote's visual language (quote.tsx):
+ * the same 2px rounded accent bar at inline-start, no typography border and no
+ * decorative quote marks.
+ */
+.prose blockquote {
+  position: relative;
+  border-inline-start: none;
+  padding-inline-start: 1.25rem;
+  quotes: none;
+}
+
+.prose blockquote::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0.5rem;
+  width: 2px;
+  border-radius: calc(infinity * 1px);
+  background: var(--color-accent);
+}
+
+.prose blockquote p:first-of-type::before,
+.prose blockquote p:last-of-type::after {
+  content: none;
+}
+
+/*
+ * Syntax colors: the highlighter emits semantic `.th-*` classes (see
+ * src/lib/highlight.ts), resolved here onto the house scales. Written once —
+ * the step-11 hue tokens are redeclared per scheme, so code recolors with
+ * data-theme without re-tokenizing. Backgrounds stay the app's own
+ * (bg-background on the <pre>), never a theme's. Tokens with no class
+ * (punctuation, identifiers, `variable`) inherit the foreground.
+ */
+.th-attr,
+.th-literal,
+.th-number {
+  color: var(--orange-11);
+}
+
+.th-code-inline,
+.th-inserted,
+.th-string {
+  color: var(--green-11);
+}
+
+.th-command,
+.th-function,
+.th-link,
+.th-type {
+  color: var(--blue-11);
+}
+
+.th-keyword,
+.th-property {
+  color: var(--pink-11);
+}
+
+.th-operator,
+.th-selector,
+.th-tag {
+  color: var(--violet-11);
+}
+
+.th-heading {
+  color: var(--amber-11);
+}
+
+.th-deleted {
+  color: var(--red-11);
+}
+
+.th-meta {
+  color: var(--color-foreground-muted);
+}
+
+.th-comment {
+  color: var(--color-foreground-muted);
+  font-style: italic;
+}
+
+/*
+ * One box per source line so off-screen lines skip layout and paint — a long
+ * artifact is thousands of lines of spans, which is what makes scrolling
+ * stutter. Inline-block because containment (and so content-visibility) has no
+ * effect on a non-atomic inline, and because the newline characters between
+ * lines have to stay real text for selections to copy correctly.
+ */
+.th-line {
+  display: inline-block;
+  content-visibility: auto;
+  /* 1.25rem matches the code line box (20px + baseline gap ≈ the real 25.5px advance); a taller
+     placeholder makes the scrollbar shrink as lines render in. */
+  contain-intrinsic-size: 0 1.25rem;
+}
+
+/*
+ * TanStack Charts paints axes, ticks, and grid with `currentColor` and takes its
+ * categorical series from `--ts-chart-*`, so the whole palette is a container
+ * concern: mapping it here (rather than passing paint through the definition)
+ * keeps the chart on house tokens and lets a data-theme switch recolor it with
+ * no re-render. The grid gets its own 0.11 stroke opacity from the library.
+ */
+.catalog-chart {
+  color: var(--color-foreground-muted);
+  --ts-chart-1: var(--color-chart-1);
+  --ts-chart-2: var(--color-chart-2);
+  --ts-chart-3: var(--color-chart-3);
+  --ts-chart-4: var(--color-chart-4);
+  --ts-chart-5: var(--color-chart-5);
+  --ts-chart-6: var(--color-chart-6);
+}
+
+/*
+ * Named through `tooltip.className`. The library owns the tooltip element and
+ * writes its base look — system `Canvas`/`CanvasText`, system-ui — as inline
+ * styles, which no author rule can outrank; `!important` is the only way to put
+ * house tokens on it. Padding, shadow, and layout are left to the library.
+ */
+.catalog-chart-tooltip {
+  background: var(--color-surface-raised) !important;
+  border-color: var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  color: var(--color-foreground) !important;
+  font-family: var(--font-sans) !important;
+  font-size: var(--text-xs) !important;
+}
+
+/*
+ * The library moves the tooltip by writing pixel `left`/`top` on the same
+ * persistent element, so transitioning those glides it between anchor points.
+ * Showing it un-sets the `hidden` attribute, which makes the element newly
+ * rendered — the one state `@starting-style` can hook — so the fade rides on
+ * that. No `!important` here: the library writes positions, never a transition.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .catalog-chart-tooltip {
+    transition:
+      left 120ms ease-out,
+      top 120ms ease-out,
+      opacity 120ms ease-out;
+  }
+
+  @starting-style {
+    .catalog-chart-tooltip {
+      opacity: 0;
+    }
+  }
 }

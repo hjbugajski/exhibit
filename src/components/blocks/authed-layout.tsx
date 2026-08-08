@@ -20,7 +20,7 @@ export function AuthedLayout({ children, email, seed }: AuthedLayoutProps) {
         Skip to content
       </a>
       {/* Fixed h-16: full-height pages (the /dev/library shell) size themselves against it. */}
-      <header className="bg-background/75 sticky top-0 z-10 h-16 border-b backdrop-blur-md">
+      <header className="bg-scrim sticky top-0 z-10 h-16 border-b backdrop-blur-md">
         {/* Inner row shares the page content width + padding so the header aligns with it. */}
         <div className="mx-auto flex h-full w-full max-w-5xl items-center justify-between px-6">
           <nav aria-label="Primary">
@@ -31,7 +31,11 @@ export function AuthedLayout({ children, email, seed }: AuthedLayoutProps) {
           <AvatarMenu email={email} seed={seed} />
         </div>
       </header>
-      <main id="main-content">{children}</main>
+      {/* tabIndex/-1 + scroll-mt: the skip link must move focus here, clear of the sticky h-16
+          header. */}
+      <main className="scroll-mt-16 outline-none" id="main-content" tabIndex={-1}>
+        {children}
+      </main>
     </div>
   );
 }

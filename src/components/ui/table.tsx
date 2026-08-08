@@ -2,14 +2,23 @@ import type { ComponentProps } from 'react';
 
 import { cn } from '@/lib/utils';
 
+export type TableViewportProps = ComponentProps<'div'>;
+
+/** Scroll container for `Root`; carries the border and rounding. */
+function Viewport({ className, ...props }: TableViewportProps) {
+  return (
+    <div
+      data-slot="table-container"
+      className={cn('relative w-full overflow-x-auto rounded-lg border', className)}
+      {...props}
+    />
+  );
+}
+
 export type TableRootProps = ComponentProps<'table'>;
 
 function Root({ className, ...props }: TableRootProps) {
-  return (
-    <div data-slot="table-container" className="relative w-full overflow-x-auto rounded-lg border">
-      <table data-slot="table" className={cn('w-full text-sm', className)} {...props} />
-    </div>
-  );
+  return <table data-slot="table" className={cn('w-full text-sm', className)} {...props} />;
 }
 
 export type TableHeaderProps = ComponentProps<'thead'>;
@@ -91,4 +100,4 @@ function Cell({ className, ...props }: TableCellProps) {
   );
 }
 
-export const Table = { Root, Header, Body, Footer, Row, Head, Cell };
+export const Table = { Viewport, Root, Header, Body, Footer, Row, Head, Cell };

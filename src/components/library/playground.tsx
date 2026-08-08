@@ -66,14 +66,18 @@ function ControlField({
           </Select.Trigger>
           <Select.Portal>
             <Select.Positioner alignItemWithTrigger={false}>
-              <Select.Popup alignItemWithTrigger={false}>
-                <Select.Group>
-                  {control.options.map((option) => (
-                    <Select.Item key={option} value={option}>
-                      {option}
-                    </Select.Item>
-                  ))}
-                </Select.Group>
+              <Select.Popup>
+                <Select.ScrollUpArrow />
+                <Select.List>
+                  <Select.Group>
+                    {control.options.map((option) => (
+                      <Select.Item key={option} value={option}>
+                        {option}
+                      </Select.Item>
+                    ))}
+                  </Select.Group>
+                </Select.List>
+                <Select.ScrollDownArrow />
               </Select.Popup>
             </Select.Positioner>
           </Select.Portal>

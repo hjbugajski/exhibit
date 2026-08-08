@@ -46,6 +46,28 @@ describe('CatalogMapInner', () => {
 
     render(<CatalogMapInner props={props} />);
 
-    expect(screen.getAllByText('Lunch')).toHaveLength(2);
+    // Two marker labels on the map, plus their two entries in the visually hidden list.
+    expect(screen.getAllByText('Lunch')).toHaveLength(4);
+  });
+
+  it('lists every marker label and description as a text alternative to the canvas', () => {
+    const props: CatalogComponentProps<'Map'> = {
+      markers: [
+        { id: 'shrine', label: 'Shrine', description: 'Opens at 9am', lat: 1, lng: 1 },
+        { id: 'hotel', label: 'Hotel', lat: 2, lng: 2 },
+      ],
+    };
+
+    render(<CatalogMapInner props={props} />);
+
+    const items = screen.getByRole('list', { name: 'Map markers' }).children;
+
+    expect([...items].map((item) => item.textContent)).toEqual(['Shrine: Opens at 9am', 'Hotel']);
+  });
+
+  it('renders no marker list when the map has no markers', () => {
+    render(<CatalogMapInner props={{ center: { lat: 1, lng: 1 } }} />);
+
+    expect(screen.queryByRole('list')).toBeNull();
   });
 });

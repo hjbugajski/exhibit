@@ -1,12 +1,8 @@
-import type { Spec } from '@json-render/core';
+import { catalogDemo } from '@/components/library/catalog-demo';
 
-import { SpecView } from '@/catalog/registry';
-import type { LibraryDemo } from '@/components/library/demo';
-import { Playground } from '@/components/library/playground';
+const kinds = ['bar', 'line', 'area', 'scatter', 'donut'] as const;
 
-const kinds = ['bar', 'line'] as const;
-
-const data = [
+const series = [
   { label: 'Jan', value: 12_400 },
   { label: 'Feb', value: 14_100 },
   { label: 'Mar', value: 13_800 },
@@ -16,36 +12,32 @@ const data = [
   { label: 'Jul', value: 21_600 },
 ];
 
-function CatalogChartDemo() {
-  return (
-    <Playground
-      controls={{
-        kind: { kind: 'select', label: 'Kind', options: kinds, defaultValue: 'line' },
-        valueLabel: { kind: 'text', label: 'Value label', defaultValue: 'Revenue ($)' },
-      }}
-      layout="block"
-      render={(values) => {
-        const spec: Spec = {
-          root: 'chart',
-          elements: {
-            chart: {
-              type: 'Chart',
-              props: { kind: values.kind, data, valueLabel: values.valueLabel },
-              children: [],
-            },
-          },
-        };
+const shares = [
+  { label: 'Direct', value: 41 },
+  { label: 'Search', value: 28 },
+  { label: 'Social', value: 19 },
+  { label: 'Referral', value: 12 },
+];
 
-        return <SpecView spec={spec} />;
-      }}
-    />
-  );
-}
+/** The part-to-whole kind reads badly over a time series, so it gets its own sample. */
+const data: Record<(typeof kinds)[number], typeof series> = {
+  bar: series,
+  line: series,
+  area: series,
+  scatter: series,
+  donut: shares,
+};
 
-export const catalogChartDemo: LibraryDemo = {
+export const catalogChartDemo = catalogDemo({
   slug: 'catalog-chart',
   title: 'Chart',
-  description: 'Simple single-series bar or line chart for a numeric series over time.',
-  group: 'Catalog',
-  render: () => <CatalogChartDemo />,
-};
+  description: 'Simple single-series chart: bar, line, area, scatter, or donut.',
+  controls: {
+    kind: { kind: 'select', label: 'Kind', options: kinds, defaultValue: 'line' },
+    valueLabel: { kind: 'text', label: 'Value label', defaultValue: 'Revenue ($)' },
+  },
+  element: (values) => ({
+    type: 'Chart',
+    props: { kind: values.kind, data: data[values.kind], valueLabel: values.valueLabel },
+  }),
+});

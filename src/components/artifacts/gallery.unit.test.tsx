@@ -1,10 +1,12 @@
 // @vitest-environment happy-dom
-import { cleanup, fireEvent, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { GalleryView, TypeFilter } from '@/components/artifacts/gallery';
 import { Gallery } from '@/components/artifacts/gallery';
-import type { Artifact } from '@/database/repository';
+import type { TrashActions } from '@/components/artifacts/trash-actions';
+import type { ArtifactListItem } from '@/database/repository';
 import type { ArtifactSort } from '@/lib/artifact-sorts';
 import { makeArtifact } from '@testing/factories';
 import { renderWithRouter } from '@testing/router';
@@ -19,22 +21,36 @@ function noop() {
   // no-op event handler for controlled-component props in tests
 }
 
+/** Trash mutations as spies; both resolve so useFormAction settles. */
+function makeTrash() {
+  return {
+    restore: vi.fn((_id: string) => Promise.resolve()),
+    purge: vi.fn((_id: string) => Promise.resolve()),
+  } satisfies TrashActions;
+}
+
 interface RenderGalleryOptions {
   state?: Partial<{
     query: string;
     type: TypeFilter;
+    archived: boolean;
+    deleted: boolean;
     sort: ArtifactSort;
     tags: string[];
     view: GalleryView;
+    updating: boolean;
   }>;
   actions?: Partial<{
     setQuery: (query: string) => void;
     setType: (type: TypeFilter) => void;
+    setArchived: (archived: boolean) => void;
+    setDeleted: (deleted: boolean) => void;
     setSort: (sort: ArtifactSort) => void;
     setTags: (tags: string[]) => void;
     setView: (view: GalleryView) => void;
   }>;
-  items?: Artifact[];
+  items?: ArtifactListItem[];
+  trash?: TrashActions;
   availableTags?: string[];
   hasMore?: boolean;
   loadingMore?: boolean;
@@ -50,15 +66,18 @@ function renderGallery(options: RenderGalleryOptions = {}) {
     query: '',
     type: 'all' as TypeFilter,
     archived: false,
+    deleted: false,
     sort: 'updated-desc' as ArtifactSort,
     tags: [] as string[],
     view: 'grid' as GalleryView,
+    updating: false,
     ...options.state,
   };
   const actions = {
     setQuery: noop,
     setType: noop,
     setArchived: noop,
+    setDeleted: noop,
     setSort: noop,
     setTags: noop,
     setView: noop,
@@ -78,13 +97,15 @@ function renderGallery(options: RenderGalleryOptions = {}) {
         <Gallery.Sort />
         <Gallery.ViewToggle />
       </Gallery.Toolbar>
-      {items.length === 0 ? (
-        <Gallery.Empty />
-      ) : state.view === 'grid' ? (
-        <Gallery.Grid items={items} />
-      ) : (
-        <Gallery.Table items={items} />
-      )}
+      <Gallery.Results>
+        {items.length === 0 ? (
+          <Gallery.Empty />
+        ) : state.view === 'grid' ? (
+          <Gallery.Grid items={items} trash={options.trash} />
+        ) : (
+          <Gallery.Table items={items} trash={options.trash} />
+        )}
+      </Gallery.Results>
       {items.length > 0 ? (
         <Gallery.LoadMore hasMore={hasMore} loadingMore={loadingMore} onLoadMore={onLoadMore} />
       ) : null}
@@ -206,6 +227,123 @@ describe('Gallery', () => {
     expect(await screen.findByRole('table')).toBeTruthy();
     expect(screen.getByRole('columnheader', { name: 'Title' })).toBeTruthy();
     expect(screen.getByRole('columnheader', { name: 'Updated' })).toBeTruthy();
+  });
+
+  it('marks a card awaiting a reply only while questions are unanswered', async () => {
+    renderGallery({
+      items: [
+        makeArtifact({ id: 'a1', title: 'Pending', answers: { answered: 1, total: 3 } }),
+        makeArtifact({ id: 'a2', title: 'Complete', answers: { answered: 2, total: 2 } }),
+        // Unknown count (body past the scan guard): no claim either way.
+        makeArtifact({ id: 'a3', title: 'Unknown', answers: null }),
+      ],
+    });
+
+    expect(await screen.findByText('Awaiting your reply')).toBeTruthy();
+    expect(screen.getAllByText('Awaiting your reply')).toHaveLength(1);
+  });
+
+  it('counts the unanswered questions in a table row', async () => {
+    renderGallery({
+      items: [
+        makeArtifact({ id: 'a1', title: 'Pending', answers: { answered: 1, total: 3 } }),
+        makeArtifact({ id: 'a2', title: 'Complete', answers: { answered: 2, total: 2 } }),
+      ],
+      state: { view: 'table' },
+    });
+
+    expect(await screen.findByText('2 awaiting')).toBeTruthy();
+    expect(screen.queryByText('0 awaiting')).toBeNull();
+  });
+
+  it('never marks a trashed artifact as awaiting a reply', async () => {
+    renderGallery({
+      items: [makeArtifact({ id: 'a1', answers: { answered: 0, total: 2 } })],
+      state: { deleted: true },
+      trash: makeTrash(),
+    });
+
+    expect(await screen.findByText('Kyoto Trip')).toBeTruthy();
+    expect(screen.queryByText('Awaiting your reply')).toBeNull();
+  });
+
+  it('marks the list busy while a filter navigation is in flight', async () => {
+    const { container } = renderGallery({ items: [makeArtifact()], state: { updating: true } });
+
+    expect(await screen.findByText('Kyoto Trip')).toBeTruthy();
+    expect(container.querySelector('[aria-busy="true"]')).toBeTruthy();
+  });
+
+  it('toggles the deleted filter from the filter popover', async () => {
+    const setDeleted = vi.fn();
+    renderGallery({ actions: { setDeleted } });
+
+    fireEvent.click(await screen.findByLabelText('Filter'));
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'Deleted only' }));
+
+    expect(setDeleted).toHaveBeenCalledWith(true);
+  });
+
+  it('shows an empty-trash message when the deleted filter matches nothing', async () => {
+    renderGallery({ state: { deleted: true } });
+
+    expect(await screen.findByText('Trash is empty')).toBeTruthy();
+  });
+
+  it('replaces card links with restore and delete-forever controls in the trash view', async () => {
+    const { container } = renderGallery({
+      items: [makeArtifact({ id: 'a1', title: 'Deleted Artifact' })],
+      state: { deleted: true },
+      trash: makeTrash(),
+    });
+
+    expect(await screen.findByText('Deleted Artifact')).toBeTruthy();
+    // Deleted artifacts have no detail page, so nothing may link to one.
+    expect(container.querySelector('a')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Restore' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Delete forever' })).toBeTruthy();
+  });
+
+  it('replaces row links with an actions column in the trash table view', async () => {
+    const { container } = renderGallery({
+      items: [makeArtifact({ id: 'a1', title: 'Deleted Artifact' })],
+      state: { deleted: true, view: 'table' },
+      trash: makeTrash(),
+    });
+
+    expect(await screen.findByRole('columnheader', { name: 'Actions' })).toBeTruthy();
+    expect(container.querySelector('a')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Restore' })).toBeTruthy();
+  });
+
+  it('restores a deleted artifact without a confirmation step', async () => {
+    const trash = makeTrash();
+    renderGallery({ items: [makeArtifact({ id: 'a1' })], state: { deleted: true }, trash });
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Restore' }));
+
+    expect(trash.restore).toHaveBeenCalledWith('a1');
+    expect(trash.purge).not.toHaveBeenCalled();
+  });
+
+  it('purges only after the confirmation is acknowledged', async () => {
+    const user = userEvent.setup();
+    const trash = makeTrash();
+    renderGallery({ items: [makeArtifact({ id: 'a1' })], state: { deleted: true }, trash });
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Delete forever' }));
+
+    const dialog = within(await screen.findByRole('alertdialog'));
+
+    expect(dialog.getByRole('button', { name: 'Delete forever' }).hasAttribute('disabled')).toBe(
+      true,
+    );
+
+    // userEvent, not fireEvent — see the Checklist test in src/catalog/registry.unit.test.tsx.
+    await user.click(dialog.getByRole('checkbox'));
+    fireEvent.click(dialog.getByRole('button', { name: 'Delete forever' }));
+
+    expect(trash.purge).toHaveBeenCalledWith('a1');
   });
 
   it('calls setView when a view toggle tab is clicked', async () => {

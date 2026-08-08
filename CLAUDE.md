@@ -12,6 +12,7 @@ Node/pnpm via mise (`mise.toml`).
 
 - `pnpm gate` — typecheck && lint && fmt && test; run before claiming done (CI uses `:check` variants)
 - `pnpm db:generate` / `db:migrate` — drizzle-kit; migrations live in `src/database/migrations`, run on boot
+- Schema changes go through `pnpm db:generate`, never `drizzle-kit push` — push writes no migration file and drifts the `meta/` snapshot. Migrations are forward-only; commit the SQL and the snapshot together.
 - Don't start dev servers; the owner runs his own.
 
 ## Conventions
@@ -25,7 +26,7 @@ Node/pnpm via mise (`mise.toml`).
 
 ## Design system
 
-- Semantic tokens only, defined once per scheme in `src/styles.css` (12-step OKLCH scales; Tailwind's default palette is purged). Never `dark:` color variants or `/NN` alpha steps in components — if a state's color is missing, add a token in both schemes.
+- Semantic tokens only, defined once per scheme in `src/styles.css` (12-step OKLCH scales; Tailwind's default palette is purged). Never `dark:` color variants or `/NN` alpha steps in components — if a state's color is missing, add a token in both schemes. Alpha belongs in the token definition instead (scrims use `oklch(from var(--background) l c h / 75%)`, defined once, no dark redeclare); components only ever consume semantic tokens.
 - Dark mode is `data-theme="dark"` on `<html>`, stamped pre-paint by `src/lib/theme.ts` from the System/Light/Dark preference — never `prefers-color-scheme` in components (it only backstops detection before the stamp).
 - Catalog blocks space themselves: `my-*` + `first:mt-0 last:mb-0` (`src/components/catalog/flow.ts`), collapsing in normal flow; flow containers add no `space-y`/`gap`, and multi-column Grid/Columns wrap children in cells to neutralize the margins.
 - Every interactive control is 32px (`h-8`); no size props. Icons tag `data-icon="only" | "inline-start" | "inline-end"` at the call site. Spacing via semantic tokens (`px-control`, `p-dialog`, `gap-card`, …), never one-off pads.
@@ -35,5 +36,5 @@ Node/pnpm via mise (`mise.toml`).
 ## Security invariants
 
 - Public routes: `/sign-in`, `/reset-password`, `/api/auth/*`, `/.well-known/*`, `/healthz` only. Everything else needs a session; `/mcp` needs a Bearer token.
-- HTML artifacts are hostile: opened as their own page at `/render/:id/:n` (never iframe/srcdoc) with CSP `sandbox allow-scripts` for an opaque origin — never same-origin with the app.
+- HTML artifacts are hostile: opened as their own page at `/render/:id/:n` (never iframe/srcdoc) with CSP `sandbox allow-scripts` for an opaque origin — never same-origin with the app. That iframe/srcdoc ban covers artifact HTML only; the one sanctioned exception is mermaid's sanitized SVG, displayed in a script-less `sandbox=""` srcdoc frame with a meta CSP (`src/components/catalog/mermaid-policy.ts`).
 - No `dangerouslySetInnerHTML` outside the vetted markdown renderer. Signup disabled in Better Auth config, not just UI.

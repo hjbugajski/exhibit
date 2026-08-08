@@ -19,6 +19,9 @@ function ProgressDemo() {
             <Progress.Label>Uploading</Progress.Label>
             <Progress.Value />
           </div>
+          <Progress.Track>
+            <Progress.Indicator />
+          </Progress.Track>
         </Progress.Root>
       )}
     />

@@ -34,7 +34,7 @@ describe('validateArtifactSpec', () => {
         {
           "component": "NotAComponent",
           "element": "unknown-el",
-          "message": "Invalid option: expected one of "Section"|"Grid"|"Columns"|"Tabs"|"Divider"|"Heading"|"Prose"|"Callout"|"Quote"|"CodeBlock"|"Card"|"Table"|"KeyValueList"|"Steps"|"Timeline"|"Checklist"|"Details"|"Badge"|"Figure"|"Progress"|"Chart"|"Map"|"Choice"|"NoteBox"|"Rating"|"Itinerary"|"Day"|"Stop"",
+          "message": "Invalid option: expected one of "Section"|"Grid"|"Columns"|"Tabs"|"Divider"|"Heading"|"Prose"|"Callout"|"Quote"|"CodeBlock"|"Card"|"Table"|"KeyValueList"|"Steps"|"Timeline"|"Checklist"|"Details"|"Badge"|"Figure"|"Progress"|"Chart"|"Mermaid"|"Map"|"Choice"|"NoteBox"|"Rating"|"Itinerary"|"Day"|"Stop"",
           "path": "elements.unknown-el.type",
         },
         {
@@ -531,6 +531,88 @@ describe('validateArtifactSpec', () => {
         element: 'choice',
         component: 'Choice',
         path: 'elements.choice.props.options.0.id',
+      }),
+    );
+  });
+
+  it('accepts a spec whose leaf elements omit children and visible, padding children in the result', () => {
+    const result = validateArtifactSpec({
+      root: 'root',
+      elements: {
+        root: { type: 'Section', props: {}, children: ['heading', 'prose'] },
+        heading: { type: 'Heading', props: { level: 1, text: 'Title' } },
+        prose: { type: 'Prose', props: { markdown: 'Body copy.' } },
+      },
+    });
+
+    expect(result.valid).toBe(true);
+    if (!result.valid) {
+      throw new Error('expected valid result');
+    }
+
+    expect(result.spec.elements.prose).toMatchObject({ children: [] });
+  });
+
+  it('accepts an element omitting props on a component with no required props, padding props in the result', () => {
+    const result = validateArtifactSpec({
+      root: 'root',
+      elements: {
+        root: { type: 'Section', children: ['divider'] },
+        divider: { type: 'Divider' },
+      },
+    });
+
+    expect(result.valid).toBe(true);
+    if (!result.valid) {
+      throw new Error('expected valid result');
+    }
+
+    // The renderer's resolveElementProps calls Object.entries(props) unguarded, so a valid result
+    // must hand the render paths a props object even when the author omitted one.
+    expect(result.spec.elements.divider).toMatchObject({ props: {}, children: [] });
+  });
+
+  it('still requires props a component declares when props is omitted entirely', () => {
+    const result = validateArtifactSpec({
+      root: 'prose',
+      elements: {
+        prose: { type: 'Prose' },
+      },
+    });
+
+    expect(result.valid).toBe(false);
+    if (result.valid) {
+      throw new Error('expected invalid result');
+    }
+
+    expect(result.errors).toEqual([
+      expect.objectContaining({
+        element: 'prose',
+        component: 'Prose',
+        path: 'elements.prose.props.markdown',
+      }),
+    ]);
+  });
+
+  it('still flags a dangling child reference on an element that omits props', () => {
+    const result = validateArtifactSpec({
+      root: 'root',
+      elements: {
+        root: { type: 'Section', children: ['does-not-exist'] },
+      },
+    });
+
+    expect(result.valid).toBe(false);
+    if (result.valid) {
+      throw new Error('expected invalid result');
+    }
+
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({
+        element: 'root',
+        component: 'Section',
+        path: 'elements.root',
+        message: expect.stringContaining('does-not-exist'),
       }),
     );
   });

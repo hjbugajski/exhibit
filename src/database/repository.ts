@@ -1,3 +1,4 @@
+import type { SQL } from 'drizzle-orm';
 import {
   and,
   asc,
@@ -18,12 +19,15 @@ import { z } from 'zod';
 import { artifacts } from '@/database/schemas/artifact';
 import { artifactStates } from '@/database/schemas/artifact-state';
 import { artifactVersions } from '@/database/schemas/artifact-version';
-import type { ArtifactSort } from '@/lib/artifact-sorts';
+import type { AnswerCount } from '@/lib/answer-count';
+import { countAnswers } from '@/lib/answer-count';
+import { normalizeTags } from '@/lib/artifact-metadata';
+import type { ArtifactSort, artifactTypes } from '@/lib/artifact-sorts';
 import { artifactSorts } from '@/lib/artifact-sorts';
 
 export type Db = BetterSQLite3Database;
 
-export type ArtifactType = 'spec' | 'html';
+export type ArtifactType = (typeof artifactTypes)[number];
 
 /**
  * Timestamps are epoch milliseconds; `deletedAt` is null while live, `archivedAt` is null while
@@ -70,41 +74,80 @@ export interface UpdateMetadataInput {
 /**
  * `limit` defaults to 20, `sort` to 'updated-desc'. A malformed `cursor`, or one minted under a
  * different `sort`, is ignored (first page). `archived: true` lists only archived artifacts;
- * otherwise archived artifacts are excluded.
+ * otherwise archived artifacts are excluded. `deleted: true` lists only soft-deleted artifacts (the
+ * trash); otherwise they're excluded.
+ *
+ * `withAnswers` opts into the answered counts, which cost a body fetch and a full markdown/spec
+ * parse per row — only the gallery renders them, so every other caller (MCP `list_artifacts`, up to
+ * 100 rows a call) leaves them off and gets `answers: null`.
  */
 export interface ListArtifactsInput {
   query?: string;
   tags?: string[];
   type?: ArtifactType;
   archived?: boolean;
+  deleted?: boolean;
   sort?: ArtifactSort;
   limit?: number;
   cursor?: string;
+  withAnswers?: boolean;
 }
 
 /**
- * A `listArtifacts` row plus a cheap owner-response signal: when the artifact's interaction state
- * last changed, or null if never touched.
+ * A `listArtifacts` row plus owner-response signals: when the artifact's interaction state last
+ * changed (null if never touched), and how much of the latest version's body the saved state
+ * answers — `null` where the count is unknown (not requested, body missing, or past
+ * `maxAnswerScanBytes`).
  */
-export type ArtifactListItem = Artifact & { stateUpdatedAt: number | null };
+export type ArtifactListItem = Artifact & {
+  stateUpdatedAt: number | null;
+  answers: AnswerCount | null;
+};
 
 export interface ListArtifactsResult {
   items: ArtifactListItem[];
   nextCursor: string | null;
 }
 
+/**
+ * Field-by-field, not a spread: selects carry extra columns (stateUpdatedAt, sortKey) that must not
+ * leak into the artifact the caller — including MCP responses — sees.
+ */
 function toArtifact(row: typeof artifacts.$inferSelect): Artifact {
   return {
-    ...row,
+    id: row.id,
+    title: row.title,
+    description: row.description,
     type: row.type as ArtifactType,
     tags: row.tags ?? [],
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    archivedAt: row.archivedAt,
+    deletedAt: row.deletedAt,
   };
 }
 
+/**
+ * Bodies past this are left uncounted: parsing is linear and a 1 MB body costs ~6 ms, which a
+ * 20-row page would pay 20 times. The row reports `answers: null` — unknown, not "nothing to
+ * answer" — and the gallery renders no marker for it.
+ */
+const maxAnswerScanBytes = 200_000;
+
 function toArtifactListItem(
-  row: typeof artifacts.$inferSelect & { stateUpdatedAt: number | null },
+  row: typeof artifacts.$inferSelect & {
+    stateUpdatedAt: number | null;
+    state: Record<string, unknown> | null;
+    body: string | null;
+  },
 ): ArtifactListItem {
-  return { ...toArtifact(row), stateUpdatedAt: row.stateUpdatedAt };
+  const artifact = toArtifact(row);
+
+  return {
+    ...artifact,
+    stateUpdatedAt: row.stateUpdatedAt,
+    answers: row.body === null ? null : countAnswers(artifact.type, row.body, row.state),
+  };
 }
 
 /**
@@ -118,8 +161,9 @@ function escapeLike(value: string): string {
 type SortField = 'updatedAt' | 'createdAt' | 'title';
 
 /**
- * Title sort is case-insensitive (cheap via SQLite's `lower()`); the cursor's `k` is stored
- * pre-lowercased for title sorts so comparisons stay consistent.
+ * Title sort is case-insensitive (cheap via SQLite's `lower()`, which is ASCII-only); the cursor's
+ * `k` is the value SQLite itself returned for the sort expression, so the cursor and the ORDER BY
+ * can't disagree about collation.
  */
 const sortSpecs: Record<ArtifactSort, { field: SortField; dir: 'asc' | 'desc' }> = {
   'updated-desc': { field: 'updatedAt', dir: 'desc' },
@@ -130,14 +174,14 @@ const sortSpecs: Record<ArtifactSort, { field: SortField; dir: 'asc' | 'desc' }>
   'title-desc': { field: 'title', dir: 'desc' },
 };
 
-function sortColumnExpr(field: SortField) {
+function sortColumnExpr(field: SortField): SQL<number | string> {
   switch (field) {
     case 'updatedAt':
-      return sql`${artifacts.updatedAt}`;
+      return sql<number | string>`${artifacts.updatedAt}`;
     case 'createdAt':
-      return sql`${artifacts.createdAt}`;
+      return sql<number | string>`${artifacts.createdAt}`;
     case 'title':
-      return sql`lower(${artifacts.title})`;
+      return sql<number | string>`lower(${artifacts.title})`;
   }
 }
 
@@ -147,14 +191,8 @@ interface Cursor {
   id: string;
 }
 
-function encodeCursor(
-  sort: ArtifactSort,
-  field: SortField,
-  row: { updatedAt: number; createdAt: number; title: string; id: string },
-): string {
-  const k = field === 'title' ? row.title.toLowerCase() : row[field];
-
-  return Buffer.from(JSON.stringify({ sort, k, id: row.id })).toString('base64url');
+function encodeCursor(sort: ArtifactSort, row: { sortKey: number | string; id: string }): string {
+  return Buffer.from(JSON.stringify({ sort, k: row.sortKey, id: row.id })).toString('base64url');
 }
 
 /**
@@ -179,6 +217,7 @@ function decodeCursor(cursor: string): Cursor | null {
   }
 }
 
+/** Inserts the artifact and its first body version in one transaction, minting version 1. */
 export function createArtifact(
   db: Db,
   input: CreateArtifactInput,
@@ -219,30 +258,70 @@ export function createArtifact(
   });
 }
 
+type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
+
+/** Inserts `body` as the next version number and bumps the artifact's `updatedAt`. */
+function insertNextVersion(tx: Tx, artifactId: string, body: string, now: number): ArtifactVersion {
+  const latest = tx
+    .select({ version: artifactVersions.version })
+    .from(artifactVersions)
+    .where(eq(artifactVersions.artifactId, artifactId))
+    .orderBy(desc(artifactVersions.version))
+    .limit(1)
+    .get();
+
+  const version = tx
+    .insert(artifactVersions)
+    .values({
+      id: nanoid(),
+      artifactId,
+      version: (latest?.version ?? 0) + 1,
+      body,
+      createdAt: now,
+    })
+    .returning()
+    .get();
+
+  tx.update(artifacts).set({ updatedAt: now }).where(eq(artifacts.id, artifactId)).run();
+
+  return version;
+}
+
 /** Inserts the next version number and bumps the artifact's `updatedAt`, in one transaction. */
 export function appendVersion(db: Db, artifactId: string, body: string): ArtifactVersion {
   const now = Date.now();
 
+  return db.transaction((tx) => insertNextVersion(tx, artifactId, body, now));
+}
+
+/**
+ * Copies an older version's body forward as a new latest version — history is append-only, so
+ * nothing is rewritten or removed. The body is copied verbatim (it was validated when it was
+ * stored, and an artifact's type can't change). Read and append share one transaction, so a
+ * concurrent append can't land between them. Returns undefined when the artifact or that version
+ * doesn't exist; like appendVersion, doesn't check `deletedAt`.
+ */
+export function revertToVersion(
+  db: Db,
+  artifactId: string,
+  version: number,
+): ArtifactVersion | undefined {
+  const now = Date.now();
+
   return db.transaction((tx) => {
-    const latest = tx
-      .select({ version: artifactVersions.version })
+    const source = tx
+      .select({ body: artifactVersions.body })
       .from(artifactVersions)
-      .where(eq(artifactVersions.artifactId, artifactId))
-      .orderBy(desc(artifactVersions.version))
-      .limit(1)
+      .where(
+        and(eq(artifactVersions.artifactId, artifactId), eq(artifactVersions.version, version)),
+      )
       .get();
 
-    const nextVersion = (latest?.version ?? 0) + 1;
+    if (!source) {
+      return undefined;
+    }
 
-    const version = tx
-      .insert(artifactVersions)
-      .values({ id: nanoid(), artifactId, version: nextVersion, body, createdAt: now })
-      .returning()
-      .get();
-
-    tx.update(artifacts).set({ updatedAt: now }).where(eq(artifacts.id, artifactId)).run();
-
-    return version;
+    return insertNextVersion(tx, artifactId, source.body, now);
   });
 }
 
@@ -332,18 +411,23 @@ export function listVersions(db: Db, artifactId: string): { version: number; cre
 }
 
 /**
- * Excludes soft-deleted artifacts. `query` substring-matches the title; `tags` matches ANY listed
- * tag (OR).
+ * Excludes soft-deleted artifacts unless `deleted` is set. `query` substring-matches the title;
+ * `tags` matches ANY listed tag (OR).
  */
 export function listArtifacts(db: Db, input: ListArtifactsInput = {}): ListArtifactsResult {
   const limit = input.limit ?? 20;
   const sort = input.sort ?? 'updated-desc';
   const { field, dir } = sortSpecs[sort];
 
-  const conditions = [
-    isNull(artifacts.deletedAt),
-    input.archived ? isNotNull(artifacts.archivedAt) : isNull(artifacts.archivedAt),
-  ];
+  const conditions = [input.deleted ? isNotNull(artifacts.deletedAt) : isNull(artifacts.deletedAt)];
+
+  // The trash is one flat view: an artifact archived before it was deleted must still be
+  // recoverable, so the archived split applies to live listings only.
+  if (!input.deleted) {
+    conditions.push(
+      input.archived ? isNotNull(artifacts.archivedAt) : isNull(artifacts.archivedAt),
+    );
+  }
 
   if (input.query) {
     conditions.push(sql`${artifacts.title} like ${`%${escapeLike(input.query)}%`} escape '\\'`);
@@ -354,9 +438,12 @@ export function listArtifacts(db: Db, input: ListArtifactsInput = {}): ListArtif
   }
 
   if (input.tags && input.tags.length > 0) {
+    // Element-wise via JSON1, not a substring match on the serialized column: a LIKE over the raw
+    // JSON matches across element boundaries, so a crafted filter value can hit unrelated tags.
     const tagCondition = or(
       ...input.tags.map(
-        (tag) => sql`${artifacts.tags} like ${`%"${escapeLike(tag)}"%`} escape '\\'`,
+        (tag) =>
+          sql`exists (select 1 from json_each(${artifacts.tags}) where json_each.value = ${tag})`,
       ),
     );
 
@@ -383,7 +470,27 @@ export function listArtifacts(db: Db, input: ListArtifactsInput = {}): ListArtif
   const orderFn = dir === 'desc' ? desc : asc;
 
   const rows = db
-    .select({ ...getTableColumns(artifacts), stateUpdatedAt: artifactStates.updatedAt })
+    .select({
+      ...getTableColumns(artifacts),
+      stateUpdatedAt: artifactStates.updatedAt,
+      state: artifactStates.state,
+      // Latest version's body, for the answered count only — never returned to the caller, and not
+      // fetched at all unless the caller asked for counts. The oversized case resolves to null in
+      // SQL so a huge body is never even read off the page.
+      body: input.withAnswers
+        ? sql<string | null>`(
+        select case
+          when length(cast(${artifactVersions.body} as blob)) > ${maxAnswerScanBytes} then null
+          else ${artifactVersions.body}
+        end
+        from ${artifactVersions}
+        where ${artifactVersions.artifactId} = ${artifacts.id}
+        order by ${artifactVersions.version} desc
+        limit 1
+      )`
+        : sql<string | null>`null`,
+      sortKey: sortColumnExpr(field),
+    })
     .from(artifacts)
     .leftJoin(artifactStates, eq(artifacts.id, artifactStates.artifactId))
     .where(and(...conditions))
@@ -397,7 +504,7 @@ export function listArtifacts(db: Db, input: ListArtifactsInput = {}): ListArtif
 
   return {
     items: page.map(toArtifactListItem),
-    nextCursor: hasMore && last ? encodeCursor(sort, field, last) : null,
+    nextCursor: hasMore && last ? encodeCursor(sort, last) : null,
   };
 }
 
@@ -424,6 +531,78 @@ export function listTags(db: Db): string[] {
   return [...tagSet].sort((a, b) => a.localeCompare(b));
 }
 
+export interface TagUsage {
+  tag: string;
+  count: number;
+}
+
+/**
+ * Every tag with the number of artifacts carrying it, sorted alphabetically. Unlike `listTags` the
+ * count spans archived and soft-deleted rows too, so it reports exactly what `renameTag`/
+ * `removeTag` would touch.
+ */
+export function listTagsWithCounts(db: Db): TagUsage[] {
+  const rows = db.select({ tags: artifacts.tags }).from(artifacts).all();
+  const counts = new Map<string, number>();
+
+  for (const row of rows) {
+    for (const tag of row.tags ?? []) {
+      counts.set(tag, (counts.get(tag) ?? 0) + 1);
+    }
+  }
+
+  return [...counts]
+    .map(([tag, count]) => ({ tag, count }))
+    .sort((a, b) => a.tag.localeCompare(b.tag));
+}
+
+/**
+ * Rewrites the tag array of every artifact carrying `tag`, one row at a time inside a single
+ * transaction — tags are a denormalized JSON column, so there's no tag table to update.
+ *
+ * Deliberately unfiltered by `deletedAt`/`archivedAt`: a soft-deleted artifact that's later
+ * restored must not resurrect the old tag. `updatedAt` is left alone — a vocabulary fix isn't a
+ * content change and shouldn't reshuffle sort order. Returns the number of rows rewritten.
+ */
+function rewriteTag(db: Db, tag: string, rewrite: (tags: string[]) => string[]): number {
+  return db.transaction((tx) => {
+    const rows = tx
+      .select({ id: artifacts.id, tags: artifacts.tags })
+      .from(artifacts)
+      // Element-wise via JSON1, matching listArtifacts' tag filter: a LIKE over the serialized
+      // column matches across element boundaries.
+      .where(
+        sql`exists (select 1 from json_each(${artifacts.tags}) where json_each.value = ${tag})`,
+      )
+      .all();
+
+    for (const row of rows) {
+      tx.update(artifacts)
+        .set({ tags: normalizeTags(rewrite(row.tags ?? [])) })
+        .where(eq(artifacts.id, row.id))
+        .run();
+    }
+
+    return rows.length;
+  });
+}
+
+/**
+ * Renames `from` to `to` everywhere it appears. When `to` already exists on an artifact this is a
+ * merge, not a duplicate — the rewritten array is normalized. Returns the affected row count (0
+ * when nothing carried `from`, writing nothing).
+ */
+export function renameTag(db: Db, from: string, to: string): number {
+  return rewriteTag(db, from, (tags) =>
+    tags.map((existing) => (existing === from ? to : existing)),
+  );
+}
+
+/** Drops `tag` from every artifact carrying it. Returns the affected row count. */
+export function removeTag(db: Db, tag: string): number {
+  return rewriteTag(db, tag, (tags) => tags.filter((existing) => existing !== tag));
+}
+
 /**
  * Sets or clears `archivedAt` without touching `updatedAt`, so archiving doesn't reshuffle sort
  * order. Returns undefined when `id` matches no row.
@@ -439,8 +618,33 @@ export function setArtifactArchived(db: Db, id: string, archived: boolean): Arti
   return artifact ? toArtifact(artifact) : undefined;
 }
 
+/** Stamps `deletedAt`; no-ops on unknown ids. Version and state rows survive. */
 export function softDeleteArtifact(db: Db, id: string): void {
   db.update(artifacts).set({ deletedAt: Date.now() }).where(eq(artifacts.id, id)).run();
+}
+
+/**
+ * Clears `deletedAt`, undoing a soft delete. Leaves `archivedAt` and `updatedAt` alone, so an
+ * artifact archived before it was deleted comes back archived. Returns undefined when `id` matches
+ * no row.
+ */
+export function restoreArtifact(db: Db, id: string): Artifact | undefined {
+  const artifact = db
+    .update(artifacts)
+    .set({ deletedAt: null })
+    .where(eq(artifacts.id, id))
+    .returning()
+    .get();
+
+  return artifact ? toArtifact(artifact) : undefined;
+}
+
+/**
+ * Hard-deletes the artifact row; the `onDelete: cascade` foreign keys take its versions and
+ * interaction state with it. Irreversible. Returns whether a row was removed.
+ */
+export function purgeArtifact(db: Db, id: string): boolean {
+  return db.delete(artifacts).where(eq(artifacts.id, id)).run().changes > 0;
 }
 
 /**

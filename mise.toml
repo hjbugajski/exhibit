@@ -1,3 +1,9 @@
+# node is pinned in .node-version — the single source CI (actions/setup-node)
+# and the local toolchain both read. mise ignores idiomatic version files
+# unless the tool is opted in, so without this setting node would silently
+# fall back to whatever the global mise config pins.
+[settings]
+idiomatic_version_file_enable_tools = ["node"]
+
 [tools]
-node = "26"
 pnpm = "11"

@@ -29,7 +29,11 @@ export function QuestionCard({
       <fieldset>
         <legend className="sr-only">{label}</legend>
         <div className={contentClassName}>
-          <p className="text-sm font-medium">{label}</p>
+          {/* aria-hidden: the legend already names the fieldset, and this paragraph is the same
+              text — exposing both makes assistive tech announce the question twice. */}
+          <p aria-hidden className="text-sm font-medium">
+            {label}
+          </p>
           {children}
         </div>
       </fieldset>

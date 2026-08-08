@@ -10,40 +10,42 @@ function TableDemo() {
       }}
       layout="block"
       render={(values) => (
-        <Table.Root>
-          <Table.Header>
-            <Table.Row>
-              <Table.Head>Name</Table.Head>
-              <Table.Head>Type</Table.Head>
-              <Table.Head>Status</Table.Head>
-            </Table.Row>
-          </Table.Header>
-          <Table.Body>
-            <Table.Row>
-              <Table.Cell>itinerary.json</Table.Cell>
-              <Table.Cell>Spec</Table.Cell>
-              <Table.Cell>Published</Table.Cell>
-            </Table.Row>
-            <Table.Row>
-              <Table.Cell>report.html</Table.Cell>
-              <Table.Cell>HTML</Table.Cell>
-              <Table.Cell>Draft</Table.Cell>
-            </Table.Row>
-            <Table.Row>
-              <Table.Cell>comparison.json</Table.Cell>
-              <Table.Cell>Spec</Table.Cell>
-              <Table.Cell>Published</Table.Cell>
-            </Table.Row>
-          </Table.Body>
-          {values.footer && (
-            <Table.Footer>
+        <Table.Viewport>
+          <Table.Root>
+            <Table.Header>
               <Table.Row>
-                <Table.Cell colSpan={2}>Total</Table.Cell>
-                <Table.Cell>3 artifacts</Table.Cell>
+                <Table.Head>Name</Table.Head>
+                <Table.Head>Type</Table.Head>
+                <Table.Head>Status</Table.Head>
               </Table.Row>
-            </Table.Footer>
-          )}
-        </Table.Root>
+            </Table.Header>
+            <Table.Body>
+              <Table.Row>
+                <Table.Cell>itinerary.json</Table.Cell>
+                <Table.Cell>Spec</Table.Cell>
+                <Table.Cell>Published</Table.Cell>
+              </Table.Row>
+              <Table.Row>
+                <Table.Cell>report.html</Table.Cell>
+                <Table.Cell>HTML</Table.Cell>
+                <Table.Cell>Draft</Table.Cell>
+              </Table.Row>
+              <Table.Row>
+                <Table.Cell>comparison.json</Table.Cell>
+                <Table.Cell>Spec</Table.Cell>
+                <Table.Cell>Published</Table.Cell>
+              </Table.Row>
+            </Table.Body>
+            {values.footer && (
+              <Table.Footer>
+                <Table.Row>
+                  <Table.Cell colSpan={2}>Total</Table.Cell>
+                  <Table.Cell>3 artifacts</Table.Cell>
+                </Table.Row>
+              </Table.Footer>
+            )}
+          </Table.Root>
+        </Table.Viewport>
       )}
     />
   );

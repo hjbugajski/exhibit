@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { act, renderHook, waitFor } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { useLocalStorageState } from '@/lib/use-local-storage-state';
 
@@ -8,6 +8,7 @@ type View = 'grid' | 'table';
 const isView = (value: string): value is View => value === 'grid' || value === 'table';
 
 afterEach(() => {
+  vi.restoreAllMocks();
   window.localStorage.clear();
 });
 
@@ -53,5 +54,29 @@ describe('useLocalStorageState', () => {
 
     expect(result.current[0]).toBe('table');
     expect(window.localStorage.getItem('view')).toBe('table');
+  });
+
+  it('keeps the new value in memory when setItem throws', () => {
+    vi.spyOn(window.localStorage, 'setItem').mockImplementation(() => {
+      throw new DOMException('QuotaExceededError');
+    });
+
+    const { result } = renderHook(() => useLocalStorageState<View>('view', 'grid', isView));
+
+    act(() => {
+      result.current[1]('table');
+    });
+
+    expect(result.current[0]).toBe('table');
+  });
+
+  it('falls back to the initial value when getItem throws', () => {
+    vi.spyOn(window.localStorage, 'getItem').mockImplementation(() => {
+      throw new DOMException('SecurityError');
+    });
+
+    const { result } = renderHook(() => useLocalStorageState<View>('view', 'grid', isView));
+
+    expect(result.current[0]).toBe('grid');
   });
 });

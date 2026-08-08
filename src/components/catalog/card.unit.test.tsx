@@ -14,4 +14,10 @@ describe('Card', () => {
 
     expect(screen.getByText('Best value')).toBeTruthy();
   });
+
+  it('renders the title as a heading so the card joins the outline', () => {
+    render(<Card props={{ title: 'Total spend' }} />);
+
+    expect(screen.getByRole('heading', { level: 3, name: 'Total spend' })).toBeTruthy();
+  });
 });

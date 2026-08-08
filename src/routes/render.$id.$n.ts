@@ -43,6 +43,10 @@ async function handleGet({
       'Content-Type': 'text/html; charset=utf-8',
       'Content-Security-Policy': RENDER_CSP,
       'X-Content-Type-Options': 'nosniff',
+      // The CSP lets an artifact pull images and fonts from any https host — its author's choice,
+      // not the owner's. Without this, each of those requests carries this gallery's URL (which
+      // includes the artifact id) to whoever the artifact points at.
+      'Referrer-Policy': 'no-referrer',
     },
   });
 }

@@ -8,14 +8,22 @@
  * Big spacing is reserved for document structure; everything inside a section
  * shares one uniform base rhythm. Headings are asymmetric: big top margin to
  * open a run, small bottom to hug the content they title. Four tiers:
- *   4  (16px) — tight offsets (heading mb, tab panel, Day body, Stop rhythm)
- *   6  (24px) — base rhythm between sibling blocks (flowBlock, column gaps)
- *   8  (32px) — standouts: h3 mt, Section/Itinerary header-to-body, Divider, Day
+ *   4  (16px) — tight offsets: flowTight (Day body, Stop rhythm), heading mb,
+ *               tab panel
+ *   6  (24px) — base rhythm between sibling blocks: flowBlock, column gaps
+ *   8  (32px) — standouts: flowStandout (Divider, Day), h3 mt,
+ *               Section/Itinerary header-to-body
  *   12 (48px) — chapters: flowSection, h1/h2 mt
  */
 
+/** Tightest rhythm — nested runs that read as one unit (Day body, Stop). */
+export const flowTight = 'my-4 first:mt-0 last:mb-0';
+
 /** Rhythm between sibling blocks — leaves and grouping containers alike. */
 export const flowBlock = 'my-6 first:mt-0 last:mb-0';
+
+/** Rhythm for blocks that stand out from the base run (Divider, Day). */
+export const flowStandout = 'my-8 first:mt-0 last:mb-0';
 
 /** Widest rhythm for document-level chapters (Section, Itinerary). */
 export const flowSection = 'my-12 first:mt-0 last:mb-0';

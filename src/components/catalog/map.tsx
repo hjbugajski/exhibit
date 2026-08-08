@@ -1,8 +1,9 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense } from 'react';
 
 import type { CatalogComponentProps } from '@/catalog/catalog';
 import { flowBlock } from '@/components/catalog/flow';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useNearViewport } from '@/lib/use-near-viewport';
 import { cn } from '@/lib/utils';
 
 type Props = CatalogComponentProps<'Map'>;
@@ -15,16 +16,14 @@ type Props = CatalogComponentProps<'Map'>;
 const MapInner = lazy(() => import('./map-inner'));
 
 export function Map({ props }: { props: Props }) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  // Each map is a live WebGL context and browsers cap how many a page may hold, so a long itinerary
+  // of Days must not mount them all at once.
+  const { ref, mounted } = useNearViewport<HTMLDivElement>();
 
   const fallback = <Skeleton className="h-full w-full rounded-none" />;
 
   return (
-    <div className={cn('h-80 overflow-hidden rounded-lg border', flowBlock)}>
+    <div ref={ref} className={cn('h-80 overflow-hidden rounded-lg border', flowBlock)}>
       {mounted ? (
         <Suspense fallback={fallback}>
           <MapInner props={props} />

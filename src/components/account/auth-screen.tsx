@@ -16,7 +16,7 @@ export interface AuthScreenProps {
  */
 export function AuthScreen({ title, children }: AuthScreenProps) {
   return (
-    <div className="flex min-h-screen items-center justify-center px-6 py-16">
+    <div className="flex min-h-dvh items-center justify-center px-6 py-16">
       <div className="flex w-full max-w-sm flex-col gap-6">
         <div className="flex items-center gap-2">
           <BrandMark className="text-foreground size-12 shrink-0" />

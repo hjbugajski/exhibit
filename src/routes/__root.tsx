@@ -33,6 +33,14 @@ export const Route = createRootRoute({
         rel: 'stylesheet',
         href: appCss,
       },
+      // Upright Inter carries every above-the-fold string; the italic face stays lazy.
+      {
+        rel: 'preload',
+        href: '/fonts/InterVariable.woff2',
+        as: 'font',
+        type: 'font/woff2',
+        crossOrigin: 'anonymous',
+      },
       // SVG first so capable browsers prefer it; .ico is the fallback.
       {
         rel: 'icon',
@@ -75,6 +83,14 @@ function RootDocument({ children }: { children: ReactNode }) {
     // React hydrates, which is an expected server/client attribute difference.
     <html lang="en" suppressHydrationWarning>
       <head>
+        {/*
+          The theme-color meta is deliberately NOT rendered here. The pre-paint script creates it
+          with the resolved scheme's color and applyTheme rewrites it — a single meta tracking
+          data-theme, where a media-keyed pair would track the OS scheme and paint the wrong chrome
+          whenever the two disagree. It cannot be JSX: React 19 hoists <meta> elements, and a
+          server-rendered tag whose content the script already rewrote fails hydration matching, so
+          React inserts a stale duplicate alongside it.
+        */}
         <HeadContent />
       </head>
       <body>

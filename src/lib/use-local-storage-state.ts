@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
  * State backed by `localStorage`, SSR-safe: the hook always returns `initialValue` on the first
@@ -15,17 +15,34 @@ export function useLocalStorageState<T extends string>(
   isValidValueRef.current = isValidValue;
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(key);
+    // Storage access throws outright when it is disabled (Safari private mode, blocked cookies);
+    // the preference is a nicety, so every failure degrades to in-memory state.
+    let stored: string | null = null;
+
+    try {
+      stored = window.localStorage.getItem(key);
+    } catch {
+      return;
+    }
 
     if (stored !== null && isValidValueRef.current(stored)) {
       setStateValue(stored);
     }
   }, [key]);
 
-  function setValue(next: T) {
-    setStateValue(next);
-    window.localStorage.setItem(key, next);
-  }
+  // Stable identity: consumers memoize action objects around it.
+  const setValue = useCallback(
+    (next: T) => {
+      setStateValue(next);
+
+      try {
+        window.localStorage.setItem(key, next);
+      } catch {
+        // Quota exceeded or storage disabled — the value still applies for this session.
+      }
+    },
+    [key],
+  );
 
   return [value, setValue];
 }

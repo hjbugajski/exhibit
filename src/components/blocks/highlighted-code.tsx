@@ -1,30 +1,17 @@
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment } from 'react';
 
-import type { ThemedToken } from '@shikijs/core';
-
-import type { HighlightLanguage } from '@/lib/shiki';
-import { highlight, resolveHighlightLanguage } from '@/lib/shiki';
-
-interface Highlighted {
-  code: string;
-  lang: HighlightLanguage;
-  tokens: ThemedToken[][];
-}
+import { highlight, resolveHighlightLanguage } from '@/lib/highlight';
 
 /**
- * vscode-textmate FontStyle bitmask on ThemedToken (comments italicize, markdown gets
- * bold/italic/links/strikethrough; colors carry everything else).
+ * Bodies past this render plain: tokenizing an artifact (up to 1MB, see src/lib/mcp/limits.ts)
+ * blocks the render pass, and a token span per word costs more than the highlighting is worth.
  */
-const ITALIC = 1;
-const BOLD = 2;
-const UNDERLINE = 4;
-const STRIKETHROUGH = 8;
+const HIGHLIGHT_MAX_CHARS = 100_000;
 
 /**
- * `<pre>` with progressive shiki highlighting: plain code renders immediately (SSR, while the
- * shiki chunk loads, and on any failure) and tokens swap in when ready. Unknown or missing
- * languages never load shiki at all. Token colors are `var(--shiki-*)` references resolved by
- * styles.css, so they follow the scheme.
+ * `<pre>` with syntax highlighting. Tokenization is synchronous, so highlighted markup ships from
+ * the server and there is no plain-text flash; unknown languages and oversized bodies render
+ * plain. Token colors come from the `.th-*` rules in styles.css, so they follow the scheme.
  */
 export function HighlightedCode({
   code,
@@ -35,72 +22,29 @@ export function HighlightedCode({
   language?: string;
   className?: string;
 }) {
-  const lang = resolveHighlightLanguage(language);
-  const [highlighted, setHighlighted] = useState<Highlighted | null>(null);
-
-  useEffect(() => {
-    if (!lang) {
-      return;
-    }
-
-    let cancelled = false;
-
-    highlight(code, lang)
-      .then((tokens) => {
-        if (!cancelled) {
-          setHighlighted({ code, lang, tokens });
-        }
-      })
-      .catch(() => {
-        // Highlighting is enhancement only — stay plain.
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [code, lang]);
-
-  // Guard against showing tokens from a previous code/language while the new ones load.
-  const tokens =
-    highlighted && highlighted.code === code && highlighted.lang === lang
-      ? highlighted.tokens
-      : null;
+  const lang = code.length > HIGHLIGHT_MAX_CHARS ? null : resolveHighlightLanguage(language);
+  const lines = lang ? highlight(code, lang) : null;
 
   return (
     <pre className={className}>
       <code>
-        {tokens
-          ? tokens.map((line, lineIndex) => (
+        {lines
+          ? lines.map((line, lineIndex) => (
               <Fragment key={lineIndex}>
-                {line.map((token, tokenIndex) => {
-                  // -1 means NotSet in the bitmask — treat like None.
-                  const fontStyle = token.fontStyle && token.fontStyle > 0 ? token.fontStyle : 0;
-
-                  return (
-                    <span
-                      key={tokenIndex}
-                      style={{
-                        color: token.color,
-                        fontStyle: fontStyle & ITALIC ? 'italic' : undefined,
-                        fontWeight: fontStyle & BOLD ? 'bold' : undefined,
-                        textDecoration:
-                          fontStyle & (UNDERLINE | STRIKETHROUGH)
-                            ? [
-                                fontStyle & UNDERLINE ? 'underline' : '',
-                                fontStyle & STRIKETHROUGH ? 'line-through' : '',
-                              ]
-                                .join(' ')
-                                .trim()
-                            : undefined,
-                      }}
-                    >
-                      {token.content}
-                    </span>
-                  );
-                })}
-                {/* Separator, not terminator: shiki's line split has no trailing entry, so a
-                    newline after the last line would add a blank line the plain fallback lacks. */}
-                {lineIndex < tokens.length - 1 ? '\n' : null}
+                <span className="th-line">
+                  {line.map((token, tokenIndex) =>
+                    token.className ? (
+                      <span className={`th-token th-${token.className}`} key={tokenIndex}>
+                        {token.value}
+                      </span>
+                    ) : (
+                      token.value
+                    ),
+                  )}
+                </span>
+                {/* A real newline between lines, not a block break: it keeps the rendered text
+                    identical to the source, so selections copy with their line breaks intact. */}
+                {lineIndex < lines.length - 1 ? '\n' : null}
               </Fragment>
             ))
           : code}

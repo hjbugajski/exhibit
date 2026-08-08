@@ -13,10 +13,5 @@ export default defineConfig({
     setupFiles: ['./testing/setup.ts'],
     // Centralize generated output under .reports/ (gitignored).
     coverage: { reportsDirectory: '.reports/coverage' },
-    outputFile: {
-      junit: '.reports/vitest/junit.xml',
-      json: '.reports/vitest/results.json',
-      html: '.reports/vitest/html/index.html',
-    },
   },
 });

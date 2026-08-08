@@ -13,7 +13,7 @@ import '../database/index.ts';
  * itself is bundled by Nitro, which does resolve it, but staying consistent costs nothing.
  */
 import { env } from './env.ts';
-import { seedOwner } from './seed.ts';
+import { seedOwner, syncOwnerEmailVerified } from './seed.ts';
 
 /**
  * Creates the owner account at server boot when OWNER_EMAIL/OWNER_PASSWORD are set, so a fresh
@@ -22,6 +22,12 @@ import { seedOwner } from './seed.ts';
  * synchronous, so the async work is fire-and-forget.
  */
 export default definePlugin(() => {
+  // Re-syncs the flag on every boot: mailer added → verified (or /change-email downgrades to
+  // verifying the NEW address), mailer dropped → unverified (or /change-email 400s outright); see
+  // seed.ts. Deliberately ahead of the OWNER_* guard below — a deployment that dropped those vars
+  // after its first boot still needs the sync.
+  syncOwnerEmailVerified();
+
   const email = env.OWNER_EMAIL;
   const password = env.OWNER_PASSWORD;
 

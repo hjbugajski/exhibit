@@ -44,6 +44,13 @@ let ownerCookie: string;
 let saveArtifactState: ServerFnCaller;
 let getArtifactDetail: ServerFnCaller;
 let updateArtifactMetadata: ServerFnCaller;
+let listArtifacts: ServerFnCaller;
+let restoreArtifactFn: ServerFnCaller;
+let revertArtifactVersion: ServerFnCaller;
+let purgeArtifactFn: ServerFnCaller;
+let listTagsWithCounts: ServerFnCaller;
+let renameTagFn: ServerFnCaller;
+let removeTagFn: ServerFnCaller;
 
 beforeAll(async () => {
   const { createArtifact } = await import('@/database/repository');
@@ -86,6 +93,55 @@ beforeAll(async () => {
     'POST',
     ORIGIN,
   );
+  listArtifacts = await serverFnCaller(
+    server,
+    '/src/lib/artifacts.ts',
+    'listArtifactsFn',
+    'GET',
+    ORIGIN,
+  );
+  restoreArtifactFn = await serverFnCaller(
+    server,
+    '/src/lib/artifacts.ts',
+    'restoreArtifactFn',
+    'POST',
+    ORIGIN,
+  );
+  revertArtifactVersion = await serverFnCaller(
+    server,
+    '/src/lib/artifacts.ts',
+    'revertArtifactVersionFn',
+    'POST',
+    ORIGIN,
+  );
+  purgeArtifactFn = await serverFnCaller(
+    server,
+    '/src/lib/artifacts.ts',
+    'purgeArtifactFn',
+    'POST',
+    ORIGIN,
+  );
+  listTagsWithCounts = await serverFnCaller(
+    server,
+    '/src/lib/artifacts.ts',
+    'listTagsWithCountsFn',
+    'GET',
+    ORIGIN,
+  );
+  renameTagFn = await serverFnCaller(
+    server,
+    '/src/lib/artifacts.ts',
+    'renameTagFn',
+    'POST',
+    ORIGIN,
+  );
+  removeTagFn = await serverFnCaller(
+    server,
+    '/src/lib/artifacts.ts',
+    'removeTagFn',
+    'POST',
+    ORIGIN,
+  );
 }, 30000);
 
 afterAll(async () => {
@@ -107,6 +163,44 @@ describe('saveArtifactStateFn (through the real server-fn RPC route)', () => {
     };
 
     expect(detail.state).toEqual({ checked: true });
+  });
+
+  it('counts the viewed version’s questions against the saved state', async () => {
+    const { createArtifact } = await import('@/database/repository');
+    const { db } = await import('@/database');
+
+    const { artifact } = createArtifact(db, {
+      title: 'Checklist',
+      type: 'spec',
+      body: JSON.stringify({
+        root: 'a',
+        elements: {
+          a: {
+            type: 'Checklist',
+            props: {
+              items: [
+                { id: 'i1', text: 'One', statePath: '/tasks/one' },
+                { id: 'i2', text: 'Two', statePath: '/tasks/two' },
+                { id: 'i3', text: 'Three', statePath: '/tasks/three' },
+              ],
+            },
+            children: [],
+          },
+        },
+      }),
+    });
+
+    await saveArtifactState(
+      { id: artifact.id, state: { tasks: { one: true, two: false } } },
+      { cookie: ownerCookie },
+    );
+
+    const detail = (await getArtifactDetail({ id: artifact.id }, { cookie: ownerCookie })) as {
+      answers: unknown;
+    };
+
+    // `false` is a real answer; the untouched third item is not.
+    expect(detail.answers).toEqual({ answered: 2, total: 3 });
   });
 
   it('rejects a state payload over the 64 KB cap', async () => {
@@ -144,5 +238,173 @@ describe('updateArtifactMetadataFn (through the real server-fn RPC route)', () =
         { cookie: ownerCookie },
       ),
     ).rejects.toThrow('Artifact not found. It may have been deleted.');
+  });
+});
+
+describe('revertArtifactVersionFn (through the real server-fn RPC route)', () => {
+  it('appends an older version body as the new latest version', async () => {
+    const { appendVersion, createArtifact } = await import('@/database/repository');
+    const { db } = await import('@/database');
+
+    const { artifact } = createArtifact(db, { title: 'Revised', type: 'markdown', body: '# v1' });
+
+    appendVersion(db, artifact.id, '# v2');
+
+    const restored = (await revertArtifactVersion(
+      { id: artifact.id, version: 1 },
+      { cookie: ownerCookie },
+    )) as { version: number; body: string };
+
+    expect(restored).toMatchObject({ version: 3, body: '# v1' });
+
+    const detail = (await getArtifactDetail({ id: artifact.id }, { cookie: ownerCookie })) as {
+      version: { version: number; body: string };
+      versions: { version: number }[];
+    };
+
+    expect(detail.version).toMatchObject({ version: 3, body: '# v1' });
+    expect(detail.versions.map((v) => v.version)).toEqual([1, 2, 3]);
+  });
+
+  it('rejects a version the artifact does not have', async () => {
+    const { createArtifact } = await import('@/database/repository');
+    const { db } = await import('@/database');
+
+    const { artifact } = createArtifact(db, { title: 'Single', type: 'markdown', body: '# v1' });
+
+    await expect(
+      revertArtifactVersion({ id: artifact.id, version: 9 }, { cookie: ownerCookie }),
+    ).rejects.toThrow('Artifact not found. It may have been deleted.');
+  });
+
+  it('rejects an unauthenticated call', async () => {
+    await expect(revertArtifactVersion({ id: artifactId, version: 1 })).rejects.toThrow(
+      'Unauthorized',
+    );
+  });
+});
+
+describe('tag management fns (through the real server-fn RPC route)', () => {
+  async function countOf(tag: string): Promise<number | undefined> {
+    const tags = (await listTagsWithCounts(undefined, { cookie: ownerCookie })) as {
+      tag: string;
+      count: number;
+    }[];
+
+    return tags.find((usage) => usage.tag === tag)?.count;
+  }
+
+  it('renames a tag across live and deleted artifacts, merging into an existing one', async () => {
+    const { createArtifact, softDeleteArtifact } = await import('@/database/repository');
+    const { db } = await import('@/database');
+
+    createArtifact(db, { title: 'Trip', type: 'spec', tags: ['trips', 'voyage'], body: '{}' });
+    const { artifact: deleted } = createArtifact(db, {
+      title: 'Old trip',
+      type: 'spec',
+      tags: ['trips'],
+      body: '{}',
+    });
+
+    softDeleteArtifact(db, deleted.id);
+
+    expect(await countOf('trips')).toBe(2);
+
+    expect(await renameTagFn({ from: 'trips', to: 'voyage' }, { cookie: ownerCookie })).toEqual({
+      affected: 2,
+    });
+
+    expect(await countOf('trips')).toBeUndefined();
+    expect(await countOf('voyage')).toBe(2);
+  });
+
+  it('removes a tag from every artifact carrying it', async () => {
+    const { createArtifact } = await import('@/database/repository');
+    const { db } = await import('@/database');
+
+    createArtifact(db, { title: 'Draft one', type: 'spec', tags: ['draft'], body: '{}' });
+    createArtifact(db, { title: 'Draft two', type: 'spec', tags: ['draft'], body: '{}' });
+
+    expect(await countOf('draft')).toBe(2);
+
+    expect(await removeTagFn({ tag: 'draft' }, { cookie: ownerCookie })).toEqual({ affected: 2 });
+
+    expect(await countOf('draft')).toBeUndefined();
+  });
+
+  it('rejects a rename target that normalizes away to nothing', async () => {
+    const { createArtifact } = await import('@/database/repository');
+    const { db } = await import('@/database');
+
+    createArtifact(db, { title: 'Kept', type: 'spec', tags: ['keeper'], body: '{}' });
+
+    await expect(
+      renameTagFn({ from: 'keeper', to: '  ' }, { cookie: ownerCookie }),
+    ).rejects.toThrow('Tag name is required.');
+
+    expect(await countOf('keeper')).toBe(1);
+  });
+
+  it('rejects unauthenticated tag calls', async () => {
+    await expect(listTagsWithCounts(undefined)).rejects.toThrow('Unauthorized');
+    await expect(renameTagFn({ from: 'a', to: 'b' })).rejects.toThrow('Unauthorized');
+    await expect(removeTagFn({ tag: 'a' })).rejects.toThrow('Unauthorized');
+  });
+});
+
+describe('restoreArtifactFn / purgeArtifactFn (through the real server-fn RPC route)', () => {
+  async function createDeleted(title: string) {
+    const { createArtifact, softDeleteArtifact } = await import('@/database/repository');
+    const { db } = await import('@/database');
+
+    const { artifact } = createArtifact(db, { title, type: 'spec', body: '{}' });
+
+    softDeleteArtifact(db, artifact.id);
+
+    return artifact.id;
+  }
+
+  it('lists a soft-deleted artifact under deleted: true and restores it back to the live list', async () => {
+    const id = await createDeleted('Trashed');
+
+    const trashed = (await listArtifacts({ deleted: true }, { cookie: ownerCookie })) as {
+      items: { id: string }[];
+    };
+
+    expect(trashed.items.map((item) => item.id)).toContain(id);
+
+    const restored = (await restoreArtifactFn({ id }, { cookie: ownerCookie })) as {
+      deletedAt: number | null;
+    };
+
+    expect(restored.deletedAt).toBeNull();
+
+    const live = (await listArtifacts({}, { cookie: ownerCookie })) as { items: { id: string }[] };
+
+    expect(live.items.map((item) => item.id)).toContain(id);
+  });
+
+  it('rejects a restore of an unknown artifact id', async () => {
+    await expect(
+      restoreArtifactFn({ id: 'nonexistent-id' }, { cookie: ownerCookie }),
+    ).rejects.toThrow('Artifact not found. It may have been deleted.');
+  });
+
+  it('purges an artifact and reports false when there is nothing left to purge', async () => {
+    const id = await createDeleted('Purged');
+
+    expect(await purgeArtifactFn({ id }, { cookie: ownerCookie })).toEqual({ purged: true });
+    expect(await purgeArtifactFn({ id }, { cookie: ownerCookie })).toEqual({ purged: false });
+
+    await expect(restoreArtifactFn({ id }, { cookie: ownerCookie })).rejects.toThrow(
+      'Artifact not found. It may have been deleted.',
+    );
+  });
+
+  it('rejects unauthenticated restore and purge calls', async () => {
+    const id = await createDeleted('Guarded');
+
+    await expect(restoreArtifactFn({ id })).rejects.toThrow('Unauthorized');
+    await expect(purgeArtifactFn({ id })).rejects.toThrow('Unauthorized');
   });
 });

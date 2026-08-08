@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { X } from 'lucide-react';
-import type MapLibreGL from 'maplibre-gl';
+import type * as MapLibreGL from 'maplibre-gl';
 import { type PopupOptions } from 'maplibre-gl';
 
 import { useLatest } from '@/components/ui/map/map-utils';

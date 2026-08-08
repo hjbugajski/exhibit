@@ -11,13 +11,23 @@ import {
 
 import 'maplibre-gl/dist/maplibre-gl.css';
 
-import MapLibreGL from 'maplibre-gl';
+import * as MapLibreGL from 'maplibre-gl';
+/**
+ * maplibre-gl v6 is ESM-only and resolves its worker from `import.meta.url`, which a bundler's
+ * module graph doesn't map back to the dist file — so bundler consumers must point it at the
+ * worker once. `?worker&url` (not plain `?url`) routes it through Vite's worker pipeline so the
+ * emitted chunk inlines its `maplibre-gl-shared.mjs` sibling; without that, production builds
+ * load no vector tiles.
+ */
+import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 
 import { MapContext, type Theme } from '@/components/ui/map/map-context';
 import { useLatest } from '@/components/ui/map/map-utils';
 import { buildProtomapsStyle } from '@/components/ui/map/protomaps-style';
 import { getProtomapsApiKeyFn } from '@/lib/map-config';
 import { cn } from '@/lib/utils';
+
+MapLibreGL.setWorkerUrl(workerUrl);
 
 /** Fallback basemaps when no PROTOMAPS_API_KEY is configured. */
 const defaultStyles = {
@@ -170,14 +180,17 @@ export type MapProps = {
   /** Map projection type. Use `{ type: "globe" }` for 3D globe view. */
   projection?: MapLibreGL.ProjectionSpecification;
   /**
-   * Controlled viewport. When provided with onViewportChange, the map becomes controlled and
-   * viewport is driven by this prop.
+   * Controlled viewport: the map is driven by this prop, so it only makes sense paired with
+   * `onViewportChange` (without it the map freezes at these values for the consumer's state, which
+   * never updates). For an initial view you don't intend to control, use `defaultViewport`.
    */
   viewport?: Partial<MapViewport>;
+  /** Uncontrolled initial viewport, read once at map creation and never resynced. */
+  defaultViewport?: Partial<MapViewport>;
   /**
    * Callback fired continuously as the viewport changes (pan, zoom, rotate, pitch). Can be used
-   * standalone to observe changes, or with `viewport` prop to enable controlled mode where the map
-   * viewport is driven by your state.
+   * standalone to observe changes, or with the `viewport` prop to enable controlled mode where the
+   * map viewport is driven by your state.
    */
   onViewportChange?: (viewport: MapViewport) => void;
   loading?: boolean;
@@ -185,13 +198,32 @@ export type MapProps = {
 
 function DefaultLoader() {
   return (
-    <div className="bg-background/50 absolute inset-0 z-10 flex items-center justify-center backdrop-blur-xs">
+    <div className="bg-scrim-subtle absolute inset-0 z-10 flex items-center justify-center backdrop-blur-xs">
       <div className="flex gap-1">
         <span className="bg-foreground-subtle size-1.5 animate-pulse rounded-full" />
         <span className="bg-foreground-subtle size-1.5 animate-pulse rounded-full [animation-delay:150ms]" />
         <span className="bg-foreground-subtle size-1.5 animate-pulse rounded-full [animation-delay:300ms]" />
       </div>
     </div>
+  );
+}
+
+let hasWarnedUncontrolledViewport = false;
+
+/**
+ * `viewport` without `onViewportChange` looks controlled but can't be: the map still pans and zooms
+ * on its own, and nothing tells the consumer's state about it. Warn once per session in dev rather
+ * than changing behavior — the map keeps honoring `viewport` as an initial view.
+ */
+function warnUncontrolledViewport() {
+  if (hasWarnedUncontrolledViewport) {
+    return;
+  }
+  hasWarnedUncontrolledViewport = true;
+  console.warn(
+    '<Map> got `viewport` without `onViewportChange`, so it is not controlled and the prop only ' +
+      'seeds the initial view. Pass `onViewportChange` to control it, or `defaultViewport` for an ' +
+      'initial view.',
   );
 }
 
@@ -215,6 +247,7 @@ export function Map({
   blank = false,
   projection,
   viewport,
+  defaultViewport,
   onViewportChange,
   loading = false,
   ...props
@@ -233,6 +266,12 @@ export function Map({
   const styleReady = Boolean(styles) || blank || apiKey !== undefined;
 
   const isControlled = viewport !== undefined && onViewportChange !== undefined;
+
+  useEffect(() => {
+    if (import.meta.env.DEV && viewport !== undefined && onViewportChange === undefined) {
+      warnUncontrolledViewport();
+    }
+  }, [viewport, onViewportChange]);
 
   const onViewportChangeRef = useLatest(onViewportChange);
   // Mount effect below only reads projection through this ref so that changing the prop after mount
@@ -275,7 +314,12 @@ export function Map({
 
   // Latest-ref (not a mount-time snapshot): creation can be deferred past first render by
   // `styleReady`, and the map must be born with the values current at creation time.
-  const initialRef = useLatest({ resolvedTheme, mapStyles, props, viewport });
+  const initialRef = useLatest({
+    resolvedTheme,
+    mapStyles,
+    props,
+    initialViewport: viewport ?? defaultViewport,
+  });
 
   useEffect(() => {
     if (!containerRef.current || !styleReady) {
@@ -286,7 +330,7 @@ export function Map({
       resolvedTheme: initialTheme,
       mapStyles: initialMapStyles,
       props: initialProps,
-      viewport: initialViewport,
+      initialViewport,
     } = initialRef.current;
 
     const initialStyle = initialTheme === 'dark' ? initialMapStyles.dark : initialMapStyles.light;
@@ -305,9 +349,10 @@ export function Map({
 
     const styleDataHandler = () => {
       clearStyleTimeout();
-      // Delay to ensure style is fully processed before allowing layer operations This is a
-      // workaround to avoid race conditions with the style loading else we have to force update
-      // every layer on setStyle change
+      // MapLibre emits `styledata` repeatedly while a style loads, so debounce: the timer is reset
+      // on every event and only fires once the burst stops. Layer operations run against a
+      // half-applied style otherwise, and the alternative is force-updating every layer on each
+      // setStyle. 100ms is empirical - long enough for the burst, short enough to not be visible.
       styleTimeoutRef.current = setTimeout(() => {
         setIsStyleLoaded(true);
         if (projectionRef.current) {

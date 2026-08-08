@@ -8,14 +8,17 @@
  *
  * Every array and string field carries a generous but finite `.max()`: safety caps against a
  * hostile-but-schema-valid spec (a Chart with millions of points, a multi-megabyte markdown string)
- * hitting React/recharts/react-markdown — a real browser-DoS vector for the owner viewing rendered
- * artifacts. SHORT_MAX covers titles/labels/short strings, LONG_MAX long-form markdown/prose/code;
- * a few array fields use their own bound where that's obviously right (documented inline).
+ * hitting React/the chart engine/the markdown renderer — a real browser-DoS vector for the owner viewing
+ * rendered artifacts. SHORT_MAX covers titles/labels/short strings, LONG_MAX long-form
+ * markdown/prose/code; a few array fields use their own bound where that's obviously right
+ * (documented inline).
  */
 
 import { defineCatalog } from '@json-render/core';
 import { schema } from '@json-render/react/schema';
 import { z } from 'zod';
+
+import { ALLOWED_FAMILIES, MERMAID_MAX_CHARS } from '@/components/catalog/mermaid-policy';
 
 /** Generous cap for a title/label/short string field. */
 const SHORT_MAX = 500;
@@ -175,7 +178,7 @@ export const catalog = defineCatalog(schema, {
           .string()
           .max(LONG_MAX)
           .describe(
-            'CommonMark + GFM markdown source. Raw HTML is stripped; links must be http(s) to render.',
+            'CommonMark + GFM markdown source. Raw HTML is never interpreted (it shows as literal text); links must be http(s) to render.',
           ),
       }),
     },
@@ -458,26 +461,35 @@ export const catalog = defineCatalog(schema, {
     },
     Chart: {
       description:
-        'Simple single-series bar or line chart. Use for a numeric series over categories or time; keep to ~4-24 points. For exact values, prefer Table.',
+        'Single-series chart over categories or time; ~4-24 points, 4-6 donut slices. Use Table for exact values.',
       props: z.object({
-        kind: z.enum(['bar', 'line']).describe('bar for categories, line for trends over time.'),
+        kind: z
+          .enum(['bar', 'line', 'area', 'scatter', 'donut'])
+          .describe('bar/scatter categories, line/area trends, donut shares.'),
         data: z
           .array(
             z.object({
-              label: z.string().max(SHORT_MAX).describe('Category or time label for the x-axis.'),
-              value: z.number().describe('Numeric value for the y-axis.'),
+              label: z.string().max(SHORT_MAX).describe('Category, time, or slice label.'),
+              value: z.number().describe('Numeric value.'),
             }),
           )
           .min(2)
-          // Recharts renders every point to SVG; 5k is generous for a real series and well short of
-          // a rendering hazard.
+          // Every point becomes an SVG primitive; 5k is generous for a real series and well short
+          // of a rendering hazard.
           .max(5_000)
-          .describe('Ordered data points, left to right.'),
+          .describe('Ordered, left to right.'),
         valueLabel: z
           .string()
           .max(SHORT_MAX)
           .optional()
-          .describe('Name of the series shown in the tooltip, e.g. "Cost ($)".'),
+          .describe('Series name in the tooltip, e.g. "Cost ($)".'),
+      }),
+    },
+
+    Mermaid: {
+      description: `Diagram from mermaid source (no code fence): ${ALLOWED_FAMILIES}; others show the source with the reason.`,
+      props: z.object({
+        code: z.string().min(1).max(MERMAID_MAX_CHARS),
       }),
     },
 

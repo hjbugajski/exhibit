@@ -1,12 +1,12 @@
-import type { Spec } from '@json-render/core';
-
-import { SpecView } from '@/catalog/registry';
-import type { LibraryDemo } from '@/components/library/demo';
-import { Playground } from '@/components/library/playground';
+import { catalogDemo } from '@/components/library/catalog-demo';
 
 // Covers Itinerary + Day + Stop together, and all five Stop kinds across the two days. Day 1's
 // stops carry coordinates, so that day auto-renders a map; day 2 has none and stays map-free.
-const spec: Spec = {
+export const catalogItineraryDemo = catalogDemo({
+  slug: 'catalog-itinerary',
+  title: 'Itinerary',
+  description:
+    'Itinerary, Day, and Stop together: a multi-day trip container of days, each a list of stops. Days whose stops have coordinates auto-render a map.',
   root: 'itinerary',
   elements: {
     itinerary: {
@@ -34,7 +34,6 @@ const spec: Spec = {
         markdown: 'Arrive early to beat the crowds on the torii gate trail.',
         kind: 'activity',
       },
-      children: [],
     },
     'stop-1b': {
       type: 'Stop',
@@ -47,7 +46,6 @@ const spec: Spec = {
         markdown: 'Udon noodles with seasonal vegetables; no reservation needed.',
         kind: 'food',
       },
-      children: [],
     },
     'stop-1c': {
       type: 'Stop',
@@ -58,7 +56,6 @@ const spec: Spec = {
         coordinates: { lat: 35.0031, lng: 135.7726 },
         kind: 'lodging',
       },
-      children: [],
     },
     'day-2': {
       type: 'Day',
@@ -79,7 +76,6 @@ const spec: Spec = {
         markdown: 'Take the JR Special Rapid; tickets are available at any station kiosk.',
         kind: 'travel',
       },
-      children: [],
     },
     'stop-2b': {
       type: 'Stop',
@@ -89,20 +85,6 @@ const spec: Spec = {
         markdown: 'Grab the bags left at the station locker before heading to the hotel.',
         kind: 'other',
       },
-      children: [],
     },
   },
-};
-
-function CatalogItineraryDemo() {
-  return <Playground controls={{}} layout="block" render={() => <SpecView spec={spec} />} />;
-}
-
-export const catalogItineraryDemo: LibraryDemo = {
-  slug: 'catalog-itinerary',
-  title: 'Itinerary',
-  description:
-    'Itinerary, Day, and Stop together: a multi-day trip container of days, each a list of stops. Days whose stops have coordinates auto-render a map.',
-  group: 'Catalog',
-  render: () => <CatalogItineraryDemo />,
-};
+});

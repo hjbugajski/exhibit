@@ -4,7 +4,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
-  "group/button focus-visible:border-ring focus-visible:ring-focus aria-invalid:border-danger-strong aria-invalid:ring-focus-danger gap-icon-label px-control has-data-[icon=inline-end]:pr-control-icon has-data-[icon=inline-start]:pl-control-icon inline-flex h-8 shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:ring-3 active:not-aria-[haspopup]:translate-y-px has-data-[icon=only]:w-8 has-data-[icon=only]:px-0 aria-invalid:ring-3 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5",
+  "group/button focus-visible:border-ring focus-visible:ring-focus aria-invalid:border-danger-strong aria-invalid:ring-focus-danger gap-icon-label px-control has-data-[icon=inline-end]:pr-control-icon has-data-[icon=inline-start]:pl-control-icon inline-flex h-8 shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-[color,background-color,border-color,box-shadow,transform] outline-none select-none focus-visible:ring-3 active:not-aria-[haspopup]:translate-y-px has-data-[icon=only]:w-8 has-data-[icon=only]:px-0 aria-invalid:ring-3 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5",
   {
     variants: {
       variant: {

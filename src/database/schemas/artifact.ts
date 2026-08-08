@@ -15,9 +15,9 @@ export const artifacts = sqliteTable(
     deletedAt: integer('deleted_at'),
   },
   (table) => [
-    check('type_check', sql`${table.type} in ('spec', 'html')`),
-    // Covers listArtifacts' default/updated/created sorts; the lower(title) sort variant is a
-    // hand-added expression index in the generated migration (drizzle-kit can't express `lower()`).
+    check('type_check', sql`${table.type} in ('spec', 'html', 'markdown')`),
+    // Covers listArtifacts' default/updated/created sorts; the lower(title) sort runs unindexed
+    // by decision (docs/plans/README.md, "Considered and rejected").
     index('artifact_deletedAt_updatedAt_id_idx').on(table.deletedAt, table.updatedAt, table.id),
     index('artifact_deletedAt_createdAt_id_idx').on(table.deletedAt, table.createdAt, table.id),
   ],

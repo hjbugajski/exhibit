@@ -12,8 +12,6 @@ export type ItemGroupProps = ComponentProps<'div'>;
 function Group({ className, ...props }: ItemGroupProps) {
   return (
     <div
-      // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
-      role="list"
       data-slot="item-group"
       className={cn('group/item-group flex w-full flex-col gap-4', className)}
       {...props}

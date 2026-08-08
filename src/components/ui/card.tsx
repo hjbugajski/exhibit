@@ -35,11 +35,14 @@ function Header({ className, ...props }: CardHeaderProps) {
   );
 }
 
-export type CardTitleProps = useRender.ComponentProps<'div'>;
+export type CardTitleProps = useRender.ComponentProps<'div'> & {
+  /** Renders as `h<level>` so the card joins the document's heading outline. */
+  level?: 2 | 3 | 4 | 5 | 6;
+};
 
-function Title({ className, render, ...props }: CardTitleProps) {
+function Title({ className, level, render, ...props }: CardTitleProps) {
   return useRender({
-    defaultTagName: 'div',
+    defaultTagName: level ? (`h${level}` as const) : 'div',
     render,
     props: mergeProps<'div'>(
       {

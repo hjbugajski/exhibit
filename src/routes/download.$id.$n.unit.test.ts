@@ -87,7 +87,33 @@ describe('/download/$id/$n', () => {
     expect(response.headers.get('Content-Disposition')).toBe(
       'attachment; filename="html-download-v1.html"',
     );
+    // A downloaded artifact opened from disk must not leak the gallery URL to the remote hosts its
+    // own markup references.
+    expect(response.headers.get('Referrer-Policy')).toBe('no-referrer');
     expect(await response.text()).toBe(html);
+  });
+
+  it('serves a markdown artifact as raw markdown with a .md filename', async () => {
+    vi.mocked(getSessionForRequest).mockResolvedValue(fakeSession as never);
+
+    const markdown = '# Title\n\nBody text.\n';
+    const { artifact } = createArtifact(db, {
+      title: 'Markdown Download',
+      type: 'markdown',
+      body: markdown,
+    });
+
+    const response = await callHandler({
+      request: new Request(`http://localhost:3000/download/${artifact.id}/1`),
+      params: { id: artifact.id, n: '1' },
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('Content-Type')).toBe('text/markdown; charset=utf-8');
+    expect(response.headers.get('Content-Disposition')).toBe(
+      'attachment; filename="markdown-download-v1.md"',
+    );
+    expect(await response.text()).toBe(markdown);
   });
 
   it('serves the raw body when a spec artifact has a malformed stored body', async () => {

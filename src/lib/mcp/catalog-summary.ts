@@ -1,13 +1,15 @@
 /**
  * Builds the get_catalog tool's payload: a compact textual description of every catalog component
- * plus a couple of trimmed example specs. Kept under ~4k tokens (see catalog-summary.unit.test.ts)
+ * plus a few trimmed example specs. Kept under ~4k tokens (see catalog-summary.unit.test.ts)
  * so it's cheap for Claude to read before every publish_spec call.
  */
+import type { Spec } from '@json-render/core';
 import { z } from 'zod';
 
 import { catalog } from '@/catalog/catalog';
 import { comparisonFixture } from '@/catalog/fixtures/comparison';
 import { explainerFixture } from '@/catalog/fixtures/explainer';
+import { feedbackFixture } from '@/catalog/fixtures/feedback';
 import { itineraryFixture } from '@/catalog/fixtures/itinerary';
 
 /** Renders a Zod schema as a short type expression, e.g. `'left'|'center'|'right'`. */
@@ -103,24 +105,43 @@ function componentLines(): string {
 
 const WIRE_FORMAT_REMINDER = `WIRE FORMAT: a spec is { root: string, elements: { [elementKey]: { type: ComponentName, props: {...}, children: string[] } } }. \`root\` is the key of the top-level element in \`elements\`. \`children\` is an array of other keys in \`elements\` (empty for leaf components). Every key referenced anywhere (root, children) must exist in \`elements\`; do not leave dangling references or orphaned elements.`;
 
-/** Compact JSON examples, trimmed from the catalog fixtures to keep token cost low. */
-function exampleSpecs(): string {
-  const trimmedItinerary = {
-    ...itineraryFixture,
+/**
+ * Drops every element `keep` rejects and prunes the retained elements' children down to the
+ * survivors — trimming without repointing children would ship the dangling references
+ * WIRE_FORMAT_REMINDER forbids and validateArtifactSpec rejects.
+ */
+function trimSpec(spec: Spec, keep: (key: string) => boolean): Spec {
+  return {
+    ...spec,
     elements: Object.fromEntries(
-      Object.entries(itineraryFixture.elements).filter(
-        ([key]) => key === 'itinerary' || key === 'day-1' || key.startsWith('stop-1'),
-      ),
+      Object.entries(spec.elements)
+        .filter(([key]) => keep(key))
+        .map(([key, element]) => [key, { ...element, children: element.children?.filter(keep) }]),
     ),
   };
+}
 
-  return [
-    ['Itinerary (multi-day trip)', trimmedItinerary],
-    ['Explainer (Prose/Callout/Steps/Details)', explainerFixture],
-    ['Comparison (Grid/Card/Table/Badge)', comparisonFixture],
-  ]
-    .map(([label, spec]) => `### ${label as string}\n${JSON.stringify(spec)}`)
-    .join('\n\n');
+/**
+ * Compact examples, trimmed from the catalog fixtures to keep token cost low. Exported so tests can
+ * validate them: an example that fails validation teaches Claude a spec the publish tools reject.
+ */
+export const EXAMPLE_SPECS: { label: string; spec: Spec }[] = [
+  {
+    label: 'Itinerary (multi-day trip)',
+    spec: trimSpec(
+      itineraryFixture,
+      (key) => key === 'itinerary' || key === 'day-1' || key === 'stop-1a' || key === 'stop-1b',
+    ),
+  },
+  { label: 'Explainer (Prose/Callout/Steps/Details)', spec: explainerFixture },
+  { label: 'Comparison (Grid/Card/Table/Badge)', spec: comparisonFixture },
+  { label: 'Feedback (Checklist/Choice/Rating/NoteBox + statePath)', spec: feedbackFixture },
+];
+
+function exampleSpecs(): string {
+  return EXAMPLE_SPECS.map(({ label, spec }) => `### ${label}\n${JSON.stringify(spec)}`).join(
+    '\n\n',
+  );
 }
 
 export interface CatalogSummary {

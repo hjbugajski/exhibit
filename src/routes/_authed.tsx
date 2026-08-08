@@ -15,6 +15,9 @@ export const Route = createFileRoute('/_authed')({
     return { session };
   },
   loader: async () => ({ tags: await listTagsFn() }),
+  // The tag list scans every artifact's tags and changes only when the owner edits them — every
+  // such mutation calls `router.invalidate()`, which refetches regardless of this window.
+  staleTime: 5 * 60_000,
   component: AuthedLayoutRoute,
 });
 

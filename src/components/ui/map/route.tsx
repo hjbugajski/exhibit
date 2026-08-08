@@ -1,6 +1,6 @@
 import { useEffect, useId, useMemo } from 'react';
 
-import type MapLibreGL from 'maplibre-gl';
+import type * as MapLibreGL from 'maplibre-gl';
 
 import { useMap } from '@/components/ui/map/map-context';
 import { removeMapLayers, useLatest } from '@/components/ui/map/map-utils';
@@ -109,7 +109,8 @@ export function MapRoute({
 
     const source = map.getSource(sourceId) as MapLibreGL.GeoJSONSource;
     if (source) {
-      source.setData({
+      // v6 made setData async; the route redraw is fire-and-forget.
+      void source.setData({
         type: 'Feature',
         properties: {},
         geometry: { type: 'LineString', coordinates },

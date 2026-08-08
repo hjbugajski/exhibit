@@ -5,15 +5,17 @@ import { Link, useRouter } from '@tanstack/react-router';
 import { Identicon } from '@/components/account/identicon';
 import { ConfirmDestructiveAction } from '@/components/blocks/confirm-destructive-action';
 import { FormStatus } from '@/components/blocks/form-status';
+import { RelativeTime } from '@/components/blocks/relative-time';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Field } from '@/components/ui/field';
 import { Form } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import type { TagUsage } from '@/database/repository';
 import type { McpConnection } from '@/lib/account';
 import { revokeMcpConnectionFn } from '@/lib/account';
+import { removeTagFn, renameTagFn } from '@/lib/artifacts';
 import { authClient } from '@/lib/auth-client';
-import { formatRelativeTime } from '@/lib/format-time';
 import { useFormAction } from '@/lib/use-form-action';
 
 function AvatarCard({ seed }: { seed: string }) {
@@ -219,14 +221,19 @@ function ConnectionRow({ connection }: { connection: McpConnection }) {
           {connection.activeGrants > 0
             ? `${connection.activeGrants} active grant${connection.activeGrants === 1 ? '' : 's'}`
             : 'No active grants'}
-          {lastActivity ? ` · last authorized ${formatRelativeTime(lastActivity)}` : ''}
+          {lastActivity ? (
+            <>
+              {' · last authorized '}
+              <RelativeTime value={lastActivity} />
+            </>
+          ) : null}
           {connection.scopes.length > 0 ? ` · ${connection.scopes.join(', ')}` : ''}
         </p>
       </div>
       <ConfirmDestructiveAction
         action={action}
         actionLabel="Revoke"
-        description="The client’s registration and tokens are removed and it can no longer publish. Outstanding access tokens expire on their own within the hour; the client can reconnect later by authorizing again."
+        description="The client’s registration and tokens are removed and it can no longer publish. Access ends immediately, including for tokens it already holds; the client can reconnect later by authorizing again."
         onConfirm={handleRevoke}
         pendingLabel="Revoking…"
         title={`Revoke “${connection.name ?? connection.clientId}”?`}
@@ -265,16 +272,138 @@ function ConnectionsCard({ connections }: { connections: McpConnection[] }) {
   );
 }
 
+function artifactCount(count: number) {
+  return `${count} artifact${count === 1 ? '' : 's'}`;
+}
+
+function TagRow({ tag, count }: TagUsage) {
+  const router = useRouter();
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(tag);
+  const renameAction = useFormAction();
+  const removeAction = useFormAction();
+
+  function startEditing() {
+    setValue(tag);
+    renameAction.setStatus(null);
+    setEditing(true);
+  }
+
+  function handleRename(event: SubmitEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    void renameAction.run(async () => {
+      await renameTagFn({ data: { from: tag, to: value } });
+      setEditing(false);
+      await router.invalidate();
+    });
+  }
+
+  function handleRemove() {
+    void removeAction.run(async () => {
+      await removeTagFn({ data: { tag } });
+      await router.invalidate();
+    });
+  }
+
+  return (
+    <div className="flex flex-col gap-2 border-b py-3 last:border-b-0">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate font-medium">{tag}</p>
+          <p className="text-foreground-muted text-sm">{artifactCount(count)}</p>
+        </div>
+        {editing ? null : (
+          <div className="flex items-center gap-2">
+            <Button onClick={startEditing} variant="outline">
+              Rename
+            </Button>
+            <ConfirmDestructiveAction
+              action={removeAction}
+              actionLabel="Delete"
+              description={
+                <>
+                  <strong className="text-foreground font-medium">{tag}</strong> is removed from{' '}
+                  {artifactCount(count)}. The artifacts themselves are untouched.
+                </>
+              }
+              onConfirm={handleRemove}
+              pendingLabel="Deleting…"
+              title={`Delete “${tag}”?`}
+              trigger={<Button disabled={removeAction.pending} variant="destructive" />}
+            />
+          </div>
+        )}
+      </div>
+      {editing ? (
+        <Form className="flex flex-col gap-2" onSubmit={handleRename}>
+          <Field.Root name="tag">
+            <Field.Label>New name</Field.Label>
+            <div className="flex items-center gap-2">
+              <Input
+                maxLength={50}
+                onChange={(event) => setValue(event.target.value)}
+                required
+                value={value}
+              />
+              <Button disabled={renameAction.pending} type="submit">
+                {renameAction.pending ? 'Saving…' : 'Save'}
+              </Button>
+              <Button
+                disabled={renameAction.pending}
+                onClick={() => setEditing(false)}
+                type="button"
+                variant="outline"
+              >
+                Cancel
+              </Button>
+            </div>
+            <Field.Error match="valueMissing">Tag name is required.</Field.Error>
+          </Field.Root>
+        </Form>
+      ) : null}
+      <FormStatus status={renameAction.status} />
+    </div>
+  );
+}
+
+function TagsCard({ tags }: { tags: TagUsage[] }) {
+  return (
+    <Card.Root>
+      <Card.Header>
+        <Card.Title render={<h2>Tags</h2>} />
+        <Card.Description>
+          The whole tag vocabulary. Renaming a tag into one that already exists merges them. Renames
+          and deletes apply to archived and deleted artifacts too, so counts include them.
+        </Card.Description>
+      </Card.Header>
+      <Card.Content>
+        {tags.length === 0 ? (
+          <p className="text-foreground-muted text-sm">No tags yet.</p>
+        ) : (
+          <div className="flex flex-col">
+            {tags.map((usage) => (
+              <TagRow count={usage.count} key={usage.tag} tag={usage.tag} />
+            ))}
+          </div>
+        )}
+      </Card.Content>
+    </Card.Root>
+  );
+}
+
 export function SettingsView({
   email,
   seed,
   connections,
   mailerAvailable,
+  tags,
 }: {
   email: string;
   seed: string;
   connections: McpConnection[];
   mailerAvailable: boolean;
+  tags: TagUsage[];
 }) {
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6 px-6 py-12">
@@ -283,6 +412,7 @@ export function SettingsView({
       <EmailCard email={email} mailerAvailable={mailerAvailable} />
       <PasswordCard />
       <ConnectionsCard connections={connections} />
+      <TagsCard tags={tags} />
     </div>
   );
 }

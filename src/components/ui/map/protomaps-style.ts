@@ -1,5 +1,5 @@
 import { layers, namedFlavor, type Flavor } from '@protomaps/basemaps';
-import type MapLibreGL from 'maplibre-gl';
+import type * as MapLibreGL from 'maplibre-gl';
 
 import type { Theme } from '@/components/ui/map/map-context';
 
@@ -210,10 +210,24 @@ const flavors: Record<Theme, { flavor: Flavor; sprite: string }> = {
   light: { flavor: lightFlavor, sprite: 'white' },
 };
 
+/**
+ * `layers()` allocates hundreds of layer objects per call, and every Map mounts builds both
+ * flavors. MapLibre only ever reads the spec it is handed (`_load` shallow-copies before assigning
+ * top-level props, `setState` deep-clones), so one object per flavor+key is safe to share.
+ */
+const styleCache = new Map<string, MapLibreGL.StyleSpecification>();
+
 export function buildProtomapsStyle(theme: Theme, apiKey: string): MapLibreGL.StyleSpecification {
+  const cacheKey = `${theme}:${apiKey}`;
+  const cached = styleCache.get(cacheKey);
+
+  if (cached) {
+    return cached;
+  }
+
   const { flavor, sprite } = flavors[theme];
 
-  return {
+  const style: MapLibreGL.StyleSpecification = {
     version: 8,
     glyphs: 'https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf',
     sprite: `https://protomaps.github.io/basemaps-assets/sprites/v4/${sprite}`,
@@ -227,4 +241,8 @@ export function buildProtomapsStyle(theme: Theme, apiKey: string): MapLibreGL.St
     },
     layers: layers('protomaps', flavor, { lang: 'en' }),
   };
+
+  styleCache.set(cacheKey, style);
+
+  return style;
 }

@@ -22,7 +22,7 @@ export interface OrderedEntryProps {
 
 export function OrderedEntry({ marker, label, title, markdown }: OrderedEntryProps) {
   return (
-    <li className="group/entry flex gap-3">
+    <li className="group/entry m-0 flex gap-3 ps-0">
       <div className="flex w-6 shrink-0 flex-col items-center gap-1.5">
         {marker}
         {/* mb matches the column gap so the rail floats clear of both markers. */}

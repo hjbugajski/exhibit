@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildCatalogSummary } from '@/lib/mcp/catalog-summary';
+import { validateArtifactSpec } from '@/catalog/validate';
+import { buildCatalogSummary, EXAMPLE_SPECS } from '@/lib/mcp/catalog-summary';
 
 describe('buildCatalogSummary', () => {
   it('stays within the ~4k token budget (chars/4 heuristic)', () => {
@@ -18,5 +19,14 @@ describe('buildCatalogSummary', () => {
     expect(text).toContain('## Itinerary');
     expect(text).toContain('### Itinerary (multi-day trip)');
     expect(text).toContain('### Comparison');
+    expect(text).toContain('statePath');
+  });
+});
+
+describe('EXAMPLE_SPECS', () => {
+  it.each(EXAMPLE_SPECS)('$label passes the publish-time validator', ({ spec }) => {
+    const result = validateArtifactSpec(spec);
+
+    expect(result.valid ? [] : result.errors).toEqual([]);
   });
 });

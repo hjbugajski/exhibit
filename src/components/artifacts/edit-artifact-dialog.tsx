@@ -3,6 +3,7 @@ import { useState, type SubmitEvent } from 'react';
 import { useRouter } from '@tanstack/react-router';
 
 import { FormStatus } from '@/components/blocks/form-status';
+import { AlertDialog } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Dialog } from '@/components/ui/dialog';
 import { Field } from '@/components/ui/field';
@@ -10,8 +11,8 @@ import { Form } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import type { Artifact } from '@/database/repository';
+import { normalizeTags } from '@/lib/artifact-metadata';
 import { updateArtifactMetadataFn } from '@/lib/artifacts';
-import { normalizeTags } from '@/lib/mcp/tags';
 import { useFormAction } from '@/lib/use-form-action';
 
 export interface EditArtifactDialogProps {
@@ -20,12 +21,22 @@ export interface EditArtifactDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+function seedFrom(artifact: Artifact) {
+  return {
+    title: artifact.title,
+    description: artifact.description ?? '',
+    tagsInput: artifact.tags.join(', '),
+  };
+}
+
 /** Controlled dialog — the opener (e.g. a menu item) owns the `open` state. */
 export function EditArtifactDialog({ artifact, open, onOpenChange }: EditArtifactDialogProps) {
   const router = useRouter();
-  const [title, setTitle] = useState(artifact.title);
-  const [description, setDescription] = useState(artifact.description ?? '');
-  const [tagsInput, setTagsInput] = useState(artifact.tags.join(', '));
+  const [seed, setSeed] = useState(() => seedFrom(artifact));
+  const [title, setTitle] = useState(seed.title);
+  const [description, setDescription] = useState(seed.description);
+  const [tagsInput, setTagsInput] = useState(seed.tagsInput);
+  const [discardOpen, setDiscardOpen] = useState(false);
   const { pending, status, setStatus, run } = useFormAction();
 
   // Reseed the form on every open, render-phase — the parent flips `open` directly, so an
@@ -35,12 +46,21 @@ export function EditArtifactDialog({ artifact, open, onOpenChange }: EditArtifac
     setSeededOpen(open);
 
     if (open) {
-      setTitle(artifact.title);
-      setDescription(artifact.description ?? '');
-      setTagsInput(artifact.tags.join(', '));
+      const next = seedFrom(artifact);
+
+      setSeed(next);
+      setTitle(next.title);
+      setDescription(next.description);
+      setTagsInput(next.tagsInput);
       setStatus(null);
+      setDiscardOpen(false);
     }
   }
+
+  // Dirty against the values seeded at open, not against `artifact` — a background refetch must
+  // not silently reclassify an untouched draft as dirty (or vice versa).
+  const isDirty =
+    title !== seed.title || description !== seed.description || tagsInput !== seed.tagsInput;
 
   function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -64,7 +84,25 @@ export function EditArtifactDialog({ artifact, open, onOpenChange }: EditArtifac
   }
 
   return (
-    <Dialog.Root onOpenChange={onOpenChange} open={open}>
+    <Dialog.Root
+      onOpenChange={(next, eventDetails) => {
+        // A dirty draft is only discarded deliberately: an accidental outside press or Escape
+        // routes through the confirm instead of closing. Cancel/X and a successful save close
+        // outright.
+        const isDismissal =
+          eventDetails.reason === 'outside-press' || eventDetails.reason === 'escape-key';
+
+        if (!next && isDirty && isDismissal) {
+          eventDetails.cancel();
+          setDiscardOpen(true);
+
+          return;
+        }
+
+        onOpenChange(next);
+      }}
+      open={open}
+    >
       <Dialog.Portal>
         <Dialog.Overlay />
         <Dialog.Popup>
@@ -109,6 +147,32 @@ export function EditArtifactDialog({ artifact, open, onOpenChange }: EditArtifac
               </Button>
             </Dialog.Footer>
           </Form>
+          {/* Nested inside the popup so Base UI stacks it above the edit dialog. */}
+          <AlertDialog.Root onOpenChange={setDiscardOpen} open={discardOpen}>
+            <AlertDialog.Portal>
+              <AlertDialog.Overlay />
+              <AlertDialog.Popup>
+                <AlertDialog.Header>
+                  <AlertDialog.Title>Discard changes?</AlertDialog.Title>
+                  <AlertDialog.Description>
+                    Your edits to this artifact have not been saved.
+                  </AlertDialog.Description>
+                </AlertDialog.Header>
+                <AlertDialog.Footer>
+                  <AlertDialog.Cancel>Keep editing</AlertDialog.Cancel>
+                  <AlertDialog.Action
+                    onClick={() => {
+                      setDiscardOpen(false);
+                      onOpenChange(false);
+                    }}
+                    variant="destructive"
+                  >
+                    Discard
+                  </AlertDialog.Action>
+                </AlertDialog.Footer>
+              </AlertDialog.Popup>
+            </AlertDialog.Portal>
+          </AlertDialog.Root>
         </Dialog.Popup>
       </Dialog.Portal>
     </Dialog.Root>
