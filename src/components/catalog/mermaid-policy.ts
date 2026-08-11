@@ -15,6 +15,16 @@ export const MERMAID_MAX_EDGES = 200;
 export const MERMAID_MAX_HEIGHT = '40rem';
 
 /**
+ * The app face (`--font-sans`), repeated here because the sandboxed frame document cannot read the
+ * app's custom properties. mermaid lays the diagram out in the app document — where InterVariable
+ * is live — so the frame must draw with the same face or every measured label width is wrong.
+ */
+export const MERMAID_FONT_FAMILY = 'InterVariable, sans-serif';
+
+/** The upright face from public/fonts; the frame gets it as a data URI (see buildDiagramDocument). */
+export const MERMAID_FONT_URL = '/fonts/InterVariable.woff2';
+
+/**
  * `mermaid.detectType` returns internal ids, not the human names — several families answer to two
  * (`graph`/`flowchart` are v1 vs v2, `classDiagram-v2` reports `classDiagram`, and
  * `stateDiagram-v2` reports `stateDiagram` while plain `stateDiagram` reports `state`). Every id
@@ -37,9 +47,13 @@ export const DIAGRAM_TYPE_LABELS: ReadonlyMap<string, string> = new Map([
   ['gitGraph', 'Git graph'],
 ]);
 
-/** Human list for the rejection message, in the order Claude is told about them. */
+/**
+ * Human list for the rejection message, in the order Claude is told about them. The first four are
+ * the families the house engine draws natively; leading with them is the only steer the catalog
+ * budget affords (see catalog-summary.unit.test.ts — the summary sits ~7 tokens under its cap).
+ */
 export const ALLOWED_FAMILIES =
-  'flowchart, sequence, class, state, ER, gantt, pie, journey and gitGraph';
+  'flowchart, state, sequence, pie, class, ER, gantt, journey and gitGraph';
 
 /**
  * Keys a `%%{init}%%` directive inside the diagram source may not touch. The first six are
@@ -79,6 +93,20 @@ export const MERMAID_THEME_TOKENS: Record<string, string> = {
   tertiaryColor: '--mermaid-tertiary',
   lineColor: '--mermaid-line',
   textColor: '--mermaid-text',
+  /*
+   * Gantt paint mermaid's base theme hardcodes to light-mode literals — `lightgrey` grid, a `white`
+   * alternating section, `#eeeeee` excluded days, `lightgrey`/`grey` done tasks, `navy` vert
+   * markers, `#003163` link labels — none of which derive from the variables above, so they arrive
+   * unreadable on a dark canvas. Every other gantt color already resolves from primary/tertiary/text
+   * and is left alone.
+   */
+  gridColor: '--mermaid-line',
+  altSectionBkgColor: '--mermaid-secondary',
+  excludeBkgColor: '--mermaid-secondary',
+  doneTaskBkgColor: '--mermaid-secondary',
+  doneTaskBorderColor: '--mermaid-primary-border',
+  vertLineColor: '--mermaid-text',
+  taskTextClickableColor: '--mermaid-text',
 };
 
 export function readThemeVariables(styles: CSSStyleDeclaration): Record<string, string> {
@@ -125,16 +153,36 @@ export function sanitizeDiagramSvg(svg: string): string {
  * document-wide, which is exactly what the 2026 advisories exploited). The meta CSP is the second
  * lock: nothing loads, styles are inline-only, images may only be data URIs.
  *
- * The background is painted explicitly from the resolved theme token: a sandboxed document whose
- * color-scheme mismatches the embedding page gets an opaque white canvas instead of transparency,
- * so `transparent` reads as a white flash in dark mode. The value is a computed custom-property
- * color, not diagram content, so interpolating it is safe.
+ * Both canvas colors are painted explicitly from resolved theme tokens, because an unstyled
+ * sandboxed document assumes light mode twice over. The background: a document whose color-scheme
+ * mismatches the embedding page gets an opaque white canvas instead of transparency, so
+ * `transparent` reads as a white flash in dark mode. The foreground: d3's axis — the gantt's grid —
+ * paints every tick line with a `stroke="currentColor"` presentation attribute that mermaid's
+ * `.grid .tick` rule cannot override, so an unset `color` draws the grid in the UA's black.
+ *
+ * The app face rides along the same way, as a data URI — the opaque-origin frame can't pass the
+ * CORS check a cross-origin font load requires, so `/fonts` is unreachable from inside it. Without
+ * the face the frame falls back to a system font while the label widths were measured against
+ * InterVariable in the app document. `font` is null when the fetch failed; the family stays
+ * declared so the fallback is at least the app's `sans-serif`.
+ *
+ * The colors are computed custom-property values and the font is base64 the app fetched from its
+ * own origin — none of it is diagram content, so interpolating is safe.
  */
-export function buildDiagramDocument(svg: string, background: string): string {
+export function buildDiagramDocument(
+  svg: string,
+  background: string,
+  foreground: string,
+  font: string | null,
+): string {
+  const fontFace = font
+    ? `@font-face{font-family:InterVariable;font-weight:100 900;src:url(${font}) format('woff2')}`
+    : '';
+
   return [
     '<!doctype html><html><head><meta charset="utf-8">',
-    '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'; img-src data:">',
-    `<style>html,body{margin:0;padding:0;background:${background}}svg{display:block;max-width:100%;height:auto}</style>`,
+    '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'; img-src data:; font-src data:">',
+    `<style>${fontFace}html,body{margin:0;padding:0;background:${background};color:${foreground};font-family:${MERMAID_FONT_FAMILY}}svg{display:block;max-width:100%;height:auto}</style>`,
     `</head><body>${svg}</body></html>`,
   ].join('');
 }

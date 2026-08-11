@@ -1,0 +1,5 @@
+flowchart LR
+  classDef danger fill:#f00
+  Ingest & Validate --> Store & Index
+  Store:::danger -- retry --> Ingest
+  Index ==> Serve

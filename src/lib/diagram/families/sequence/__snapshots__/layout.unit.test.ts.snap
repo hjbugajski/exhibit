@@ -1,0 +1,1794 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`sequence layout > 'sequence-activations' matches its golden scene 1`] = `
+{
+  "activations": [
+    {
+      "box": {
+        "height": 172,
+        "width": 10,
+        "x": 168.27,
+        "y": 78.2,
+      },
+      "depth": 0,
+      "id": "activation-0",
+      "participant": "M",
+    },
+    {
+      "box": {
+        "height": 32,
+        "width": 10,
+        "x": 347.73,
+        "y": 110.2,
+      },
+      "depth": 0,
+      "id": "activation-1",
+      "participant": "A",
+    },
+    {
+      "box": {
+        "height": 72,
+        "width": 10,
+        "x": 173.27,
+        "y": 146.2,
+      },
+      "depth": 1,
+      "id": "activation-2",
+      "participant": "M",
+    },
+  ],
+  "family": "sequence",
+  "frames": [],
+  "kind": "sequence",
+  "messages": [
+    {
+      "arrow": "arrow",
+      "arrowD": "M168.27,78.2L159.27,81.2L159.27,75.2Z",
+      "d": "M43.81,78.2L159.27,78.2",
+      "id": "message-0",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "1 publish_spec",
+          ],
+          "width": 82.72,
+        },
+        "x": 106.04,
+        "y": 65.8,
+      },
+      "line": "solid",
+      "points": [
+        {
+          "x": 43.81,
+          "y": 78.2,
+        },
+        {
+          "x": 168.27,
+          "y": 78.2,
+        },
+      ],
+      "reversed": false,
+      "self": false,
+      "source": "C",
+      "span": {
+        "column": 3,
+        "length": 20,
+        "line": 6,
+        "offset": 120,
+      },
+      "target": "M",
+    },
+    {
+      "arrow": "arrow",
+      "arrowD": "M347.73,110.2L338.73,113.2L338.73,107.2Z",
+      "d": "M178.27,110.2L338.73,110.2",
+      "id": "message-1",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "2 verify bearer token",
+          ],
+          "width": 118.77,
+        },
+        "x": 263,
+        "y": 97.8,
+      },
+      "line": "solid",
+      "points": [
+        {
+          "x": 178.27,
+          "y": 110.2,
+        },
+        {
+          "x": 347.73,
+          "y": 110.2,
+        },
+      ],
+      "reversed": false,
+      "self": false,
+      "source": "M",
+      "span": {
+        "column": 3,
+        "length": 27,
+        "line": 7,
+        "offset": 143,
+      },
+      "target": "A",
+    },
+    {
+      "arrow": "arrow",
+      "arrowD": "M178.27,142.2L187.27,139.2L187.27,145.2Z",
+      "d": "M347.73,142.2L187.27,142.2",
+      "id": "message-2",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "3 token claims",
+          ],
+          "width": 82.65,
+        },
+        "x": 263,
+        "y": 129.8,
+      },
+      "line": "dotted",
+      "points": [
+        {
+          "x": 347.73,
+          "y": 142.2,
+        },
+        {
+          "x": 178.27,
+          "y": 142.2,
+        },
+      ],
+      "reversed": true,
+      "self": false,
+      "source": "A",
+      "span": {
+        "column": 3,
+        "length": 21,
+        "line": 8,
+        "offset": 173,
+      },
+      "target": "M",
+    },
+    {
+      "arrow": "arrow",
+      "arrowD": "M183.27,214.2L192.27,211.2L192.27,217.2Z",
+      "d": "M183.27,178.2L213.27,178.2Q219.27,178.2 219.27,184.2L219.27,208.2Q219.27,214.2 213.27,214.2L192.27,214.2",
+      "id": "message-3",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "4 validate spec",
+          ],
+          "width": 86.78,
+        },
+        "x": 266.66,
+        "y": 196.2,
+      },
+      "line": "solid",
+      "points": [
+        {
+          "x": 183.27,
+          "y": 178.2,
+        },
+        {
+          "x": 219.27,
+          "y": 178.2,
+        },
+        {
+          "x": 219.27,
+          "y": 214.2,
+        },
+        {
+          "x": 183.27,
+          "y": 214.2,
+        },
+      ],
+      "reversed": false,
+      "self": true,
+      "source": "M",
+      "span": {
+        "column": 3,
+        "length": 20,
+        "line": 10,
+        "offset": 210,
+      },
+      "target": "M",
+    },
+    {
+      "arrow": "arrow",
+      "arrowD": "M43.81,250.2L52.81,247.2L52.81,253.2Z",
+      "d": "M168.27,250.2L52.81,250.2",
+      "id": "message-4",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "5 artifact url",
+          ],
+          "width": 68.88,
+        },
+        "x": 106.04,
+        "y": 237.8,
+      },
+      "line": "dotted",
+      "points": [
+        {
+          "x": 168.27,
+          "y": 250.2,
+        },
+        {
+          "x": 43.81,
+          "y": 250.2,
+        },
+      ],
+      "reversed": true,
+      "self": false,
+      "source": "M",
+      "span": {
+        "column": 3,
+        "length": 21,
+        "line": 12,
+        "offset": 248,
+      },
+      "target": "C",
+    },
+  ],
+  "notes": [],
+  "participants": [
+    {
+      "actor": false,
+      "box": {
+        "height": 38.2,
+        "width": 71.62,
+        "x": 8,
+        "y": 8,
+      },
+      "footer": {
+        "height": 38.2,
+        "width": 71.62,
+        "x": 8,
+        "y": 266.2,
+      },
+      "id": "C",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "Claude",
+        ],
+        "width": 43.62,
+      },
+      "lifeline": {
+        "y1": 46.2,
+        "y2": 266.2,
+      },
+      "span": {
+        "column": 3,
+        "length": 23,
+        "line": 3,
+        "offset": 31,
+      },
+      "x": 43.81,
+    },
+    {
+      "actor": false,
+      "box": {
+        "height": 38.2,
+        "width": 115.3,
+        "x": 115.62,
+        "y": 8,
+      },
+      "footer": {
+        "height": 38.2,
+        "width": 115.3,
+        "x": 115.62,
+        "y": 266.2,
+      },
+      "id": "M",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "MCP endpoint",
+        ],
+        "width": 87.3,
+      },
+      "lifeline": {
+        "y1": 46.2,
+        "y2": 266.2,
+      },
+      "span": {
+        "column": 3,
+        "length": 29,
+        "line": 4,
+        "offset": 57,
+      },
+      "x": 173.27,
+    },
+    {
+      "actor": false,
+      "box": {
+        "height": 38.2,
+        "width": 97.36,
+        "x": 304.06,
+        "y": 8,
+      },
+      "footer": {
+        "height": 38.2,
+        "width": 97.36,
+        "x": 304.06,
+        "y": 266.2,
+      },
+      "id": "A",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "Better Auth",
+        ],
+        "width": 69.36,
+      },
+      "lifeline": {
+        "y1": 46.2,
+        "y2": 266.2,
+      },
+      "span": {
+        "column": 3,
+        "length": 28,
+        "line": 5,
+        "offset": 89,
+      },
+      "x": 352.73,
+    },
+  ],
+  "size": {
+    "height": 312.4,
+    "width": 409.41,
+  },
+}
+`;
+
+exports[`sequence layout > 'sequence-basic' matches its golden scene 1`] = `
+{
+  "activations": [],
+  "family": "sequence",
+  "frames": [],
+  "kind": "sequence",
+  "messages": [
+    {
+      "arrow": "arrow",
+      "arrowD": "M173.27,78.2L164.27,81.2L164.27,75.2Z",
+      "d": "M43.81,78.2L164.27,78.2",
+      "id": "message-0",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "publish_spec",
+          ],
+          "width": 74.46,
+        },
+        "x": 108.54,
+        "y": 65.8,
+      },
+      "line": "solid",
+      "points": [
+        {
+          "x": 43.81,
+          "y": 78.2,
+        },
+        {
+          "x": 173.27,
+          "y": 78.2,
+        },
+      ],
+      "reversed": false,
+      "self": false,
+      "source": "C",
+      "span": {
+        "column": 3,
+        "length": 19,
+        "line": 5,
+        "offset": 90,
+      },
+      "target": "M",
+    },
+    {
+      "arrow": "arrow",
+      "arrowD": "M43.81,110.2L52.81,107.2L52.81,113.2Z",
+      "d": "M173.27,110.2L52.81,110.2",
+      "id": "message-1",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "artifact url",
+          ],
+          "width": 58.38,
+        },
+        "x": 108.54,
+        "y": 97.8,
+      },
+      "line": "dotted",
+      "points": [
+        {
+          "x": 173.27,
+          "y": 110.2,
+        },
+        {
+          "x": 43.81,
+          "y": 110.2,
+        },
+      ],
+      "reversed": true,
+      "self": false,
+      "source": "M",
+      "span": {
+        "column": 3,
+        "length": 20,
+        "line": 6,
+        "offset": 112,
+      },
+      "target": "C",
+    },
+    {
+      "arrow": "async",
+      "arrowD": "M164.27,145.2L173.27,142.2L164.27,139.2",
+      "d": "M43.81,142.2L173.27,142.2",
+      "id": "message-2",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "fire and forget",
+          ],
+          "width": 81.27,
+        },
+        "x": 108.54,
+        "y": 129.8,
+      },
+      "line": "solid",
+      "points": [
+        {
+          "x": 43.81,
+          "y": 142.2,
+        },
+        {
+          "x": 173.27,
+          "y": 142.2,
+        },
+      ],
+      "reversed": false,
+      "self": false,
+      "source": "C",
+      "span": {
+        "column": 3,
+        "length": 21,
+        "line": 7,
+        "offset": 135,
+      },
+      "target": "M",
+    },
+    {
+      "arrow": "cross",
+      "arrowD": "M43.81,170.2L51.81,178.2M43.81,178.2L51.81,170.2",
+      "d": "M173.27,174.2L51.81,174.2",
+      "id": "message-3",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "dropped",
+          ],
+          "width": 48.12,
+        },
+        "x": 108.54,
+        "y": 161.8,
+      },
+      "line": "dotted",
+      "points": [
+        {
+          "x": 173.27,
+          "y": 174.2,
+        },
+        {
+          "x": 43.81,
+          "y": 174.2,
+        },
+      ],
+      "reversed": true,
+      "self": false,
+      "source": "M",
+      "span": {
+        "column": 3,
+        "length": 14,
+        "line": 8,
+        "offset": 159,
+      },
+      "target": "C",
+    },
+    {
+      "arrow": "none",
+      "d": "M43.81,206.2L173.27,206.2",
+      "id": "message-4",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "no head at all",
+          ],
+          "width": 76.64,
+        },
+        "x": 108.54,
+        "y": 193.8,
+      },
+      "line": "solid",
+      "points": [
+        {
+          "x": 43.81,
+          "y": 206.2,
+        },
+        {
+          "x": 173.27,
+          "y": 206.2,
+        },
+      ],
+      "reversed": false,
+      "self": false,
+      "source": "C",
+      "span": {
+        "column": 3,
+        "length": 20,
+        "line": 9,
+        "offset": 176,
+      },
+      "target": "M",
+    },
+    {
+      "arrow": "arrow",
+      "arrowD": "M301.3,274.2L310.3,271.2L310.3,277.2Z",
+      "d": "M301.3,238.2L331.3,238.2Q337.3,238.2 337.3,244.2L337.3,268.2Q337.3,274.2 331.3,274.2L310.3,274.2",
+      "id": "message-5",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "reads the gallery",
+          ],
+          "width": 95.73,
+        },
+        "x": 389.16,
+        "y": 256.2,
+      },
+      "line": "solid",
+      "points": [
+        {
+          "x": 301.3,
+          "y": 238.2,
+        },
+        {
+          "x": 337.3,
+          "y": 238.2,
+        },
+        {
+          "x": 337.3,
+          "y": 274.2,
+        },
+        {
+          "x": 301.3,
+          "y": 274.2,
+        },
+      ],
+      "reversed": false,
+      "self": true,
+      "source": "Owner",
+      "span": {
+        "column": 3,
+        "length": 32,
+        "line": 10,
+        "offset": 199,
+      },
+      "target": "Owner",
+    },
+  ],
+  "notes": [],
+  "participants": [
+    {
+      "actor": false,
+      "box": {
+        "height": 38.2,
+        "width": 71.62,
+        "x": 8,
+        "y": 8,
+      },
+      "footer": {
+        "height": 38.2,
+        "width": 71.62,
+        "x": 8,
+        "y": 290.2,
+      },
+      "id": "C",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "Claude",
+        ],
+        "width": 43.62,
+      },
+      "lifeline": {
+        "y1": 46.2,
+        "y2": 290.2,
+      },
+      "span": {
+        "column": 3,
+        "length": 23,
+        "line": 2,
+        "offset": 18,
+      },
+      "x": 43.81,
+    },
+    {
+      "actor": false,
+      "box": {
+        "height": 38.2,
+        "width": 115.3,
+        "x": 115.62,
+        "y": 8,
+      },
+      "footer": {
+        "height": 38.2,
+        "width": 115.3,
+        "x": 115.62,
+        "y": 290.2,
+      },
+      "id": "M",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "MCP endpoint",
+        ],
+        "width": 87.3,
+      },
+      "lifeline": {
+        "y1": 46.2,
+        "y2": 290.2,
+      },
+      "span": {
+        "column": 3,
+        "length": 29,
+        "line": 3,
+        "offset": 44,
+      },
+      "x": 173.27,
+    },
+    {
+      "actor": true,
+      "box": {
+        "height": 38.2,
+        "width": 68.76,
+        "x": 266.92,
+        "y": 8,
+      },
+      "footer": {
+        "height": 38.2,
+        "width": 68.76,
+        "x": 266.92,
+        "y": 290.2,
+      },
+      "id": "Owner",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "Owner",
+        ],
+        "width": 40.76,
+      },
+      "lifeline": {
+        "y1": 46.2,
+        "y2": 290.2,
+      },
+      "span": {
+        "column": 3,
+        "length": 11,
+        "line": 4,
+        "offset": 76,
+      },
+      "x": 301.3,
+    },
+  ],
+  "size": {
+    "height": 336.4,
+    "width": 449.03,
+  },
+}
+`;
+
+exports[`sequence layout > 'sequence-degenerate' matches its golden scene 1`] = `
+{
+  "activations": [
+    {
+      "box": {
+        "height": 16,
+        "width": 10,
+        "x": 94.23,
+        "y": 114.2,
+      },
+      "depth": 0,
+      "id": "activation-0",
+      "participant": "B",
+    },
+  ],
+  "family": "sequence",
+  "frames": [],
+  "kind": "sequence",
+  "messages": [
+    {
+      "arrow": "arrow",
+      "arrowD": "M99.23,78.2L90.23,81.2L90.23,75.2Z",
+      "d": "M26.49,78.2L90.23,78.2",
+      "id": "message-0",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "10",
+          ],
+          "width": 12.45,
+        },
+        "x": 62.86,
+        "y": 65.8,
+      },
+      "line": "solid",
+      "points": [
+        {
+          "x": 26.49,
+          "y": 78.2,
+        },
+        {
+          "x": 99.23,
+          "y": 78.2,
+        },
+      ],
+      "reversed": false,
+      "self": false,
+      "source": "A",
+      "span": {
+        "column": 3,
+        "length": 6,
+        "line": 3,
+        "offset": 36,
+      },
+      "target": "B",
+    },
+    {
+      "arrow": "arrow",
+      "arrowD": "M26.49,110.2L35.49,107.2L35.49,113.2Z",
+      "d": "M99.23,110.2L35.49,110.2",
+      "id": "message-1",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "15 back",
+          ],
+          "width": 42.93,
+        },
+        "x": 62.86,
+        "y": 97.8,
+      },
+      "line": "solid",
+      "points": [
+        {
+          "x": 99.23,
+          "y": 110.2,
+        },
+        {
+          "x": 26.49,
+          "y": 110.2,
+        },
+      ],
+      "reversed": true,
+      "self": false,
+      "source": "B",
+      "span": {
+        "column": 3,
+        "length": 11,
+        "line": 4,
+        "offset": 45,
+      },
+      "target": "A",
+    },
+  ],
+  "notes": [],
+  "participants": [
+    {
+      "actor": false,
+      "box": {
+        "height": 38.2,
+        "width": 36.98,
+        "x": 8,
+        "y": 8,
+      },
+      "footer": {
+        "height": 38.2,
+        "width": 36.98,
+        "x": 8,
+        "y": 130.2,
+      },
+      "id": "A",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "A",
+        ],
+        "width": 8.98,
+      },
+      "lifeline": {
+        "y1": 46.2,
+        "y2": 130.2,
+      },
+      "span": {
+        "column": 3,
+        "length": 6,
+        "line": 3,
+        "offset": 36,
+      },
+      "x": 26.49,
+    },
+    {
+      "actor": false,
+      "box": {
+        "height": 38.2,
+        "width": 36.51,
+        "x": 80.98,
+        "y": 8,
+      },
+      "footer": {
+        "height": 38.2,
+        "width": 36.51,
+        "x": 80.98,
+        "y": 130.2,
+      },
+      "id": "B",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "B",
+        ],
+        "width": 8.51,
+      },
+      "lifeline": {
+        "y1": 46.2,
+        "y2": 130.2,
+      },
+      "span": {
+        "column": 3,
+        "length": 6,
+        "line": 3,
+        "offset": 36,
+      },
+      "x": 99.23,
+    },
+  ],
+  "size": {
+    "height": 176.4,
+    "width": 125.48,
+  },
+}
+`;
+
+exports[`sequence layout > 'sequence-frames' matches its golden scene 1`] = `
+{
+  "activations": [],
+  "family": "sequence",
+  "frames": [
+    {
+      "box": {
+        "height": 336.8,
+        "width": 295.42,
+        "x": 24.81,
+        "y": 54.2,
+      },
+      "depth": 0,
+      "id": "frame-0",
+      "kind": "loop",
+      "label": {
+        "box": {
+          "baseline": 13.78,
+          "height": 18.2,
+          "lineHeight": 18.2,
+          "lines": [
+            "every publish",
+          ],
+          "width": 83.25,
+        },
+        "x": 117.58,
+        "y": 67.3,
+      },
+      "sections": [],
+      "span": {
+        "column": 3,
+        "length": 18,
+        "line": 5,
+        "offset": 102,
+      },
+      "tab": {
+        "height": 26.2,
+        "width": 43.14,
+        "x": 24.81,
+        "y": 54.2,
+      },
+      "title": {
+        "box": {
+          "baseline": 13.78,
+          "height": 18.2,
+          "lineHeight": 18.2,
+          "lines": [
+            "loop",
+          ],
+          "width": 27.14,
+        },
+        "x": 46.38,
+        "y": 67.3,
+      },
+    },
+    {
+      "box": {
+        "height": 172.4,
+        "width": 289.42,
+        "x": 27.81,
+        "y": 128.4,
+      },
+      "depth": 1,
+      "id": "frame-1",
+      "kind": "alt",
+      "label": {
+        "box": {
+          "baseline": 13.78,
+          "height": 18.2,
+          "lineHeight": 18.2,
+          "lines": [
+            "token valid",
+          ],
+          "width": 67.44,
+        },
+        "x": 100.68,
+        "y": 141.5,
+      },
+      "sections": [
+        {
+          "label": {
+            "box": {
+              "baseline": 13.78,
+              "height": 18.2,
+              "lineHeight": 18.2,
+              "lines": [
+                "expired",
+              ],
+              "width": 46.24,
+            },
+            "x": 58.93,
+            "y": 247.7,
+          },
+          "y": 234.6,
+        },
+      ],
+      "span": {
+        "column": 5,
+        "length": 15,
+        "line": 7,
+        "offset": 153,
+      },
+      "tab": {
+        "height": 26.2,
+        "width": 31.15,
+        "x": 27.81,
+        "y": 128.4,
+      },
+      "title": {
+        "box": {
+          "baseline": 13.78,
+          "height": 18.2,
+          "lineHeight": 18.2,
+          "lines": [
+            "alt",
+          ],
+          "width": 15.15,
+        },
+        "x": 43.39,
+        "y": 141.5,
+      },
+    },
+    {
+      "box": {
+        "height": 74.2,
+        "width": 159.96,
+        "x": 157.27,
+        "y": 308.8,
+      },
+      "depth": 1,
+      "id": "frame-2",
+      "kind": "opt",
+      "label": {
+        "box": {
+          "baseline": 13.78,
+          "height": 18.2,
+          "lineHeight": 18.2,
+          "lines": [
+            "tags supplied",
+          ],
+          "width": 82.82,
+        },
+        "x": 242.7,
+        "y": 321.9,
+      },
+      "sections": [],
+      "span": {
+        "column": 5,
+        "length": 17,
+        "line": 13,
+        "offset": 278,
+      },
+      "tab": {
+        "height": 26.2,
+        "width": 36.02,
+        "x": 157.27,
+        "y": 308.8,
+      },
+      "title": {
+        "box": {
+          "baseline": 13.78,
+          "height": 18.2,
+          "lineHeight": 18.2,
+          "lines": [
+            "opt",
+          ],
+          "width": 20.02,
+        },
+        "x": 175.28,
+        "y": 321.9,
+      },
+    },
+    {
+      "box": {
+        "height": 140.4,
+        "width": 289.42,
+        "x": 27.81,
+        "y": 399,
+      },
+      "depth": 0,
+      "id": "frame-3",
+      "kind": "par",
+      "label": {
+        "box": {
+          "baseline": 13.78,
+          "height": 18.2,
+          "lineHeight": 18.2,
+          "lines": [
+            "notify",
+          ],
+          "width": 35.02,
+        },
+        "x": 89.48,
+        "y": 412.1,
+      },
+      "sections": [
+        {
+          "label": {
+            "box": {
+              "baseline": 13.78,
+              "height": 18.2,
+              "lineHeight": 18.2,
+              "lines": [
+                "index",
+              ],
+              "width": 33.48,
+            },
+            "x": 52.55,
+            "y": 486.3,
+          },
+          "y": 473.2,
+        },
+      ],
+      "span": {
+        "column": 3,
+        "length": 10,
+        "line": 17,
+        "offset": 337,
+      },
+      "tab": {
+        "height": 26.2,
+        "width": 36.16,
+        "x": 27.81,
+        "y": 399,
+      },
+      "title": {
+        "box": {
+          "baseline": 13.78,
+          "height": 18.2,
+          "lineHeight": 18.2,
+          "lines": [
+            "par",
+          ],
+          "width": 20.16,
+        },
+        "x": 45.89,
+        "y": 412.1,
+      },
+    },
+  ],
+  "kind": "sequence",
+  "messages": [
+    {
+      "arrow": "arrow",
+      "arrowD": "M173.27,120.4L164.27,123.4L164.27,117.4Z",
+      "d": "M43.81,120.4L164.27,120.4",
+      "id": "message-0",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "publish_markdown",
+          ],
+          "width": 106.75,
+        },
+        "x": 108.54,
+        "y": 108,
+      },
+      "line": "solid",
+      "points": [
+        {
+          "x": 43.81,
+          "y": 120.4,
+        },
+        {
+          "x": 173.27,
+          "y": 120.4,
+        },
+      ],
+      "reversed": false,
+      "self": false,
+      "source": "C",
+      "span": {
+        "column": 5,
+        "length": 23,
+        "line": 6,
+        "offset": 125,
+      },
+      "target": "M",
+    },
+    {
+      "arrow": "arrow",
+      "arrowD": "M301.24,194.6L292.24,197.6L292.24,191.6Z",
+      "d": "M173.27,194.6L292.24,194.6",
+      "id": "message-1",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "insert version",
+          ],
+          "width": 76.98,
+        },
+        "x": 237.25,
+        "y": 182.2,
+      },
+      "line": "solid",
+      "points": [
+        {
+          "x": 173.27,
+          "y": 194.6,
+        },
+        {
+          "x": 301.24,
+          "y": 194.6,
+        },
+      ],
+      "reversed": false,
+      "self": false,
+      "source": "M",
+      "span": {
+        "column": 7,
+        "length": 21,
+        "line": 8,
+        "offset": 175,
+      },
+      "target": "D",
+    },
+    {
+      "arrow": "arrow",
+      "arrowD": "M173.27,226.6L182.27,223.6L182.27,229.6Z",
+      "d": "M301.24,226.6L182.27,226.6",
+      "id": "message-2",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "row id",
+          ],
+          "width": 35.17,
+        },
+        "x": 237.25,
+        "y": 214.2,
+      },
+      "line": "dotted",
+      "points": [
+        {
+          "x": 301.24,
+          "y": 226.6,
+        },
+        {
+          "x": 173.27,
+          "y": 226.6,
+        },
+      ],
+      "reversed": true,
+      "self": false,
+      "source": "D",
+      "span": {
+        "column": 7,
+        "length": 14,
+        "line": 9,
+        "offset": 203,
+      },
+      "target": "M",
+    },
+    {
+      "arrow": "arrow",
+      "arrowD": "M43.81,292.8L52.81,289.8L52.81,295.8Z",
+      "d": "M173.27,292.8L52.81,292.8",
+      "id": "message-3",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "401 unauthorized",
+          ],
+          "width": 98.24,
+        },
+        "x": 108.54,
+        "y": 280.4,
+      },
+      "line": "dotted",
+      "points": [
+        {
+          "x": 173.27,
+          "y": 292.8,
+        },
+        {
+          "x": 43.81,
+          "y": 292.8,
+        },
+      ],
+      "reversed": true,
+      "self": false,
+      "source": "M",
+      "span": {
+        "column": 7,
+        "length": 24,
+        "line": 11,
+        "offset": 241,
+      },
+      "target": "C",
+    },
+    {
+      "arrow": "arrow",
+      "arrowD": "M301.24,375L292.24,378L292.24,372Z",
+      "d": "M173.27,375L292.24,375",
+      "id": "message-4",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "upsert tags",
+          ],
+          "width": 63.99,
+        },
+        "x": 237.25,
+        "y": 362.6,
+      },
+      "line": "solid",
+      "points": [
+        {
+          "x": 173.27,
+          "y": 375,
+        },
+        {
+          "x": 301.24,
+          "y": 375,
+        },
+      ],
+      "reversed": false,
+      "self": false,
+      "source": "M",
+      "span": {
+        "column": 7,
+        "length": 18,
+        "line": 14,
+        "offset": 302,
+      },
+      "target": "D",
+    },
+    {
+      "arrow": "arrow",
+      "arrowD": "M43.81,465.2L52.81,462.2L52.81,468.2Z",
+      "d": "M173.27,465.2L52.81,465.2",
+      "id": "message-5",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "artifact url",
+          ],
+          "width": 58.38,
+        },
+        "x": 108.54,
+        "y": 452.8,
+      },
+      "line": "dotted",
+      "points": [
+        {
+          "x": 173.27,
+          "y": 465.2,
+        },
+        {
+          "x": 43.81,
+          "y": 465.2,
+        },
+      ],
+      "reversed": true,
+      "self": false,
+      "source": "M",
+      "span": {
+        "column": 5,
+        "length": 20,
+        "line": 18,
+        "offset": 352,
+      },
+      "target": "C",
+    },
+    {
+      "arrow": "arrow",
+      "arrowD": "M301.24,531.4L292.24,534.4L292.24,528.4Z",
+      "d": "M173.27,531.4L292.24,531.4",
+      "id": "message-6",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "refresh search",
+          ],
+          "width": 82.86,
+        },
+        "x": 237.25,
+        "y": 519,
+      },
+      "line": "solid",
+      "points": [
+        {
+          "x": 173.27,
+          "y": 531.4,
+        },
+        {
+          "x": 301.24,
+          "y": 531.4,
+        },
+      ],
+      "reversed": false,
+      "self": false,
+      "source": "M",
+      "span": {
+        "column": 5,
+        "length": 21,
+        "line": 20,
+        "offset": 389,
+      },
+      "target": "D",
+    },
+  ],
+  "notes": [],
+  "participants": [
+    {
+      "actor": false,
+      "box": {
+        "height": 38.2,
+        "width": 71.62,
+        "x": 8,
+        "y": 8,
+      },
+      "footer": {
+        "height": 38.2,
+        "width": 71.62,
+        "x": 8,
+        "y": 555.4,
+      },
+      "id": "C",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "Claude",
+        ],
+        "width": 43.62,
+      },
+      "lifeline": {
+        "y1": 46.2,
+        "y2": 555.4,
+      },
+      "span": {
+        "column": 3,
+        "length": 23,
+        "line": 2,
+        "offset": 18,
+      },
+      "x": 43.81,
+    },
+    {
+      "actor": false,
+      "box": {
+        "height": 38.2,
+        "width": 115.3,
+        "x": 115.62,
+        "y": 8,
+      },
+      "footer": {
+        "height": 38.2,
+        "width": 115.3,
+        "x": 115.62,
+        "y": 555.4,
+      },
+      "id": "M",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "MCP endpoint",
+        ],
+        "width": 87.3,
+      },
+      "lifeline": {
+        "y1": 46.2,
+        "y2": 555.4,
+      },
+      "span": {
+        "column": 3,
+        "length": 29,
+        "line": 3,
+        "offset": 44,
+      },
+      "x": 173.27,
+    },
+    {
+      "actor": false,
+      "box": {
+        "height": 38.2,
+        "width": 68.63,
+        "x": 266.92,
+        "y": 8,
+      },
+      "footer": {
+        "height": 38.2,
+        "width": 68.63,
+        "x": 266.92,
+        "y": 555.4,
+      },
+      "id": "D",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "SQLite",
+        ],
+        "width": 40.63,
+      },
+      "lifeline": {
+        "y1": 46.2,
+        "y2": 555.4,
+      },
+      "span": {
+        "column": 3,
+        "length": 23,
+        "line": 4,
+        "offset": 76,
+      },
+      "x": 301.24,
+    },
+  ],
+  "size": {
+    "height": 601.6,
+    "width": 343.55,
+  },
+}
+`;
+
+exports[`sequence layout > 'sequence-notes' matches its golden scene 1`] = `
+{
+  "activations": [],
+  "family": "sequence",
+  "frames": [],
+  "kind": "sequence",
+  "messages": [
+    {
+      "arrow": "arrow",
+      "arrowD": "M307.83,132.4L298.83,135.4L298.83,129.4Z",
+      "d": "M142.94,132.4L298.83,132.4",
+      "id": "message-0",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "publish_html",
+          ],
+          "width": 71.77,
+        },
+        "x": 225.38,
+        "y": 120,
+      },
+      "line": "solid",
+      "points": [
+        {
+          "x": 142.94,
+          "y": 132.4,
+        },
+        {
+          "x": 307.83,
+          "y": 132.4,
+        },
+      ],
+      "reversed": false,
+      "self": false,
+      "source": "C",
+      "span": {
+        "column": 3,
+        "length": 19,
+        "line": 5,
+        "offset": 111,
+      },
+      "target": "M",
+    },
+  ],
+  "notes": [
+    {
+      "box": {
+        "height": 38.2,
+        "width": 130.94,
+        "x": 8,
+        "y": 54.2,
+      },
+      "id": "note-0",
+      "label": {
+        "box": {
+          "baseline": 13.78,
+          "height": 18.2,
+          "lineHeight": 18.2,
+          "lines": [
+            "the model drives",
+          ],
+          "width": 102.94,
+        },
+        "x": 73.47,
+        "y": 73.3,
+      },
+      "placement": "left",
+      "span": {
+        "column": 3,
+        "length": 32,
+        "line": 4,
+        "offset": 76,
+      },
+      "targets": [
+        "C",
+      ],
+    },
+    {
+      "box": {
+        "height": 38.2,
+        "width": 170.08,
+        "x": 311.83,
+        "y": 140.4,
+      },
+      "id": "note-1",
+      "label": {
+        "box": {
+          "baseline": 13.78,
+          "height": 18.2,
+          "lineHeight": 18.2,
+          "lines": [
+            "sanitized, never inlined",
+          ],
+          "width": 142.08,
+        },
+        "x": 396.87,
+        "y": 159.5,
+      },
+      "placement": "right",
+      "span": {
+        "column": 3,
+        "length": 41,
+        "line": 6,
+        "offset": 133,
+      },
+      "targets": [
+        "M",
+      ],
+    },
+    {
+      "box": {
+        "height": 56.4,
+        "width": 192.9,
+        "x": 128.94,
+        "y": 194.6,
+      },
+      "id": "note-2",
+      "label": {
+        "box": {
+          "baseline": 13.78,
+          "height": 36.4,
+          "lineHeight": 18.2,
+          "lines": [
+            "the whole exchange is one",
+            "bearer token",
+          ],
+          "width": 164.9,
+        },
+        "x": 225.38,
+        "y": 222.8,
+      },
+      "placement": "over",
+      "span": {
+        "column": 3,
+        "length": 53,
+        "line": 7,
+        "offset": 177,
+      },
+      "targets": [
+        "C",
+        "M",
+      ],
+    },
+  ],
+  "participants": [
+    {
+      "actor": false,
+      "box": {
+        "height": 38.2,
+        "width": 71.62,
+        "x": 107.12,
+        "y": 8,
+      },
+      "footer": {
+        "height": 38.2,
+        "width": 71.62,
+        "x": 107.12,
+        "y": 275,
+      },
+      "id": "C",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "Claude",
+        ],
+        "width": 43.62,
+      },
+      "lifeline": {
+        "y1": 46.2,
+        "y2": 275,
+      },
+      "span": {
+        "column": 3,
+        "length": 23,
+        "line": 2,
+        "offset": 18,
+      },
+      "x": 142.94,
+    },
+    {
+      "actor": false,
+      "box": {
+        "height": 38.2,
+        "width": 115.3,
+        "x": 250.18,
+        "y": 8,
+      },
+      "footer": {
+        "height": 38.2,
+        "width": 115.3,
+        "x": 250.18,
+        "y": 275,
+      },
+      "id": "M",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "MCP endpoint",
+        ],
+        "width": 87.3,
+      },
+      "lifeline": {
+        "y1": 46.2,
+        "y2": 275,
+      },
+      "span": {
+        "column": 3,
+        "length": 29,
+        "line": 3,
+        "offset": 44,
+      },
+      "x": 307.83,
+    },
+  ],
+  "size": {
+    "height": 321.2,
+    "width": 489.91,
+  },
+}
+`;

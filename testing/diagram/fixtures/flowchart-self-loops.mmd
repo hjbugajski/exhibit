@@ -1,0 +1,5 @@
+flowchart TD
+  A[Watcher] --> B[Queue]
+  A --> A
+  A -->|retry| A
+  B --> B

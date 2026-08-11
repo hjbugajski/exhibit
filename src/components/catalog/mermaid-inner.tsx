@@ -8,6 +8,8 @@ import {
   ALLOWED_FAMILIES,
   buildDiagramDocument,
   DIAGRAM_TYPE_LABELS,
+  MERMAID_FONT_FAMILY,
+  MERMAID_FONT_URL,
   MERMAID_MAX_CHARS,
   MERMAID_MAX_EDGES,
   MERMAID_MAX_HEIGHT,
@@ -64,9 +66,46 @@ function buildConfig(themeVariables: Record<string, string>): MermaidConfig {
     maxTextSize: MERMAID_MAX_CHARS,
     maxEdges: MERMAID_MAX_EDGES,
     theme: 'base',
-    themeVariables,
+    // Root fontFamily seeds themeVariables.fontFamily, but the explicit entry covers the theme
+    // reading its variables before the root default is folded in.
+    fontFamily: MERMAID_FONT_FAMILY,
+    themeVariables: { ...themeVariables, fontFamily: MERMAID_FONT_FAMILY },
     secure: MERMAID_SECURE_KEYS,
   };
+}
+
+/**
+ * The app face, fetched once from this origin and delivered to the frame as a data URI (the frame
+ * itself can't fetch it — see buildDiagramDocument). Cached across diagrams and theme flips; a
+ * failed fetch resolves null (the frame falls back to system sans) and clears the cache so the
+ * next diagram retries.
+ */
+let fontPromise: Promise<string | null> | undefined;
+
+function loadFont(): Promise<string | null> {
+  fontPromise ??= (async () => {
+    try {
+      const response = await fetch(MERMAID_FONT_URL);
+
+      if (!response.ok) {
+        throw new Error(`Font fetch returned ${response.status}.`);
+      }
+
+      const blob = await response.blob();
+
+      return await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(reader.error ?? new Error('Font read failed.'));
+        reader.readAsDataURL(blob);
+      });
+    } catch {
+      fontPromise = undefined;
+      return null;
+    }
+  })();
+
+  return fontPromise;
 }
 
 function diagramTitle(code: string): string {
@@ -109,11 +148,16 @@ export default function CatalogMermaidInner({ props }: { props: Props }) {
         throw new DiagramRejected(`Only ${ALLOWED_FAMILIES} diagrams render here.`);
       }
 
-      const { svg } = await mermaid.render(renderId, code);
+      const [{ svg }, font] = await Promise.all([mermaid.render(renderId, code), loadFont()]);
       const clean = sanitizeDiagramSvg(svg);
 
       return {
-        doc: buildDiagramDocument(clean, themeVariables.background ?? 'transparent'),
+        doc: buildDiagramDocument(
+          clean,
+          themeVariables.background ?? 'transparent',
+          themeVariables.lineColor ?? 'inherit',
+          font,
+        ),
         title,
         aspectRatio: parseDiagramAspectRatio(clean),
       };

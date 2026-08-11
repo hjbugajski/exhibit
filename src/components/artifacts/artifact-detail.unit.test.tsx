@@ -110,7 +110,14 @@ describe('ArtifactDetailView', () => {
       initialEntry: '/a/fixture-id',
     });
 
-    expect(await screen.findByText('Kyoto in Three Days')).toBeTruthy();
+    /*
+     * The spec body sits behind SpecView's lazy chunk, which now evaluates the whole catalog —
+     * diagram engine included. Under a loaded parallel suite that import can outlast the 1s
+     * default, so the first lazy-content wait gets a real timeout.
+     */
+    expect(
+      await screen.findByText('Kyoto in Three Days', undefined, { timeout: 10_000 }),
+    ).toBeTruthy();
     expect(screen.getByText('Day 1 — Saturday')).toBeTruthy();
   });
 
@@ -247,7 +254,10 @@ describe('ArtifactDetailView', () => {
 
     renderDetail(detail);
 
-    expect((await screen.findByText('Trip notes')).tagName).toBe('H1');
+    // Same lazy-chunk wait as the spec fixture above, for MarkdownView.
+    expect((await screen.findByText('Trip notes', undefined, { timeout: 10_000 })).tagName).toBe(
+      'H1',
+    );
     expect(screen.getByText('train').closest('a')?.getAttribute('href')).toBe(
       'https://example.com',
     );

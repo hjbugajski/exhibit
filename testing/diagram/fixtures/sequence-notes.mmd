@@ -1,0 +1,7 @@
+sequenceDiagram
+  participant C as Claude
+  participant M as MCP endpoint
+  Note left of C: the model drives
+  C->>M: publish_html
+  Note right of M: sanitized, never inlined
+  Note over C,M: the whole exchange is one bearer token

@@ -20,8 +20,6 @@ node_modules/
 .env
 .env.*
 !.env.example
-# local planning notes, intentionally untracked (root only — src/components/docs is app code)
-/docs/
 
 # Misc
 .DS_Store

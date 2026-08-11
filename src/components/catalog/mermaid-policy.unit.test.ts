@@ -5,7 +5,9 @@ import { beforeAll, describe, expect, it, vi } from 'vitest';
 import {
   buildDiagramDocument,
   DIAGRAM_TYPE_LABELS,
+  MERMAID_THEME_TOKENS,
   parseDiagramAspectRatio,
+  readThemeVariables,
   sanitizeDiagramSvg,
 } from '@/components/catalog/mermaid-policy';
 
@@ -113,15 +115,75 @@ describe('sanitizeDiagramSvg', () => {
   });
 });
 
+describe('theme variables', () => {
+  /** A wrong variable name is ignored in silence, so the whole map is pinned rather than sampled. */
+  it('pins every mermaid variable to its house token', () => {
+    expect(MERMAID_THEME_TOKENS).toEqual({
+      background: '--mermaid-background',
+      primaryColor: '--mermaid-primary',
+      primaryTextColor: '--mermaid-primary-text',
+      primaryBorderColor: '--mermaid-primary-border',
+      secondaryColor: '--mermaid-secondary',
+      tertiaryColor: '--mermaid-tertiary',
+      lineColor: '--mermaid-line',
+      textColor: '--mermaid-text',
+      gridColor: '--mermaid-line',
+      altSectionBkgColor: '--mermaid-secondary',
+      excludeBkgColor: '--mermaid-secondary',
+      doneTaskBkgColor: '--mermaid-secondary',
+      doneTaskBorderColor: '--mermaid-primary-border',
+      vertLineColor: '--mermaid-text',
+      taskTextClickableColor: '--mermaid-text',
+    });
+  });
+
+  it('resolves each variable sharing a token and skips the ones with no value', () => {
+    const styles = {
+      getPropertyValue: (name: string) => (name === '--mermaid-line' ? ' #747474 ' : ''),
+    } as CSSStyleDeclaration;
+
+    expect(readThemeVariables(styles)).toEqual({ lineColor: '#747474', gridColor: '#747474' });
+  });
+});
+
 describe('buildDiagramDocument', () => {
   it('locks the frame down with a meta CSP and embeds the diagram', () => {
-    const doc = buildDiagramDocument('<svg viewBox="0 0 10 5"></svg>', '#131518');
+    const doc = buildDiagramDocument('<svg viewBox="0 0 10 5"></svg>', '#131518', '#747474', null);
 
     expect(doc).toContain(
-      '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'; img-src data:">',
+      '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'; img-src data:; font-src data:">',
     );
     expect(doc).toContain('<svg viewBox="0 0 10 5"></svg>');
     expect(doc).toContain('background:#131518');
+  });
+
+  // d3's axis writes stroke="currentColor" on every tick line; unset, the grid draws black.
+  it('paints the canvas foreground so currentColor line work follows the scheme', () => {
+    expect(buildDiagramDocument('<svg></svg>', '#131518', '#747474', null)).toContain(
+      'color:#747474',
+    );
+  });
+
+  // The opaque-origin frame can't load /fonts, so the app face rides along as a data URI.
+  it('embeds the app face and declares its family', () => {
+    const doc = buildDiagramDocument(
+      '<svg></svg>',
+      '#131518',
+      '#747474',
+      'data:font/woff2;base64,AA==',
+    );
+
+    expect(doc).toContain(
+      "@font-face{font-family:InterVariable;font-weight:100 900;src:url(data:font/woff2;base64,AA==) format('woff2')}",
+    );
+    expect(doc).toContain('font-family:InterVariable, sans-serif');
+  });
+
+  it('keeps the family declared when the font fetch failed', () => {
+    const doc = buildDiagramDocument('<svg></svg>', '#131518', '#747474', null);
+
+    expect(doc).not.toContain('@font-face');
+    expect(doc).toContain('font-family:InterVariable, sans-serif');
   });
 });
 

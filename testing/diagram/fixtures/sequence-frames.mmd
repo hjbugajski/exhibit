@@ -1,0 +1,21 @@
+sequenceDiagram
+  participant C as Claude
+  participant M as MCP endpoint
+  participant D as SQLite
+  loop every publish
+    C->>M: publish_markdown
+    alt token valid
+      M->>D: insert version
+      D-->>M: row id
+    else expired
+      M-->>C: 401 unauthorized
+    end
+    opt tags supplied
+      M->>D: upsert tags
+    end
+  end
+  par notify
+    M-->>C: artifact url
+  and index
+    M->>D: refresh search
+  end

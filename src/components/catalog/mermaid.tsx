@@ -3,7 +3,9 @@ import { lazy, Suspense } from 'react';
 import type { CatalogComponentProps } from '@/catalog/catalog';
 import { HighlightedCode } from '@/components/blocks/highlighted-code';
 import { flowBlock } from '@/components/catalog/flow';
+import { HouseDiagram } from '@/components/diagram/house-diagram';
 import { Skeleton } from '@/components/ui/skeleton';
+import { detectFamily } from '@/lib/diagram/detect';
 import { useNearViewport } from '@/lib/use-near-viewport';
 
 type Props = CatalogComponentProps<'Mermaid'>;
@@ -38,7 +40,12 @@ const MermaidInner = lazy(() =>
   })),
 );
 
-export function Mermaid({ props }: { props: Props }) {
+/**
+ * The stock renderer, for the families the house engine does not draw. It owns its own flow
+ * wrapper because the house path gets one from `HouseDiagram` — one rhythm class per block either
+ * way, never two nested.
+ */
+function StockMermaid({ props }: { props: Props }) {
   const { ref, mounted } = useNearViewport<HTMLDivElement>();
 
   // Also the SSR and pre-mount shape, so hydration swaps a skeleton for a skeleton.
@@ -54,5 +61,25 @@ export function Mermaid({ props }: { props: Props }) {
         fallback
       )}
     </div>
+  );
+}
+
+/**
+ * One block, two engines. The house engine draws the families it knows — flowchart, sequence,
+ * state, pie — from the same mermaid source, and it draws them eagerly: detection is a read of the
+ * header line, the layout is deterministic, and the result is house-themed SVG in the page rather
+ * than a sandboxed frame, so there is no chunk to wait for and nothing to gate on the viewport.
+ * Everything else still goes to mermaid.js on the terms it has always had.
+ *
+ * Detection is a claim on the header, not a promise about the body, so the fork is not one-way: a
+ * source the house engine claims and then cannot draw — nested past a limit, too many edges to
+ * route — goes to mermaid.js after all rather than degrading to source, because that is the
+ * drawing the publisher got before this block had two engines.
+ */
+export function Mermaid({ props }: { props: Props }) {
+  return detectFamily(props.code) ? (
+    <HouseDiagram source={props.code} fallback={<StockMermaid props={props} />} />
+  ) : (
+    <StockMermaid props={props} />
   );
 }

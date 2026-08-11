@@ -1,0 +1,809 @@
+/*
+ * The diagram stylesheet. This file is the *only* place a diagram's appearance is decided — the
+ * renderer emits `data-part` and author intent, never a paint attribute — so a theme flip repaints
+ * with no re-render and no re-layout.
+ *
+ * Four override tiers, cheapest first:
+ *   0. nothing. Every declaration bottoms out at `currentColor` / `transparent`, so an unstyled
+ *      diagram is a legible monochrome line drawing. That is the honesty check for tier 1.
+ *   1. the `--diagram-*` custom properties below. This is the primary surface; the repo's own
+ *      binding (styles.css, `@layer diagram.house`) is exactly one such block. That block declares
+ *      them *on* `[data-slot='diagram']`, so a re-skin has to reach the same element — pass them
+ *      through `Diagram.Root`'s `style`, or write a rule that matches the root. Setting them on an
+ *      ancestor does not work: an inherited value loses to a declaration on the element itself,
+ *      whatever the layer.
+ *   2. part selectors — `[data-part]`, plus `data-shape`, `data-line`, `data-arrow`, `data-class`,
+ *      `data-series`, `data-id`, `data-source`/`data-target`, `data-reversed`.
+ *   3. the `classNames` slot map, then the `components` registry, on `Diagram.Root`.
+ *
+ * Everything lives in `@layer diagram.library`, which styles.css orders before Tailwind's
+ * components/utilities layers — so any consumer utility class or unlayered rule wins on its own,
+ * with no `!important` anywhere.
+ *
+ * Hover is plain CSS, never React state: a `useState` hover on a 400-node diagram would re-render
+ * the whole drawing on every pointer move.
+ */
+
+@layer diagram.library {
+  [data-slot='diagram'] {
+    /* Typography is written inline by Diagram.Root from the same metrics layout measured with;
+       these are the fallbacks for a bare SVG outside a Root. */
+    --diagram-font-family: inherit;
+    --diagram-font-size: 13px;
+    --diagram-font-weight: 400;
+    --diagram-line-height: 1.4;
+    --diagram-letter-spacing: 0;
+    /* Three measured roles, three sizes. Retune them here and the drawing changes size but not
+       shape; retune them in `metrics` and the layout follows. Weight is deliberately not a role:
+       the shipped advance table is a 400 table. */
+    --diagram-edge-font-size: 12px;
+    --diagram-cluster-label-font-size: 11px;
+    --diagram-cluster-label-letter-spacing: 0.22px;
+    --diagram-stroke-width: 1.5px;
+    --diagram-max-block-size: 40rem;
+
+    --diagram-node-fill: transparent;
+    --diagram-node-fill-hover: var(--diagram-node-fill);
+    --diagram-node-stroke: currentColor;
+    --diagram-node-text: currentColor;
+
+    --diagram-cluster-fill: transparent;
+    /* Inherited by everything below depth 1, so the ramp is one step deep however far nesting
+       goes — three visibly different greys stacked inside each other is noise, not structure. */
+    --diagram-cluster-fill-nested: var(--diagram-cluster-fill);
+    --diagram-cluster-stroke: currentColor;
+    --diagram-cluster-text: currentColor;
+    /* The title plate masks the edges that cross the cluster border, so it defaults to whatever the
+       box behind it is filled with. */
+    --diagram-cluster-label-fill: var(--diagram-cluster-fill);
+
+    --diagram-edge-stroke: currentColor;
+    --diagram-edge-text: currentColor;
+    --diagram-edge-label-fill: transparent;
+    /* True dots: a round cap grows each dash by one stroke width, so a dash near zero against a
+       generous gap is what reads as dotted rather than as a lumpy solid. Expressed against the
+       stroke so retuning `metrics.strokeWidth` keeps the rhythm; `1 5` at the 1.5px default. */
+    --diagram-dash-pattern: calc(var(--diagram-stroke-width) * 0.667)
+      calc(var(--diagram-stroke-width) * 3.333);
+    --diagram-thick-width: calc(var(--diagram-stroke-width) * 2);
+
+    --diagram-arrow-fill: currentColor;
+    --diagram-arrow-stroke: currentColor;
+    --diagram-arrow-open-fill: transparent;
+
+    --diagram-marker-fill: currentColor;
+    --diagram-note-fill: transparent;
+    --diagram-note-stroke: currentColor;
+    --diagram-note-text: currentColor;
+
+    --diagram-participant-fill: transparent;
+    --diagram-participant-stroke: currentColor;
+    --diagram-participant-text: currentColor;
+    --diagram-lifeline-stroke: currentColor;
+    --diagram-lifeline-dash: 3 4;
+    --diagram-activation-fill: transparent;
+    --diagram-activation-stroke: currentColor;
+    --diagram-message-stroke: currentColor;
+    --diagram-message-text: currentColor;
+    --diagram-message-label-fill: transparent;
+    --diagram-frame-fill: transparent;
+    --diagram-frame-stroke: currentColor;
+    --diagram-frame-text: currentColor;
+    --diagram-frame-tab-fill: transparent;
+
+    --diagram-slice-stroke: currentColor;
+    --diagram-slice-text: currentColor;
+    --diagram-series-1: transparent;
+    --diagram-series-2: transparent;
+    --diagram-series-3: transparent;
+    --diagram-series-4: transparent;
+    --diagram-series-5: transparent;
+    --diagram-series-6: transparent;
+    --diagram-series-7: transparent;
+    --diagram-series-8: transparent;
+
+    --diagram-legend-text: currentColor;
+    --diagram-legend-value-text: var(--diagram-legend-text);
+    --diagram-legend-swatch-radius: 2px;
+    --diagram-issue-text: currentColor;
+    --diagram-issue-error-text: var(--diagram-issue-text);
+    --diagram-issue-warning-text: var(--diagram-issue-text);
+    --diagram-issue-marker: currentColor;
+    --diagram-issue-code-text: var(--diagram-issue-text);
+    --diagram-issue-code-fill: transparent;
+    --diagram-issue-code-font: ui-monospace, monospace;
+
+    --diagram-canvas-fill: transparent;
+    --diagram-canvas-border: currentColor;
+    --diagram-canvas-radius: 0;
+    --diagram-canvas-block-size: 28rem;
+    --diagram-canvas-dot: currentColor;
+    /* Dot radius, constant in screen px; the gap is canvas units at k = 1. */
+    --diagram-canvas-dot-size: 1px;
+    --diagram-canvas-dot-gap: 20px;
+    --diagram-canvas-ring: currentColor;
+    --diagram-canvas-border-focus: var(--diagram-canvas-border);
+    --diagram-canvas-control-fill: transparent;
+    --diagram-canvas-control-fill-hover: transparent;
+    --diagram-canvas-control-border: currentColor;
+    --diagram-canvas-control-text: currentColor;
+
+    margin: 0;
+  }
+
+  /* fit=scale: the viewBox does the work, shrinking only — `--diagram-scene-inline-size` is the
+     drawing's own width, written by `Diagram.Root`, so a small graph in a wide column keeps the
+     type size layout measured instead of being blown up, and centres in the leftover room. Capped
+     in the block axis so a tall diagram cannot take over the page; `meet` letterboxes there rather
+     than distorting, which is the intended trade.
+     fit=scroll: natural size, the figure scrolls. */
+  [data-slot='diagram'] [data-part='svg'] {
+    display: block;
+    overflow: visible;
+  }
+
+  [data-slot='diagram'][data-fit='scale'] [data-part='svg'] {
+    width: 100%;
+    height: auto;
+    max-inline-size: var(--diagram-scene-inline-size, none);
+    max-block-size: var(--diagram-max-block-size);
+    margin-inline: auto;
+  }
+
+  [data-slot='diagram'][data-fit='scroll'] {
+    overflow-x: auto;
+  }
+
+  [data-slot='diagram'] [data-part='svg'] text {
+    font-family: var(--diagram-font-family);
+    font-size: var(--diagram-font-size);
+    font-weight: var(--diagram-font-weight);
+    letter-spacing: var(--diagram-letter-spacing);
+    /* Hit-testing belongs to the shape, not the glyphs. `user-select` is deliberately untouched so
+       find-in-page and copy keep working. */
+    pointer-events: none;
+  }
+
+  /* The two smaller roles. Written as `text[data-part=…]` so they outrank the blanket `text` rule
+     above without an id, an `!important` or a source-order dependency. Both are measured at these
+     sizes in `core/text/measure.ts` — change one and the other has to move with it. */
+  [data-slot='diagram'] [data-part='svg'] text[data-part='edge-label-text'],
+  [data-slot='diagram'] [data-part='svg'] text[data-part='message-label-text'] {
+    font-size: var(--diagram-edge-font-size);
+  }
+
+  [data-slot='diagram'] [data-part='svg'] text[data-part='cluster-label-text'] {
+    font-size: var(--diagram-cluster-label-font-size);
+    letter-spacing: var(--diagram-cluster-label-letter-spacing);
+  }
+
+  /* ---------------------------------------------------------------------------------- nodes */
+
+  [data-part='node-shape'] {
+    fill: var(--diagram-node-fill);
+    stroke: var(--diagram-node-stroke);
+    stroke-width: var(--diagram-stroke-width);
+  }
+
+  [data-part='node-label'] {
+    fill: var(--diagram-node-text);
+  }
+
+  [data-part='node']:hover [data-part='node-shape'] {
+    fill: var(--diagram-node-fill-hover);
+  }
+
+  /* State markers are solid glyphs, not boxes: they carry no label and their whole job is to be
+     recognizable. Choice belongs to that family — it is a labelless branch point, not an anonymous
+     small node. The end marker's outline is two concentric circles in one path, so it needs
+     `evenodd` to read as a ring rather than a disc. */
+  [data-shape='state-start'] [data-part='node-shape'],
+  [data-shape='state-choice'] [data-part='node-shape'],
+  [data-shape='state-bar'] [data-part='node-shape'] {
+    fill: var(--diagram-marker-fill);
+    stroke: none;
+  }
+
+  [data-shape='state-end'] [data-part='node-shape'] {
+    fill: var(--diagram-marker-fill);
+    fill-rule: evenodd;
+    stroke: var(--diagram-marker-fill);
+  }
+
+  [data-shape='state-note'] [data-part='node-shape'] {
+    fill: var(--diagram-note-fill);
+    stroke: var(--diagram-note-stroke);
+  }
+
+  [data-shape='state-note'] [data-part='node-label'] {
+    fill: var(--diagram-note-text);
+  }
+
+  /* ---------------------------------------------------------------------------------- edges */
+
+  [data-part='edge-path'] {
+    fill: none;
+    stroke: var(--diagram-edge-stroke);
+    stroke-width: var(--diagram-stroke-width);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  [data-line='dotted'] [data-part='edge-path'] {
+    stroke-dasharray: var(--diagram-dash-pattern);
+  }
+
+  [data-line='thick'] [data-part='edge-path'] {
+    stroke-width: var(--diagram-thick-width);
+  }
+
+  /* `~~~` links exist only to constrain layout, so they reserve their space and draw nothing. */
+  [data-line='invisible'] {
+    visibility: hidden;
+  }
+
+  /* Arrowheads are inline geometry, never `<marker>` — so they inherit their edge's color by plain
+     cascade and no generated id is ever needed. */
+  [data-part='edge-arrow'] {
+    fill: var(--diagram-arrow-fill);
+    stroke: none;
+  }
+
+  [data-part='edge-arrow'][data-arrow='circle'] {
+    fill: var(--diagram-arrow-open-fill);
+    stroke: var(--diagram-arrow-stroke);
+    stroke-width: var(--diagram-stroke-width);
+  }
+
+  [data-part='edge-arrow'][data-arrow='cross'] {
+    fill: none;
+    stroke: var(--diagram-arrow-stroke);
+    stroke-width: var(--diagram-stroke-width);
+    stroke-linecap: round;
+  }
+
+  /* ------------------------------------------------------------------------------ label layer */
+
+  /* Titles and edge labels are drawn last so nothing can be painted over them; nothing in the layer
+     is a hit target, so the shape under a plate still takes the pointer. */
+  [data-part='labels'] {
+    pointer-events: none;
+  }
+
+  /* The scene cuts the label box out of the stroke, so the plate paints nothing at all in the
+     normal case — only where the engine could not make that cut (`data-plate`) and the stroke still
+     crosses the glyphs. */
+  [data-part='edge-label-bg'] {
+    fill: transparent;
+    stroke: none;
+  }
+
+  [data-part='edge-label-bg'][data-plate] {
+    fill: var(--diagram-edge-label-fill);
+  }
+
+  [data-part='edge-label-text'] {
+    fill: var(--diagram-edge-text);
+  }
+
+  /* -------------------------------------------------------------------------------- clusters */
+
+  [data-part='cluster-box'] {
+    fill: var(--diagram-cluster-fill);
+    stroke: var(--diagram-cluster-stroke);
+    stroke-width: var(--diagram-stroke-width);
+  }
+
+  /* One step in, once. The property is set on the group, so every deeper cluster inherits the
+     nested value and the ramp stops at depth 1 by construction. Titles live in the label layer,
+     outside the cluster tree, so they carry their own depth and match on it separately — a custom
+     property set on the box can never reach them. */
+  [data-part='cluster'][data-depth='1'] {
+    --diagram-cluster-fill: var(--diagram-cluster-fill-nested);
+  }
+
+  [data-part='cluster-label']:not([data-depth='0']) {
+    --diagram-cluster-label-fill: var(--diagram-cluster-fill-nested);
+  }
+
+  [data-part='cluster-label-bg'] {
+    fill: var(--diagram-cluster-label-fill);
+    stroke: none;
+  }
+
+  [data-part='cluster-label-text'] {
+    fill: var(--diagram-cluster-text);
+  }
+
+  /* ------------------------------------------------------------------------------- sequence */
+
+  /* Header and footer are the same box drawn twice, so one rule covers both; `data-position`
+     exists so a consumer can drop the repeated footer without touching the layout. */
+  [data-part='participant-box'] {
+    fill: var(--diagram-participant-fill);
+    stroke: var(--diagram-participant-stroke);
+    stroke-width: var(--diagram-stroke-width);
+  }
+
+  [data-part='participant-label'] {
+    fill: var(--diagram-participant-text);
+  }
+
+  [data-part='lifeline'] {
+    stroke: var(--diagram-lifeline-stroke);
+    stroke-width: var(--diagram-stroke-width);
+    stroke-dasharray: var(--diagram-lifeline-dash);
+  }
+
+  [data-part='activation'] {
+    fill: var(--diagram-activation-fill);
+    stroke: var(--diagram-activation-stroke);
+    stroke-width: var(--diagram-stroke-width);
+  }
+
+  [data-part='message-path'] {
+    fill: none;
+    stroke: var(--diagram-message-stroke);
+    stroke-width: var(--diagram-stroke-width);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  [data-part='message'][data-line='dotted'] [data-part='message-path'] {
+    stroke-dasharray: var(--diagram-dash-pattern);
+  }
+
+  [data-part='message-arrow'] {
+    fill: var(--diagram-arrow-fill);
+    stroke: none;
+  }
+
+  /* `-x` is two crossed strokes and `-)` an open half arrow: both are outlines, not solids. */
+  [data-part='message-arrow'][data-arrow='cross'],
+  [data-part='message-arrow'][data-arrow='async'] {
+    fill: none;
+    stroke: var(--diagram-arrow-stroke);
+    stroke-width: var(--diagram-stroke-width);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  /* A message label lies across every lifeline it spans, so the plate is what keeps the dashes
+     out of the glyphs — the same job the edge-label plate does in a flowchart. */
+  [data-part='message-label-bg'] {
+    fill: var(--diagram-message-label-fill);
+    stroke: none;
+  }
+
+  [data-part='message-label-text'] {
+    fill: var(--diagram-message-text);
+  }
+
+  [data-part='note-box'] {
+    fill: var(--diagram-note-fill);
+    stroke: var(--diagram-note-stroke);
+    stroke-width: var(--diagram-stroke-width);
+  }
+
+  [data-part='note-label'] {
+    fill: var(--diagram-note-text);
+  }
+
+  [data-part='frame-box'] {
+    fill: var(--diagram-frame-fill);
+    stroke: var(--diagram-frame-stroke);
+    stroke-width: var(--diagram-stroke-width);
+  }
+
+  [data-part='frame-tab'] {
+    fill: var(--diagram-frame-tab-fill);
+    stroke: var(--diagram-frame-stroke);
+    stroke-width: var(--diagram-stroke-width);
+  }
+
+  [data-part='frame-section'] {
+    stroke: var(--diagram-frame-stroke);
+    stroke-width: var(--diagram-stroke-width);
+    stroke-dasharray: var(--diagram-dash-pattern);
+  }
+
+  [data-part='frame-title'],
+  [data-part='frame-label'],
+  [data-part='frame-section-label'] {
+    fill: var(--diagram-frame-text);
+  }
+
+  /* ------------------------------------------------------------------------------------ pie */
+
+  [data-part='slice'] {
+    fill: var(--diagram-slice-fill, transparent);
+    stroke: var(--diagram-slice-stroke);
+    stroke-width: var(--diagram-stroke-width);
+  }
+
+  [data-part='slice-label'] {
+    fill: var(--diagram-slice-text);
+  }
+
+  /* Series index -> palette slot, set as a custom property so the swatch, the wedge and its
+     label all read one value. Scoped to the parts that carry it: `data-series` is a common
+     attribute name and the library must not colour someone else's markup. */
+  [data-part='slice'][data-series='0'],
+  [data-part='slice-label'][data-series='0'],
+  [data-part='legend-item'][data-series='0'] {
+    --diagram-slice-fill: var(--diagram-series-1);
+  }
+
+  [data-part='slice'][data-series='1'],
+  [data-part='slice-label'][data-series='1'],
+  [data-part='legend-item'][data-series='1'] {
+    --diagram-slice-fill: var(--diagram-series-2);
+  }
+
+  [data-part='slice'][data-series='2'],
+  [data-part='slice-label'][data-series='2'],
+  [data-part='legend-item'][data-series='2'] {
+    --diagram-slice-fill: var(--diagram-series-3);
+  }
+
+  [data-part='slice'][data-series='3'],
+  [data-part='slice-label'][data-series='3'],
+  [data-part='legend-item'][data-series='3'] {
+    --diagram-slice-fill: var(--diagram-series-4);
+  }
+
+  [data-part='slice'][data-series='4'],
+  [data-part='slice-label'][data-series='4'],
+  [data-part='legend-item'][data-series='4'] {
+    --diagram-slice-fill: var(--diagram-series-5);
+  }
+
+  [data-part='slice'][data-series='5'],
+  [data-part='slice-label'][data-series='5'],
+  [data-part='legend-item'][data-series='5'] {
+    --diagram-slice-fill: var(--diagram-series-6);
+  }
+
+  [data-part='slice'][data-series='6'],
+  [data-part='slice-label'][data-series='6'],
+  [data-part='legend-item'][data-series='6'] {
+    --diagram-slice-fill: var(--diagram-series-7);
+  }
+
+  [data-part='slice'][data-series='7'],
+  [data-part='slice-label'][data-series='7'],
+  [data-part='legend-item'][data-series='7'] {
+    --diagram-slice-fill: var(--diagram-series-8);
+  }
+
+  /* --------------------------------------------------------------------------------- legend */
+
+  [data-part='legend'] {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color: var(--diagram-legend-text);
+    font-size: var(--diagram-font-size);
+  }
+
+  [data-part='legend-item'] {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+  }
+
+  [data-part='legend-swatch'] {
+    inline-size: 0.625rem;
+    block-size: 0.625rem;
+    border-radius: var(--diagram-legend-swatch-radius);
+    background: var(--diagram-slice-fill, transparent);
+    box-shadow: inset 0 0 0 1px var(--diagram-slice-stroke);
+  }
+
+  /* The one place the library prints numbers, so they line up in a column and read as data rather
+     than as more label. */
+  [data-part='legend-value'] {
+    color: var(--diagram-legend-value-text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* --------------------------------------------------------------------------------- issues */
+
+  [data-part='issues'] {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color: var(--diagram-issue-text);
+    font-size: var(--diagram-font-size);
+  }
+
+  /* A hanging indent, so the marker sits in its own gutter and a wrapped sentence lines up under
+     the first word rather than under the marker. */
+  [data-part='issue'] {
+    padding-inline-start: 1.25rem;
+    text-indent: -1.25rem;
+  }
+
+  /* Severity has to be visible without reading, and not by colour alone (WCAG 1.4.1): the glyph is
+     the signal, the colour is reinforcement. Generated content rather than an element, so a
+     consumer rendering its own `<li>` children keeps this treatment for free. */
+  /* `text-indent` is inherited by an inline-block and re-applied to its own first line, so the
+     hanging indent above would drag the glyph out of its gutter and off the panel. */
+  [data-part='issue']::before {
+    display: inline-block;
+    inline-size: 1.25rem;
+    color: var(--diagram-issue-marker);
+    content: '·';
+    text-indent: 0;
+  }
+
+  [data-part='issue'][data-severity='error'] {
+    color: var(--diagram-issue-error-text);
+  }
+
+  [data-part='issue'][data-severity='error']::before {
+    color: var(--diagram-issue-error-text);
+    content: '✕';
+  }
+
+  [data-part='issue'][data-severity='warning'] {
+    color: var(--diagram-issue-warning-text);
+  }
+
+  [data-part='issue'][data-severity='warning']::before {
+    color: var(--diagram-issue-warning-text);
+    content: '!';
+  }
+
+  /* The machine code was already on the element and shown nowhere; printed from the attribute it
+     costs no markup and stays greppable next to the sentence it belongs to. A chip rather than
+     bare mono text, so the identifier reads as a token to copy instead of as the last word of the
+     sentence. */
+  [data-part='issue'][data-code]::after {
+    display: inline-block;
+    margin-inline-start: 0.5ch;
+    border-radius: 0.3333em;
+    padding-inline: 0.4166em;
+    background-color: var(--diagram-issue-code-fill);
+    color: var(--diagram-issue-code-text);
+    content: attr(data-code);
+    font-family: var(--diagram-issue-code-font);
+    font-size: 0.9166em;
+    text-indent: 0;
+  }
+
+  /* --------------------------------------------------------------------------------- canvas */
+
+  /* Canvas mode: a clipped viewport, a dotted grid locked to the scene, and one transformed
+     wrapper. The transform string exists only here — `Diagram.Canvas` writes `--diagram-canvas-pan-*`
+     and `--diagram-canvas-zoom`, never a `transform` — so translate and scale can never be composed
+     in the wrong order and no paint ever reaches the DOM. */
+
+  [data-part='canvas'] {
+    /* The pre-hydration values; the canvas overwrites them inline from the first client frame. */
+    --diagram-canvas-pan-x: 0px;
+    --diagram-canvas-pan-y: 0px;
+    --diagram-canvas-zoom: 1;
+    --diagram-canvas-grid-scale: 1;
+
+    position: relative;
+    /* `clip`, not `hidden`: an overflow-hidden box is still a scroll container, so focusing a
+       control inside it can silently scroll the scene out from under the transform. */
+    overflow: clip;
+    block-size: var(--diagram-canvas-block-size);
+    border: 1px solid var(--diagram-canvas-border);
+    border-radius: var(--diagram-canvas-radius);
+    background-color: var(--diagram-canvas-fill);
+    background-image: radial-gradient(
+      circle at center,
+      var(--diagram-canvas-dot) 0,
+      var(--diagram-canvas-dot) var(--diagram-canvas-dot-size),
+      transparent calc(var(--diagram-canvas-dot-size) + 0.5px)
+    );
+    background-size: calc(var(--diagram-canvas-dot-gap) * var(--diagram-canvas-grid-scale))
+      calc(var(--diagram-canvas-dot-gap) * var(--diagram-canvas-grid-scale));
+    /* The gradient sits at the tile centre, so the lattice is pulled back half a tile and lands on
+       canvas-space multiples of the current step, anchored at the canvas origin. */
+    background-position: calc(
+        var(--diagram-canvas-pan-x) - var(--diagram-canvas-dot-gap) *
+          var(--diagram-canvas-grid-scale) / 2
+      )
+      calc(
+        var(--diagram-canvas-pan-y) - var(--diagram-canvas-dot-gap) *
+          var(--diagram-canvas-grid-scale) / 2
+      );
+    background-origin: padding-box;
+    background-clip: padding-box;
+    touch-action: none;
+    cursor: grab;
+    contain: layout paint;
+  }
+
+  /* The house focus treatment, which is a ring *and* a darker edge: the ring alone is a light grey
+     on a white page, weaker than every other control on the screen. */
+  [data-part='canvas']:focus-visible {
+    border-color: var(--diagram-canvas-border-focus);
+    outline: 3px solid var(--diagram-canvas-ring);
+    outline-offset: 0;
+  }
+
+  [data-part='canvas'][data-panning] {
+    cursor: grabbing;
+    user-select: none;
+  }
+
+  [data-part='canvas-scene'] {
+    /* Physical properties deliberately: the transform math is physical and must not flip in RTL. */
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform: translate(var(--diagram-canvas-pan-x), var(--diagram-canvas-pan-y))
+      scale(var(--diagram-canvas-zoom));
+    transform-origin: 0 0;
+    will-change: transform;
+  }
+
+  /* Natural size inside a canvas, whatever `fit` says. One attribute more specific than the fit
+     rules on purpose — do not rely on source order. */
+  [data-slot='diagram'][data-fit] [data-part='canvas-scene'] [data-part='svg'] {
+    width: auto;
+    height: auto;
+    max-inline-size: none;
+    max-block-size: none;
+    margin-inline: 0;
+  }
+
+  [data-part='canvas-controls'] {
+    position: absolute;
+    inset-block-end: 0.5rem;
+    inset-inline-end: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  [data-part='canvas-control'] {
+    display: inline-flex;
+    block-size: 2rem;
+    min-inline-size: 2rem;
+    align-items: center;
+    justify-content: center;
+    padding-inline: 0.375rem;
+    border: 1px solid var(--diagram-canvas-control-border);
+    border-radius: var(--diagram-canvas-radius);
+    background: var(--diagram-canvas-control-fill);
+    color: var(--diagram-canvas-control-text);
+    font-family: var(--diagram-font-family);
+    font-size: var(--diagram-font-size);
+    /* The readout must not jiggle while zooming. */
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+  }
+
+  [data-part='canvas-control']:hover {
+    background: var(--diagram-canvas-control-fill-hover);
+  }
+
+  [data-part='canvas-control']:focus-visible {
+    outline: 2px solid var(--diagram-canvas-ring);
+    outline-offset: 1px;
+  }
+
+  [data-part='canvas-icon'] {
+    inline-size: 0.875rem;
+    block-size: 0.875rem;
+    fill: none;
+    /* CSS, never an attribute: the contract test fails on a painted glyph. */
+    stroke: currentColor;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  /* Both transitions are linear in the same pan and zoom, so the grid stays locked to the scene
+     through the animation. `--diagram-canvas-grid-scale` steps discretely at a level boundary —
+     one frame of grid snap, invisible in practice; do not try to animate it. */
+  @media (prefers-reduced-motion: no-preference) {
+    [data-part='canvas'][data-animate] {
+      transition:
+        background-position 120ms ease-out,
+        background-size 120ms ease-out;
+    }
+
+    [data-part='canvas'][data-animate] [data-part='canvas-scene'] {
+      transition: transform 120ms ease-out;
+    }
+  }
+
+  /* Diagrams inherit dark tokens into a print sheet that assumes paper, so print forces tier 0. */
+  @media print {
+    [data-slot='diagram'] {
+      --diagram-node-fill: transparent;
+      --diagram-node-fill-hover: transparent;
+      --diagram-node-stroke: currentColor;
+      --diagram-node-text: currentColor;
+      --diagram-cluster-fill: transparent;
+      --diagram-cluster-fill-nested: transparent;
+      --diagram-cluster-stroke: currentColor;
+      --diagram-cluster-text: currentColor;
+      --diagram-cluster-label-fill: transparent;
+      --diagram-edge-stroke: currentColor;
+      --diagram-edge-text: currentColor;
+      --diagram-edge-label-fill: transparent;
+      --diagram-arrow-fill: currentColor;
+      --diagram-arrow-stroke: currentColor;
+      --diagram-arrow-open-fill: transparent;
+      --diagram-marker-fill: currentColor;
+      --diagram-note-fill: transparent;
+      --diagram-note-stroke: currentColor;
+      --diagram-note-text: currentColor;
+      --diagram-participant-fill: transparent;
+      --diagram-participant-stroke: currentColor;
+      --diagram-participant-text: currentColor;
+      --diagram-lifeline-stroke: currentColor;
+      --diagram-activation-fill: transparent;
+      --diagram-activation-stroke: currentColor;
+      --diagram-message-stroke: currentColor;
+      --diagram-message-text: currentColor;
+      --diagram-message-label-fill: transparent;
+      --diagram-frame-fill: transparent;
+      --diagram-frame-stroke: currentColor;
+      --diagram-frame-text: currentColor;
+      --diagram-frame-tab-fill: transparent;
+      --diagram-slice-stroke: currentColor;
+      --diagram-slice-text: currentColor;
+      /* The one role tier 0 cannot collapse: eight transparent wedges are eight identical wedges,
+         and the legend then matches nothing. A tint ramp of the ink already on the page keeps the
+         encoding without naming a colour, and the slice stroke separates neighbours that land on
+         adjacent steps. Ordered to alternate light and dark, because adjacency is what a reader
+         actually has to tell apart. Nothing goes past 55%: the centroid label prints in the same
+         ink, so a darker wedge would swallow it. */
+      --diagram-series-1: color-mix(in oklch, currentColor 55%, transparent);
+      --diagram-series-2: color-mix(in oklch, currentColor 8%, transparent);
+      --diagram-series-3: color-mix(in oklch, currentColor 45%, transparent);
+      --diagram-series-4: color-mix(in oklch, currentColor 16%, transparent);
+      --diagram-series-5: color-mix(in oklch, currentColor 36%, transparent);
+      --diagram-series-6: color-mix(in oklch, currentColor 24%, transparent);
+      --diagram-series-7: color-mix(in oklch, currentColor 50%, transparent);
+      --diagram-series-8: color-mix(in oklch, currentColor 12%, transparent);
+      --diagram-legend-text: currentColor;
+      --diagram-legend-value-text: currentColor;
+      --diagram-issue-text: currentColor;
+      --diagram-issue-error-text: currentColor;
+      --diagram-issue-warning-text: currentColor;
+      --diagram-issue-marker: currentColor;
+      --diagram-issue-code-text: currentColor;
+      --diagram-issue-code-fill: transparent;
+
+      /* A graph split down the middle by a page break is unreadable; a whole one on the next page
+         is not. */
+      break-inside: avoid;
+      --diagram-canvas-fill: transparent;
+      --diagram-canvas-border: currentColor;
+      --diagram-canvas-dot: currentColor;
+      --diagram-canvas-control-fill: transparent;
+      --diagram-canvas-control-fill-hover: transparent;
+      --diagram-canvas-control-border: currentColor;
+      --diagram-canvas-control-text: currentColor;
+    }
+
+    /* Paper gets the whole drawing at natural size, with no grid and no controls. */
+    [data-part='canvas'] {
+      block-size: auto;
+      overflow: visible;
+      background-image: none;
+    }
+
+    [data-part='canvas-scene'] {
+      position: static;
+      transform: none;
+    }
+
+    [data-part='canvas-controls'] {
+      display: none;
+    }
+  }
+}

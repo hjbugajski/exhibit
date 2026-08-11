@@ -1,0 +1,7 @@
+stateDiagram-v2
+  [*] --> Draft
+  Draft --> Review : submit
+  note right of Draft : editable by the author
+  Review --> Published : approve
+  Review --> Draft : request changes
+  Published --> [*]

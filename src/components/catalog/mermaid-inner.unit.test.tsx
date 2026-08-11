@@ -25,6 +25,12 @@ vi.mock('mermaid', () => ({
   default: { initialize: vi.fn(), detectType: mermaid.detectType, render: mermaid.render },
 }));
 
+// The font fetch has no server to talk to here; left to happy-dom it fails loudly on every render.
+vi.stubGlobal(
+  'fetch',
+  vi.fn(() => Promise.reject(new Error('no network in tests'))),
+);
+
 /** A drawn flowchart carrying every payload the pipeline is supposed to strip. */
 const HOSTILE_SVG =
   '<svg viewBox="0 0 200 100"><g><text x="1" onclick="alert(1)">Label</text></g>' +
@@ -59,7 +65,7 @@ describe('CatalogMermaidInner', () => {
 
   it('locks the framed document down with the meta CSP', async () => {
     expect((await frame()).getAttribute('srcdoc')).toContain(
-      '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'; img-src data:">',
+      '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'; img-src data:; font-src data:">',
     );
   });
 

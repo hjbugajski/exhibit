@@ -1,0 +1,2302 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`layoutGraph golden scenes > 'blank labels' matches its golden scene 1`] = `
+{
+  "clusters": [],
+  "edges": [
+    {
+      "arrow": "arrow",
+      "arrowD": "M26,88L23,79L29,79Z",
+      "classes": [],
+      "d": "M26,40L26,79",
+      "id": "a->b#0",
+      "line": "solid",
+      "points": [
+        {
+          "x": 26,
+          "y": 40,
+        },
+        {
+          "x": 26,
+          "y": 79,
+        },
+      ],
+      "reversed": false,
+      "source": "a",
+      "startArrow": "none",
+      "target": "b",
+    },
+  ],
+  "family": "flowchart",
+  "kind": "graph",
+  "nodes": [
+    {
+      "classes": [],
+      "height": 32,
+      "id": "a",
+      "label": {
+        "baseline": 13.78,
+        "height": 0,
+        "lineHeight": 18.2,
+        "lines": [],
+        "width": 0,
+      },
+      "outline": "M-12,-16L12,-16A6,6 0 0 1 18,-10L18,10A6,6 0 0 1 12,16L-12,16A6,6 0 0 1 -18,10L-18,-10A6,6 0 0 1 -12,-16Z",
+      "shape": "rect",
+      "width": 36,
+      "x": 26,
+      "y": 24,
+    },
+    {
+      "classes": [],
+      "height": 32,
+      "id": "b",
+      "label": {
+        "baseline": 13.78,
+        "height": 0,
+        "lineHeight": 18.2,
+        "lines": [],
+        "width": 0,
+      },
+      "outline": "M-12,-16L12,-16A6,6 0 0 1 18,-10L18,10A6,6 0 0 1 12,16L-12,16A6,6 0 0 1 -18,10L-18,-10A6,6 0 0 1 -12,-16Z",
+      "shape": "rect",
+      "width": 36,
+      "x": 26,
+      "y": 104,
+    },
+  ],
+  "size": {
+    "height": 128,
+    "width": 52,
+  },
+}
+`;
+
+exports[`layoutGraph golden scenes > 'branch and merge' matches its golden scene 1`] = `
+{
+  "clusters": [],
+  "edges": [
+    {
+      "arrow": "arrow",
+      "arrowD": "M76.19,94.2L73.19,85.2L79.19,85.2Z",
+      "classes": [],
+      "d": "M76.19,46.2L76.19,85.2",
+      "id": "start->check#0",
+      "line": "solid",
+      "points": [
+        {
+          "x": 76.19,
+          "y": 46.2,
+        },
+        {
+          "x": 76.19,
+          "y": 85.2,
+        },
+      ],
+      "reversed": false,
+      "source": "start",
+      "startArrow": "none",
+      "target": "check",
+    },
+    {
+      "arrow": "arrow",
+      "arrowD": "M32.88,277.5L29.88,268.5L35.88,268.5Z",
+      "classes": [],
+      "d": "M76.19,164.7L76.19,186.9Q76.19,192.9 70.19,192.9L38.88,192.9Q32.88,192.9 32.88,198.9L32.88,210.7M32.88,231.5L32.88,268.5",
+      "id": "check->yes#1",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "yes",
+          ],
+          "width": 20.09,
+        },
+        "x": 32.88,
+        "y": 221.1,
+      },
+      "line": "solid",
+      "points": [
+        {
+          "x": 76.19,
+          "y": 164.7,
+        },
+        {
+          "x": 76.19,
+          "y": 192.9,
+        },
+        {
+          "x": 32.88,
+          "y": 192.9,
+        },
+        {
+          "x": 32.88,
+          "y": 221.1,
+        },
+        {
+          "x": 32.88,
+          "y": 268.5,
+        },
+      ],
+      "reversed": false,
+      "source": "check",
+      "startArrow": "none",
+      "target": "yes",
+    },
+    {
+      "arrow": "arrow",
+      "arrowD": "M119.51,277.5L116.51,268.5L122.51,268.5Z",
+      "classes": [],
+      "d": "M76.19,164.7L76.19,186.9Q76.19,192.9 82.19,192.9L113.51,192.9Q119.51,192.9 119.51,198.9L119.51,210.7M119.51,231.5L119.51,268.5",
+      "id": "check->no#2",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "no",
+          ],
+          "width": 14.29,
+        },
+        "x": 119.51,
+        "y": 221.1,
+      },
+      "line": "solid",
+      "points": [
+        {
+          "x": 76.19,
+          "y": 164.7,
+        },
+        {
+          "x": 76.19,
+          "y": 192.9,
+        },
+        {
+          "x": 119.51,
+          "y": 192.9,
+        },
+        {
+          "x": 119.51,
+          "y": 221.1,
+        },
+        {
+          "x": 119.51,
+          "y": 268.5,
+        },
+      ],
+      "reversed": false,
+      "source": "check",
+      "startArrow": "none",
+      "target": "no",
+    },
+    {
+      "arrow": "arrow",
+      "arrowD": "M66.6,363.7L63.6,354.7L69.6,354.7Z",
+      "classes": [],
+      "d": "M42.48,315.7L42.48,333.7Q42.48,339.7 48.48,339.7L60.6,339.7Q66.6,339.7 66.6,345.7L66.6,354.7",
+      "id": "yes->done#3",
+      "line": "solid",
+      "points": [
+        {
+          "x": 42.48,
+          "y": 315.7,
+        },
+        {
+          "x": 42.48,
+          "y": 339.7,
+        },
+        {
+          "x": 66.6,
+          "y": 339.7,
+        },
+        {
+          "x": 66.6,
+          "y": 354.7,
+        },
+      ],
+      "reversed": false,
+      "source": "yes",
+      "startArrow": "none",
+      "target": "done",
+    },
+    {
+      "arrow": "arrow",
+      "arrowD": "M85.79,363.7L82.79,354.7L88.79,354.7Z",
+      "classes": [],
+      "d": "M109.91,315.7L109.91,333.7Q109.91,339.7 103.91,339.7L91.79,339.7Q85.79,339.7 85.79,345.7L85.79,354.7",
+      "id": "no->done#4",
+      "line": "solid",
+      "points": [
+        {
+          "x": 109.91,
+          "y": 315.7,
+        },
+        {
+          "x": 109.91,
+          "y": 339.7,
+        },
+        {
+          "x": 85.79,
+          "y": 339.7,
+        },
+        {
+          "x": 85.79,
+          "y": 354.7,
+        },
+      ],
+      "reversed": false,
+      "source": "no",
+      "startArrow": "none",
+      "target": "done",
+    },
+  ],
+  "family": "flowchart",
+  "kind": "graph",
+  "nodes": [
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "start",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "start",
+        ],
+        "width": 27.58,
+      },
+      "outline": "M-21.79,-19.1L21.79,-19.1A6,6 0 0 1 27.79,-13.1L27.79,13.1A6,6 0 0 1 21.79,19.1L-21.79,19.1A6,6 0 0 1 -27.79,13.1L-27.79,-13.1A6,6 0 0 1 -21.79,-19.1Z",
+      "shape": "rect",
+      "width": 55.58,
+      "x": 76.19,
+      "y": 27.1,
+    },
+    {
+      "classes": [],
+      "height": 70.5,
+      "id": "check",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "Ready?",
+        ],
+        "width": 45.18,
+      },
+      "outline": "M0,-35.25L53.26,0L0,35.25L-53.26,0Z",
+      "shape": "diamond",
+      "width": 106.52,
+      "x": 76.19,
+      "y": 129.45,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "yes",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "yes",
+        ],
+        "width": 21.76,
+      },
+      "outline": "M-18.88,-19.1L18.88,-19.1A6,6 0 0 1 24.88,-13.1L24.88,13.1A6,6 0 0 1 18.88,19.1L-18.88,19.1A6,6 0 0 1 -24.88,13.1L-24.88,-13.1A6,6 0 0 1 -18.88,-19.1Z",
+      "shape": "rect",
+      "width": 49.76,
+      "x": 32.88,
+      "y": 296.6,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "no",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "no",
+        ],
+        "width": 15.48,
+      },
+      "outline": "M-15.74,-19.1L15.74,-19.1A6,6 0 0 1 21.74,-13.1L21.74,13.1A6,6 0 0 1 15.74,19.1L-15.74,19.1A6,6 0 0 1 -21.74,13.1L-21.74,-13.1A6,6 0 0 1 -15.74,-19.1Z",
+      "shape": "rect",
+      "width": 43.48,
+      "x": 119.51,
+      "y": 296.6,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "done",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "done",
+        ],
+        "width": 31.03,
+      },
+      "outline": "M-23.52,-19.1L23.52,-19.1A6,6 0 0 1 29.52,-13.1L29.52,13.1A6,6 0 0 1 23.52,19.1L-23.52,19.1A6,6 0 0 1 -29.52,13.1L-29.52,-13.1A6,6 0 0 1 -23.52,-19.1Z",
+      "shape": "rect",
+      "width": 59.03,
+      "x": 76.19,
+      "y": 382.8,
+    },
+  ],
+  "size": {
+    "height": 409.9,
+    "width": 149.25,
+  },
+}
+`;
+
+exports[`layoutGraph golden scenes > 'chain BT' matches its golden scene 1`] = `
+{
+  "clusters": [],
+  "edges": [
+    {
+      "arrow": "arrow",
+      "arrowD": "M29.94,218.6L32.94,227.6L26.94,227.6Z",
+      "classes": [],
+      "d": "M29.94,266.6L29.94,227.6",
+      "id": "n0->n1#0",
+      "line": "solid",
+      "points": [
+        {
+          "x": 29.94,
+          "y": 266.6,
+        },
+        {
+          "x": 29.94,
+          "y": 227.6,
+        },
+      ],
+      "reversed": false,
+      "source": "n0",
+      "startArrow": "none",
+      "target": "n1",
+    },
+    {
+      "arrow": "arrow",
+      "arrowD": "M29.94,132.4L32.94,141.4L26.94,141.4Z",
+      "classes": [],
+      "d": "M29.94,180.4L29.94,141.4",
+      "id": "n1->n2#1",
+      "line": "solid",
+      "points": [
+        {
+          "x": 29.94,
+          "y": 180.4,
+        },
+        {
+          "x": 29.94,
+          "y": 141.4,
+        },
+      ],
+      "reversed": false,
+      "source": "n1",
+      "startArrow": "none",
+      "target": "n2",
+    },
+    {
+      "arrow": "arrow",
+      "arrowD": "M29.94,46.2L32.94,55.2L26.94,55.2Z",
+      "classes": [],
+      "d": "M29.94,94.2L29.94,55.2",
+      "id": "n2->n3#2",
+      "line": "solid",
+      "points": [
+        {
+          "x": 29.94,
+          "y": 94.2,
+        },
+        {
+          "x": 29.94,
+          "y": 55.2,
+        },
+      ],
+      "reversed": false,
+      "source": "n2",
+      "startArrow": "none",
+      "target": "n3",
+    },
+  ],
+  "family": "flowchart",
+  "kind": "graph",
+  "nodes": [
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "n0",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "n0",
+        ],
+        "width": 15.89,
+      },
+      "outline": "M-15.94,-19.1L15.94,-19.1A6,6 0 0 1 21.94,-13.1L21.94,13.1A6,6 0 0 1 15.94,19.1L-15.94,19.1A6,6 0 0 1 -21.94,13.1L-21.94,-13.1A6,6 0 0 1 -15.94,-19.1Z",
+      "shape": "rect",
+      "width": 43.89,
+      "x": 29.94,
+      "y": 285.7,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "n1",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "n1",
+        ],
+        "width": 12.98,
+      },
+      "outline": "M-14.49,-19.1L14.49,-19.1A6,6 0 0 1 20.49,-13.1L20.49,13.1A6,6 0 0 1 14.49,19.1L-14.49,19.1A6,6 0 0 1 -20.49,13.1L-20.49,-13.1A6,6 0 0 1 -14.49,-19.1Z",
+      "shape": "rect",
+      "width": 40.98,
+      "x": 29.94,
+      "y": 199.5,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "n2",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "n2",
+        ],
+        "width": 15.62,
+      },
+      "outline": "M-15.81,-19.1L15.81,-19.1A6,6 0 0 1 21.81,-13.1L21.81,13.1A6,6 0 0 1 15.81,19.1L-15.81,19.1A6,6 0 0 1 -21.81,13.1L-21.81,-13.1A6,6 0 0 1 -15.81,-19.1Z",
+      "shape": "rect",
+      "width": 43.62,
+      "x": 29.94,
+      "y": 113.3,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "n3",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "n3",
+        ],
+        "width": 15.72,
+      },
+      "outline": "M-15.86,-19.1L15.86,-19.1A6,6 0 0 1 21.86,-13.1L21.86,13.1A6,6 0 0 1 15.86,19.1L-15.86,19.1A6,6 0 0 1 -21.86,13.1L-21.86,-13.1A6,6 0 0 1 -15.86,-19.1Z",
+      "shape": "rect",
+      "width": 43.72,
+      "x": 29.94,
+      "y": 27.1,
+    },
+  ],
+  "size": {
+    "height": 312.8,
+    "width": 59.89,
+  },
+}
+`;
+
+exports[`layoutGraph golden scenes > 'chain LR' matches its golden scene 1`] = `
+{
+  "clusters": [],
+  "edges": [
+    {
+      "arrow": "arrow",
+      "arrowD": "M99.89,27.1L90.89,30.1L90.89,24.1Z",
+      "classes": [],
+      "d": "M51.89,27.1L90.89,27.1",
+      "id": "n0->n1#0",
+      "line": "solid",
+      "points": [
+        {
+          "x": 51.89,
+          "y": 27.1,
+        },
+        {
+          "x": 90.89,
+          "y": 27.1,
+        },
+      ],
+      "reversed": false,
+      "source": "n0",
+      "startArrow": "none",
+      "target": "n1",
+    },
+    {
+      "arrow": "arrow",
+      "arrowD": "M188.87,27.1L179.87,30.1L179.87,24.1Z",
+      "classes": [],
+      "d": "M140.87,27.1L179.87,27.1",
+      "id": "n1->n2#1",
+      "line": "solid",
+      "points": [
+        {
+          "x": 140.87,
+          "y": 27.1,
+        },
+        {
+          "x": 179.87,
+          "y": 27.1,
+        },
+      ],
+      "reversed": false,
+      "source": "n1",
+      "startArrow": "none",
+      "target": "n2",
+    },
+    {
+      "arrow": "arrow",
+      "arrowD": "M280.48,27.1L271.48,30.1L271.48,24.1Z",
+      "classes": [],
+      "d": "M232.48,27.1L271.48,27.1",
+      "id": "n2->n3#2",
+      "line": "solid",
+      "points": [
+        {
+          "x": 232.48,
+          "y": 27.1,
+        },
+        {
+          "x": 271.48,
+          "y": 27.1,
+        },
+      ],
+      "reversed": false,
+      "source": "n2",
+      "startArrow": "none",
+      "target": "n3",
+    },
+  ],
+  "family": "flowchart",
+  "kind": "graph",
+  "nodes": [
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "n0",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "n0",
+        ],
+        "width": 15.89,
+      },
+      "outline": "M-15.94,-19.1L15.94,-19.1A6,6 0 0 1 21.94,-13.1L21.94,13.1A6,6 0 0 1 15.94,19.1L-15.94,19.1A6,6 0 0 1 -21.94,13.1L-21.94,-13.1A6,6 0 0 1 -15.94,-19.1Z",
+      "shape": "rect",
+      "width": 43.89,
+      "x": 29.94,
+      "y": 27.1,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "n1",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "n1",
+        ],
+        "width": 12.98,
+      },
+      "outline": "M-14.49,-19.1L14.49,-19.1A6,6 0 0 1 20.49,-13.1L20.49,13.1A6,6 0 0 1 14.49,19.1L-14.49,19.1A6,6 0 0 1 -20.49,13.1L-20.49,-13.1A6,6 0 0 1 -14.49,-19.1Z",
+      "shape": "rect",
+      "width": 40.98,
+      "x": 120.38,
+      "y": 27.1,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "n2",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "n2",
+        ],
+        "width": 15.62,
+      },
+      "outline": "M-15.81,-19.1L15.81,-19.1A6,6 0 0 1 21.81,-13.1L21.81,13.1A6,6 0 0 1 15.81,19.1L-15.81,19.1A6,6 0 0 1 -21.81,13.1L-21.81,-13.1A6,6 0 0 1 -15.81,-19.1Z",
+      "shape": "rect",
+      "width": 43.62,
+      "x": 210.67,
+      "y": 27.1,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "n3",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "n3",
+        ],
+        "width": 15.72,
+      },
+      "outline": "M-15.86,-19.1L15.86,-19.1A6,6 0 0 1 21.86,-13.1L21.86,13.1A6,6 0 0 1 15.86,19.1L-15.86,19.1A6,6 0 0 1 -21.86,13.1L-21.86,-13.1A6,6 0 0 1 -15.86,-19.1Z",
+      "shape": "rect",
+      "width": 43.72,
+      "x": 302.34,
+      "y": 27.1,
+    },
+  ],
+  "size": {
+    "height": 54.2,
+    "width": 332.2,
+  },
+}
+`;
+
+exports[`layoutGraph golden scenes > 'chain RL' matches its golden scene 1`] = `
+{
+  "clusters": [],
+  "edges": [
+    {
+      "arrow": "arrow",
+      "arrowD": "M232.31,27.1L241.31,24.1L241.31,30.1Z",
+      "classes": [],
+      "d": "M280.31,27.1L241.31,27.1",
+      "id": "n0->n1#0",
+      "line": "solid",
+      "points": [
+        {
+          "x": 280.31,
+          "y": 27.1,
+        },
+        {
+          "x": 241.31,
+          "y": 27.1,
+        },
+      ],
+      "reversed": false,
+      "source": "n0",
+      "startArrow": "none",
+      "target": "n1",
+    },
+    {
+      "arrow": "arrow",
+      "arrowD": "M143.34,27.1L152.34,24.1L152.34,30.1Z",
+      "classes": [],
+      "d": "M191.34,27.1L152.34,27.1",
+      "id": "n1->n2#1",
+      "line": "solid",
+      "points": [
+        {
+          "x": 191.34,
+          "y": 27.1,
+        },
+        {
+          "x": 152.34,
+          "y": 27.1,
+        },
+      ],
+      "reversed": false,
+      "source": "n1",
+      "startArrow": "none",
+      "target": "n2",
+    },
+    {
+      "arrow": "arrow",
+      "arrowD": "M51.72,27.1L60.72,24.1L60.72,30.1Z",
+      "classes": [],
+      "d": "M99.72,27.1L60.72,27.1",
+      "id": "n2->n3#2",
+      "line": "solid",
+      "points": [
+        {
+          "x": 99.72,
+          "y": 27.1,
+        },
+        {
+          "x": 60.72,
+          "y": 27.1,
+        },
+      ],
+      "reversed": false,
+      "source": "n2",
+      "startArrow": "none",
+      "target": "n3",
+    },
+  ],
+  "family": "flowchart",
+  "kind": "graph",
+  "nodes": [
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "n0",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "n0",
+        ],
+        "width": 15.89,
+      },
+      "outline": "M-15.94,-19.1L15.94,-19.1A6,6 0 0 1 21.94,-13.1L21.94,13.1A6,6 0 0 1 15.94,19.1L-15.94,19.1A6,6 0 0 1 -21.94,13.1L-21.94,-13.1A6,6 0 0 1 -15.94,-19.1Z",
+      "shape": "rect",
+      "width": 43.89,
+      "x": 302.26,
+      "y": 27.1,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "n1",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "n1",
+        ],
+        "width": 12.98,
+      },
+      "outline": "M-14.49,-19.1L14.49,-19.1A6,6 0 0 1 20.49,-13.1L20.49,13.1A6,6 0 0 1 14.49,19.1L-14.49,19.1A6,6 0 0 1 -20.49,13.1L-20.49,-13.1A6,6 0 0 1 -14.49,-19.1Z",
+      "shape": "rect",
+      "width": 40.98,
+      "x": 211.82,
+      "y": 27.1,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "n2",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "n2",
+        ],
+        "width": 15.62,
+      },
+      "outline": "M-15.81,-19.1L15.81,-19.1A6,6 0 0 1 21.81,-13.1L21.81,13.1A6,6 0 0 1 15.81,19.1L-15.81,19.1A6,6 0 0 1 -21.81,13.1L-21.81,-13.1A6,6 0 0 1 -15.81,-19.1Z",
+      "shape": "rect",
+      "width": 43.62,
+      "x": 121.53,
+      "y": 27.1,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "n3",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "n3",
+        ],
+        "width": 15.72,
+      },
+      "outline": "M-15.86,-19.1L15.86,-19.1A6,6 0 0 1 21.86,-13.1L21.86,13.1A6,6 0 0 1 15.86,19.1L-15.86,19.1A6,6 0 0 1 -21.86,13.1L-21.86,-13.1A6,6 0 0 1 -15.86,-19.1Z",
+      "shape": "rect",
+      "width": 43.72,
+      "x": 29.86,
+      "y": 27.1,
+    },
+  ],
+  "size": {
+    "height": 54.2,
+    "width": 332.2,
+  },
+}
+`;
+
+exports[`layoutGraph golden scenes > 'chain TB' matches its golden scene 1`] = `
+{
+  "clusters": [],
+  "edges": [
+    {
+      "arrow": "arrow",
+      "arrowD": "M29.94,94.2L26.94,85.2L32.94,85.2Z",
+      "classes": [],
+      "d": "M29.94,46.2L29.94,85.2",
+      "id": "n0->n1#0",
+      "line": "solid",
+      "points": [
+        {
+          "x": 29.94,
+          "y": 46.2,
+        },
+        {
+          "x": 29.94,
+          "y": 85.2,
+        },
+      ],
+      "reversed": false,
+      "source": "n0",
+      "startArrow": "none",
+      "target": "n1",
+    },
+    {
+      "arrow": "arrow",
+      "arrowD": "M29.94,180.4L26.94,171.4L32.94,171.4Z",
+      "classes": [],
+      "d": "M29.94,132.4L29.94,171.4",
+      "id": "n1->n2#1",
+      "line": "solid",
+      "points": [
+        {
+          "x": 29.94,
+          "y": 132.4,
+        },
+        {
+          "x": 29.94,
+          "y": 171.4,
+        },
+      ],
+      "reversed": false,
+      "source": "n1",
+      "startArrow": "none",
+      "target": "n2",
+    },
+    {
+      "arrow": "arrow",
+      "arrowD": "M29.94,266.6L26.94,257.6L32.94,257.6Z",
+      "classes": [],
+      "d": "M29.94,218.6L29.94,257.6",
+      "id": "n2->n3#2",
+      "line": "solid",
+      "points": [
+        {
+          "x": 29.94,
+          "y": 218.6,
+        },
+        {
+          "x": 29.94,
+          "y": 257.6,
+        },
+      ],
+      "reversed": false,
+      "source": "n2",
+      "startArrow": "none",
+      "target": "n3",
+    },
+  ],
+  "family": "flowchart",
+  "kind": "graph",
+  "nodes": [
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "n0",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "n0",
+        ],
+        "width": 15.89,
+      },
+      "outline": "M-15.94,-19.1L15.94,-19.1A6,6 0 0 1 21.94,-13.1L21.94,13.1A6,6 0 0 1 15.94,19.1L-15.94,19.1A6,6 0 0 1 -21.94,13.1L-21.94,-13.1A6,6 0 0 1 -15.94,-19.1Z",
+      "shape": "rect",
+      "width": 43.89,
+      "x": 29.94,
+      "y": 27.1,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "n1",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "n1",
+        ],
+        "width": 12.98,
+      },
+      "outline": "M-14.49,-19.1L14.49,-19.1A6,6 0 0 1 20.49,-13.1L20.49,13.1A6,6 0 0 1 14.49,19.1L-14.49,19.1A6,6 0 0 1 -20.49,13.1L-20.49,-13.1A6,6 0 0 1 -14.49,-19.1Z",
+      "shape": "rect",
+      "width": 40.98,
+      "x": 29.94,
+      "y": 113.3,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "n2",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "n2",
+        ],
+        "width": 15.62,
+      },
+      "outline": "M-15.81,-19.1L15.81,-19.1A6,6 0 0 1 21.81,-13.1L21.81,13.1A6,6 0 0 1 15.81,19.1L-15.81,19.1A6,6 0 0 1 -21.81,13.1L-21.81,-13.1A6,6 0 0 1 -15.81,-19.1Z",
+      "shape": "rect",
+      "width": 43.62,
+      "x": 29.94,
+      "y": 199.5,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "n3",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "n3",
+        ],
+        "width": 15.72,
+      },
+      "outline": "M-15.86,-19.1L15.86,-19.1A6,6 0 0 1 21.86,-13.1L21.86,13.1A6,6 0 0 1 15.86,19.1L-15.86,19.1A6,6 0 0 1 -21.86,13.1L-21.86,-13.1A6,6 0 0 1 -15.86,-19.1Z",
+      "shape": "rect",
+      "width": 43.72,
+      "x": 29.94,
+      "y": 285.7,
+    },
+  ],
+  "size": {
+    "height": 312.8,
+    "width": 59.89,
+  },
+}
+`;
+
+exports[`layoutGraph golden scenes > 'cycle' matches its golden scene 1`] = `
+{
+  "clusters": [],
+  "edges": [
+    {
+      "arrow": "arrow",
+      "arrowD": "M30.32,94.2L27.32,85.2L33.32,85.2Z",
+      "classes": [],
+      "d": "M41,46.2L41,62.7C41,70.2 30.32,70.2 30.32,77.7L30.32,85.2",
+      "id": "a->b#0",
+      "line": "solid",
+      "points": [
+        {
+          "x": 41,
+          "y": 46.2,
+        },
+        {
+          "x": 41,
+          "y": 70.2,
+        },
+        {
+          "x": 30.32,
+          "y": 70.2,
+        },
+        {
+          "x": 30.32,
+          "y": 85.2,
+        },
+      ],
+      "reversed": false,
+      "source": "a",
+      "startArrow": "none",
+      "target": "b",
+    },
+    {
+      "arrow": "arrow",
+      "arrowD": "M56,180.4L53,171.4L59,171.4Z",
+      "classes": [],
+      "d": "M34.64,132.4L34.64,150.4Q34.64,156.4 40.64,156.4L50,156.4Q56,156.4 56,162.4L56,171.4",
+      "id": "b->c#1",
+      "line": "solid",
+      "points": [
+        {
+          "x": 34.64,
+          "y": 132.4,
+        },
+        {
+          "x": 34.64,
+          "y": 156.4,
+        },
+        {
+          "x": 56,
+          "y": 156.4,
+        },
+        {
+          "x": 56,
+          "y": 171.4,
+        },
+      ],
+      "reversed": false,
+      "source": "b",
+      "startArrow": "none",
+      "target": "c",
+    },
+    {
+      "arrow": "arrow",
+      "arrowD": "M50,46.2L53,55.2L47,55.2Z",
+      "classes": [],
+      "d": "M65,180.4L65,163.63C65,146.85 50,146.85 50,130.07L50,55.2",
+      "id": "c->a#2",
+      "line": "solid",
+      "points": [
+        {
+          "x": 65,
+          "y": 180.4,
+        },
+        {
+          "x": 65,
+          "y": 146.85,
+        },
+        {
+          "x": 50,
+          "y": 146.85,
+        },
+        {
+          "x": 50,
+          "y": 113.3,
+        },
+        {
+          "x": 50,
+          "y": 55.2,
+        },
+      ],
+      "reversed": true,
+      "source": "c",
+      "startArrow": "none",
+      "target": "a",
+    },
+  ],
+  "family": "flowchart",
+  "kind": "graph",
+  "nodes": [
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "a",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "a",
+        ],
+        "width": 7.3,
+      },
+      "outline": "M-12,-19.1L12,-19.1A6,6 0 0 1 18,-13.1L18,13.1A6,6 0 0 1 12,19.1L-12,19.1A6,6 0 0 1 -18,13.1L-18,-13.1A6,6 0 0 1 -12,-19.1Z",
+      "shape": "rect",
+      "width": 36,
+      "x": 45.5,
+      "y": 27.1,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "b",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "b",
+        ],
+        "width": 7.96,
+      },
+      "outline": "M-12,-19.1L12,-19.1A6,6 0 0 1 18,-13.1L18,13.1A6,6 0 0 1 12,19.1L-12,19.1A6,6 0 0 1 -18,13.1L-18,-13.1A6,6 0 0 1 -12,-19.1Z",
+      "shape": "rect",
+      "width": 36,
+      "x": 26,
+      "y": 113.3,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "c",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "c",
+        ],
+        "width": 7.43,
+      },
+      "outline": "M-12,-19.1L12,-19.1A6,6 0 0 1 18,-13.1L18,13.1A6,6 0 0 1 12,19.1L-12,19.1A6,6 0 0 1 -18,13.1L-18,-13.1A6,6 0 0 1 -12,-19.1Z",
+      "shape": "rect",
+      "width": 36,
+      "x": 65,
+      "y": 199.5,
+    },
+  ],
+  "size": {
+    "height": 226.6,
+    "width": 91,
+  },
+}
+`;
+
+exports[`layoutGraph golden scenes > 'disconnected components' matches its golden scene 1`] = `
+{
+  "clusters": [],
+  "edges": [
+    {
+      "arrow": "arrow",
+      "arrowD": "M26,94.2L23,85.2L29,85.2Z",
+      "classes": [],
+      "d": "M26,46.2L26,85.2",
+      "id": "a->b#0",
+      "line": "solid",
+      "points": [
+        {
+          "x": 26,
+          "y": 46.2,
+        },
+        {
+          "x": 26,
+          "y": 85.2,
+        },
+      ],
+      "reversed": false,
+      "source": "a",
+      "startArrow": "none",
+      "target": "b",
+    },
+    {
+      "arrow": "arrow",
+      "arrowD": "M102,94.2L99,85.2L105,85.2Z",
+      "classes": [],
+      "d": "M102,46.2L102,85.2",
+      "id": "c->d#1",
+      "line": "solid",
+      "points": [
+        {
+          "x": 102,
+          "y": 46.2,
+        },
+        {
+          "x": 102,
+          "y": 85.2,
+        },
+      ],
+      "reversed": false,
+      "source": "c",
+      "startArrow": "none",
+      "target": "d",
+    },
+  ],
+  "family": "flowchart",
+  "kind": "graph",
+  "nodes": [
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "a",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "a",
+        ],
+        "width": 7.3,
+      },
+      "outline": "M-12,-19.1L12,-19.1A6,6 0 0 1 18,-13.1L18,13.1A6,6 0 0 1 12,19.1L-12,19.1A6,6 0 0 1 -18,13.1L-18,-13.1A6,6 0 0 1 -12,-19.1Z",
+      "shape": "rect",
+      "width": 36,
+      "x": 26,
+      "y": 27.1,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "b",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "b",
+        ],
+        "width": 7.96,
+      },
+      "outline": "M-12,-19.1L12,-19.1A6,6 0 0 1 18,-13.1L18,13.1A6,6 0 0 1 12,19.1L-12,19.1A6,6 0 0 1 -18,13.1L-18,-13.1A6,6 0 0 1 -12,-19.1Z",
+      "shape": "rect",
+      "width": 36,
+      "x": 26,
+      "y": 113.3,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "c",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "c",
+        ],
+        "width": 7.43,
+      },
+      "outline": "M-12,-19.1L12,-19.1A6,6 0 0 1 18,-13.1L18,13.1A6,6 0 0 1 12,19.1L-12,19.1A6,6 0 0 1 -18,13.1L-18,-13.1A6,6 0 0 1 -12,-19.1Z",
+      "shape": "rect",
+      "width": 36,
+      "x": 102,
+      "y": 27.1,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "d",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "d",
+        ],
+        "width": 7.96,
+      },
+      "outline": "M-12,-19.1L12,-19.1A6,6 0 0 1 18,-13.1L18,13.1A6,6 0 0 1 12,19.1L-12,19.1A6,6 0 0 1 -18,13.1L-18,-13.1A6,6 0 0 1 -12,-19.1Z",
+      "shape": "rect",
+      "width": 36,
+      "x": 102,
+      "y": 113.3,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "lonely",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "lonely",
+        ],
+        "width": 37.55,
+      },
+      "outline": "M-26.78,-19.1L26.78,-19.1A6,6 0 0 1 32.78,-13.1L32.78,13.1A6,6 0 0 1 26.78,19.1L-26.78,19.1A6,6 0 0 1 -32.78,13.1L-32.78,-13.1A6,6 0 0 1 -26.78,-19.1Z",
+      "shape": "rect",
+      "width": 65.55,
+      "x": 192.78,
+      "y": 27.1,
+    },
+  ],
+  "size": {
+    "height": 140.4,
+    "width": 233.55,
+  },
+}
+`;
+
+exports[`layoutGraph golden scenes > 'empty graph' matches its golden scene 1`] = `
+{
+  "clusters": [],
+  "edges": [],
+  "family": "flowchart",
+  "kind": "graph",
+  "nodes": [],
+  "size": {
+    "height": 16,
+    "width": 16,
+  },
+}
+`;
+
+exports[`layoutGraph golden scenes > 'long labelled edge' matches its golden scene 1`] = `
+{
+  "clusters": [],
+  "edges": [
+    {
+      "arrow": "arrow",
+      "arrowD": "M35,94.2L32,85.2L38,85.2Z",
+      "classes": [],
+      "d": "M67.55,46.2L67.55,64.2Q67.55,70.2 61.55,70.2L41,70.2Q35,70.2 35,76.2L35,85.2",
+      "id": "a->b#0",
+      "line": "solid",
+      "points": [
+        {
+          "x": 67.55,
+          "y": 46.2,
+        },
+        {
+          "x": 67.55,
+          "y": 70.2,
+        },
+        {
+          "x": 35,
+          "y": 70.2,
+        },
+        {
+          "x": 35,
+          "y": 85.2,
+        },
+      ],
+      "reversed": false,
+      "source": "a",
+      "startArrow": "none",
+      "target": "b",
+    },
+    {
+      "arrow": "arrow",
+      "arrowD": "M79.1,180.4L76.1,171.4L82.1,171.4Z",
+      "classes": [],
+      "d": "M35,132.4L35,150.4Q35,156.4 41,156.4L73.1,156.4Q79.1,156.4 79.1,162.4L79.1,171.4",
+      "id": "b->c#1",
+      "line": "solid",
+      "points": [
+        {
+          "x": 35,
+          "y": 132.4,
+        },
+        {
+          "x": 35,
+          "y": 156.4,
+        },
+        {
+          "x": 79.1,
+          "y": 156.4,
+        },
+        {
+          "x": 79.1,
+          "y": 171.4,
+        },
+      ],
+      "reversed": false,
+      "source": "b",
+      "startArrow": "none",
+      "target": "c",
+    },
+    {
+      "arrow": "arrow",
+      "arrowD": "M118.1,266.6L115.1,257.6L121.1,257.6Z",
+      "classes": [],
+      "d": "M96.74,218.6L96.74,236.6Q96.74,242.6 102.74,242.6L112.1,242.6Q118.1,242.6 118.1,248.6L118.1,257.6",
+      "id": "c->d#2",
+      "line": "solid",
+      "points": [
+        {
+          "x": 96.74,
+          "y": 218.6,
+        },
+        {
+          "x": 96.74,
+          "y": 242.6,
+        },
+        {
+          "x": 118.1,
+          "y": 242.6,
+        },
+        {
+          "x": 118.1,
+          "y": 257.6,
+        },
+      ],
+      "reversed": false,
+      "source": "c",
+      "startArrow": "none",
+      "target": "d",
+    },
+    {
+      "arrow": "arrow",
+      "arrowD": "M127.1,266.6L124.1,257.6L130.1,257.6Z",
+      "classes": [],
+      "d": "M85.55,46.2L85.55,73.75Q85.55,79.75 91.55,79.75L121.1,79.75Q127.1,79.75 127.1,85.75L127.1,102.9M127.1,123.7L127.1,257.6",
+      "id": "a->d#3",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "skip the whole middle",
+          ],
+          "width": 124.2,
+        },
+        "x": 127.1,
+        "y": 113.3,
+      },
+      "line": "solid",
+      "points": [
+        {
+          "x": 85.55,
+          "y": 46.2,
+        },
+        {
+          "x": 85.55,
+          "y": 79.75,
+        },
+        {
+          "x": 127.1,
+          "y": 79.75,
+        },
+        {
+          "x": 127.1,
+          "y": 113.3,
+        },
+        {
+          "x": 127.1,
+          "y": 199.5,
+        },
+        {
+          "x": 127.1,
+          "y": 257.6,
+        },
+      ],
+      "reversed": false,
+      "source": "a",
+      "startArrow": "none",
+      "target": "d",
+    },
+  ],
+  "family": "flowchart",
+  "kind": "graph",
+  "nodes": [
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "a",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "a",
+        ],
+        "width": 7.3,
+      },
+      "outline": "M-12,-19.1L12,-19.1A6,6 0 0 1 18,-13.1L18,13.1A6,6 0 0 1 12,19.1L-12,19.1A6,6 0 0 1 -18,13.1L-18,-13.1A6,6 0 0 1 -12,-19.1Z",
+      "shape": "rect",
+      "width": 36,
+      "x": 76.55,
+      "y": 27.1,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "b",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "b",
+        ],
+        "width": 7.96,
+      },
+      "outline": "M-12,-19.1L12,-19.1A6,6 0 0 1 18,-13.1L18,13.1A6,6 0 0 1 12,19.1L-12,19.1A6,6 0 0 1 -18,13.1L-18,-13.1A6,6 0 0 1 -12,-19.1Z",
+      "shape": "rect",
+      "width": 36,
+      "x": 26,
+      "y": 113.3,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "c",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "c",
+        ],
+        "width": 7.43,
+      },
+      "outline": "M-12,-19.1L12,-19.1A6,6 0 0 1 18,-13.1L18,13.1A6,6 0 0 1 12,19.1L-12,19.1A6,6 0 0 1 -18,13.1L-18,-13.1A6,6 0 0 1 -12,-19.1Z",
+      "shape": "rect",
+      "width": 36,
+      "x": 88.1,
+      "y": 199.5,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "d",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "d",
+        ],
+        "width": 7.96,
+      },
+      "outline": "M-12,-19.1L12,-19.1A6,6 0 0 1 18,-13.1L18,13.1A6,6 0 0 1 12,19.1L-12,19.1A6,6 0 0 1 -18,13.1L-18,-13.1A6,6 0 0 1 -12,-19.1Z",
+      "shape": "rect",
+      "width": 36,
+      "x": 127.1,
+      "y": 285.7,
+    },
+  ],
+  "size": {
+    "height": 312.8,
+    "width": 197.2,
+  },
+}
+`;
+
+exports[`layoutGraph golden scenes > 'mixed shapes' matches its golden scene 1`] = `
+{
+  "clusters": [],
+  "edges": [
+    {
+      "arrow": "arrow",
+      "arrowD": "M105.3,48L96.3,51L96.3,45Z",
+      "classes": [],
+      "d": "M57.3,48L96.3,48",
+      "id": "a->b#0",
+      "line": "solid",
+      "points": [
+        {
+          "x": 57.3,
+          "y": 48,
+        },
+        {
+          "x": 96.3,
+          "y": 48,
+        },
+      ],
+      "reversed": false,
+      "source": "a",
+      "startArrow": "none",
+      "target": "b",
+    },
+    {
+      "arrow": "arrow",
+      "arrowD": "M193.17,48L184.17,51L184.17,45Z",
+      "classes": [],
+      "d": "M145.17,48L184.17,48",
+      "id": "b->c#1",
+      "line": "solid",
+      "points": [
+        {
+          "x": 145.17,
+          "y": 48,
+        },
+        {
+          "x": 184.17,
+          "y": 48,
+        },
+      ],
+      "reversed": false,
+      "source": "b",
+      "startArrow": "none",
+      "target": "c",
+    },
+    {
+      "arrow": "arrow",
+      "arrowD": "M296.27,48L287.27,51L287.27,45Z",
+      "classes": [],
+      "d": "M248.27,48L287.27,48",
+      "id": "c->d#2",
+      "line": "solid",
+      "points": [
+        {
+          "x": 248.27,
+          "y": 48,
+        },
+        {
+          "x": 287.27,
+          "y": 48,
+        },
+      ],
+      "reversed": false,
+      "source": "c",
+      "startArrow": "none",
+      "target": "d",
+    },
+    {
+      "arrow": "arrow",
+      "arrowD": "M380.27,48L371.27,51L371.27,45Z",
+      "classes": [],
+      "d": "M332.27,48L371.27,48",
+      "id": "d->e#3",
+      "line": "solid",
+      "points": [
+        {
+          "x": 332.27,
+          "y": 48,
+        },
+        {
+          "x": 371.27,
+          "y": 48,
+        },
+      ],
+      "reversed": false,
+      "source": "d",
+      "startArrow": "none",
+      "target": "e",
+    },
+  ],
+  "family": "flowchart",
+  "kind": "graph",
+  "nodes": [
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "a",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "a",
+        ],
+        "width": 7.3,
+      },
+      "outline": "M-5.55,-19.1L5.55,-19.1A19.1,19.1 0 0 1 24.65,0L24.65,0A19.1,19.1 0 0 1 5.55,19.1L-5.55,19.1A19.1,19.1 0 0 1 -24.65,0L-24.65,0A19.1,19.1 0 0 1 -5.55,-19.1Z",
+      "shape": "stadium",
+      "width": 49.3,
+      "x": 32.65,
+      "y": 48,
+    },
+    {
+      "classes": [],
+      "height": 39.87,
+      "id": "b",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "b",
+        ],
+        "width": 7.96,
+      },
+      "outline": "M-19.93,0A19.93,19.93 0 1 0 19.93,0A19.93,19.93 0 1 0 -19.93,0Z",
+      "shape": "circle",
+      "width": 39.87,
+      "x": 125.24,
+      "y": 48,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "c",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "c",
+        ],
+        "width": 7.43,
+      },
+      "outline": "M-9.18,-19.1L9.18,-19.1L27.55,0L9.18,19.1L-9.18,19.1L-27.55,0Z",
+      "shape": "hexagon",
+      "width": 55.1,
+      "x": 220.72,
+      "y": 48,
+    },
+    {
+      "classes": [],
+      "height": 54.2,
+      "id": "d",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "d",
+        ],
+        "width": 7.96,
+      },
+      "outline": "M-18,-19.1A18,8 0 0 1 18,-19.1L18,19.1A18,8 0 0 1 -18,19.1ZM-18,-19.1A18,8 0 0 0 18,-19.1",
+      "shape": "cylinder",
+      "width": 36,
+      "x": 314.27,
+      "y": 48,
+    },
+    {
+      "classes": [],
+      "height": 80,
+      "id": "e",
+      "label": {
+        "baseline": 13.78,
+        "height": 0,
+        "lineHeight": 18.2,
+        "lines": [],
+        "width": 0,
+      },
+      "outline": "M0,-40L0,-40A4,4 0 0 1 4,-36L4,36A4,4 0 0 1 0,40L0,40A4,4 0 0 1 -4,36L-4,-36A4,4 0 0 1 0,-40Z",
+      "shape": "state-bar",
+      "width": 8,
+      "x": 384.27,
+      "y": 48,
+    },
+  ],
+  "size": {
+    "height": 96,
+    "width": 396.27,
+  },
+}
+`;
+
+exports[`layoutGraph golden scenes > 'nested clusters' matches its golden scene 1`] = `
+{
+  "clusters": [
+    {
+      "box": {
+        "height": 338.6,
+        "width": 100,
+        "x": 8,
+        "y": 94.2,
+      },
+      "children": [
+        {
+          "box": {
+            "height": 188.4,
+            "width": 68,
+            "x": 24,
+            "y": 142.2,
+          },
+          "children": [],
+          "classes": [],
+          "depth": 1,
+          "id": "inner",
+          "title": {
+            "box": {
+              "baseline": 11.66,
+              "height": 15.4,
+              "lineHeight": 15.4,
+              "lines": [
+                "Inner",
+              ],
+              "width": 27.63,
+            },
+            "x": 53.81,
+            "y": 162.2,
+          },
+        },
+      ],
+      "classes": [],
+      "depth": 0,
+      "id": "outer",
+      "title": {
+        "box": {
+          "baseline": 11.66,
+          "height": 15.4,
+          "lineHeight": 15.4,
+          "lines": [
+            "Outer",
+          ],
+          "width": 30.19,
+        },
+        "x": 39.09,
+        "y": 114.2,
+      },
+    },
+  ],
+  "edges": [
+    {
+      "arrow": "arrow",
+      "arrowD": "M58,190.2L55,181.2L61,181.2Z",
+      "classes": [],
+      "d": "M58,46.2L58,181.2",
+      "id": "top->b#0",
+      "line": "solid",
+      "points": [
+        {
+          "x": 58,
+          "y": 46.2,
+        },
+        {
+          "x": 58,
+          "y": 94.2,
+        },
+        {
+          "x": 58,
+          "y": 181.2,
+        },
+      ],
+      "reversed": false,
+      "source": "top",
+      "startArrow": "none",
+      "target": "b",
+    },
+    {
+      "arrow": "arrow",
+      "arrowD": "M58,276.4L55,267.4L61,267.4Z",
+      "classes": [],
+      "d": "M58,228.4L58,267.4",
+      "id": "b->c#1",
+      "line": "solid",
+      "points": [
+        {
+          "x": 58,
+          "y": 228.4,
+        },
+        {
+          "x": 58,
+          "y": 267.4,
+        },
+      ],
+      "reversed": false,
+      "source": "b",
+      "startArrow": "none",
+      "target": "c",
+    },
+    {
+      "arrow": "arrow",
+      "arrowD": "M58,378.6L55,369.6L61,369.6Z",
+      "classes": [],
+      "d": "M58,314.6L58,369.6",
+      "id": "c->d#2",
+      "line": "solid",
+      "points": [
+        {
+          "x": 58,
+          "y": 314.6,
+        },
+        {
+          "x": 58,
+          "y": 330.6,
+        },
+        {
+          "x": 58,
+          "y": 369.6,
+        },
+      ],
+      "reversed": false,
+      "source": "c",
+      "startArrow": "none",
+      "target": "d",
+    },
+    {
+      "arrow": "arrow",
+      "arrowD": "M58,480.8L55,471.8L61,471.8Z",
+      "classes": [],
+      "d": "M58,416.8L58,471.8",
+      "id": "d->tail#3",
+      "line": "solid",
+      "points": [
+        {
+          "x": 58,
+          "y": 416.8,
+        },
+        {
+          "x": 58,
+          "y": 432.8,
+        },
+        {
+          "x": 58,
+          "y": 471.8,
+        },
+      ],
+      "reversed": false,
+      "source": "d",
+      "startArrow": "none",
+      "target": "tail",
+    },
+  ],
+  "family": "flowchart",
+  "kind": "graph",
+  "nodes": [
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "top",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "top",
+        ],
+        "width": 20.02,
+      },
+      "outline": "M-18.01,-19.1L18.01,-19.1A6,6 0 0 1 24.01,-13.1L24.01,13.1A6,6 0 0 1 18.01,19.1L-18.01,19.1A6,6 0 0 1 -24.01,13.1L-24.01,-13.1A6,6 0 0 1 -18.01,-19.1Z",
+      "shape": "rect",
+      "width": 48.02,
+      "x": 58,
+      "y": 27.1,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "b",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "b",
+        ],
+        "width": 7.96,
+      },
+      "outline": "M-12,-19.1L12,-19.1A6,6 0 0 1 18,-13.1L18,13.1A6,6 0 0 1 12,19.1L-12,19.1A6,6 0 0 1 -18,13.1L-18,-13.1A6,6 0 0 1 -12,-19.1Z",
+      "shape": "rect",
+      "width": 36,
+      "x": 58,
+      "y": 209.3,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "c",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "c",
+        ],
+        "width": 7.43,
+      },
+      "outline": "M-12,-19.1L12,-19.1A6,6 0 0 1 18,-13.1L18,13.1A6,6 0 0 1 12,19.1L-12,19.1A6,6 0 0 1 -18,13.1L-18,-13.1A6,6 0 0 1 -12,-19.1Z",
+      "shape": "rect",
+      "width": 36,
+      "x": 58,
+      "y": 295.5,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "d",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "d",
+        ],
+        "width": 7.96,
+      },
+      "outline": "M-12,-19.1L12,-19.1A6,6 0 0 1 18,-13.1L18,13.1A6,6 0 0 1 12,19.1L-12,19.1A6,6 0 0 1 -18,13.1L-18,-13.1A6,6 0 0 1 -12,-19.1Z",
+      "shape": "rect",
+      "width": 36,
+      "x": 58,
+      "y": 397.7,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "tail",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "tail",
+        ],
+        "width": 18.3,
+      },
+      "outline": "M-17.15,-19.1L17.15,-19.1A6,6 0 0 1 23.15,-13.1L23.15,13.1A6,6 0 0 1 17.15,19.1L-17.15,19.1A6,6 0 0 1 -23.15,13.1L-23.15,-13.1A6,6 0 0 1 -17.15,-19.1Z",
+      "shape": "rect",
+      "width": 46.3,
+      "x": 58,
+      "y": 499.9,
+    },
+  ],
+  "size": {
+    "height": 527,
+    "width": 116,
+  },
+}
+`;
+
+exports[`layoutGraph golden scenes > 'parallel edges' matches its golden scene 1`] = `
+{
+  "clusters": [],
+  "edges": [
+    {
+      "arrow": "arrow",
+      "arrowD": "M17,94.2L18.94,84.91L24.13,87.94Z",
+      "classes": [],
+      "d": "M17,46.2L27.98,65.02Q31,70.2 27.98,75.38L21.53,86.43",
+      "id": "a->b#0",
+      "line": "solid",
+      "points": [
+        {
+          "x": 17,
+          "y": 46.2,
+        },
+        {
+          "x": 31,
+          "y": 70.2,
+        },
+        {
+          "x": 21.53,
+          "y": 86.43,
+        },
+      ],
+      "reversed": false,
+      "source": "a",
+      "startArrow": "none",
+      "target": "b",
+    },
+    {
+      "arrow": "arrow",
+      "arrowD": "M26,94.2L23,85.2L29,85.2Z",
+      "classes": [],
+      "d": "M26,46.2L26,85.2",
+      "id": "a->b#1",
+      "line": "solid",
+      "points": [
+        {
+          "x": 26,
+          "y": 46.2,
+        },
+        {
+          "x": 26,
+          "y": 85.2,
+        },
+      ],
+      "reversed": false,
+      "source": "a",
+      "startArrow": "none",
+      "target": "b",
+    },
+    {
+      "arrow": "arrow",
+      "arrowD": "M35,46.2L33.06,55.49L27.87,52.46Z",
+      "classes": [],
+      "d": "M35,94.2L24.02,75.38Q21,70.2 24.02,65.02L30.47,53.97",
+      "id": "b->a#2",
+      "line": "solid",
+      "points": [
+        {
+          "x": 35,
+          "y": 94.2,
+        },
+        {
+          "x": 21,
+          "y": 70.2,
+        },
+        {
+          "x": 30.47,
+          "y": 53.97,
+        },
+      ],
+      "reversed": true,
+      "source": "b",
+      "startArrow": "none",
+      "target": "a",
+    },
+  ],
+  "family": "flowchart",
+  "kind": "graph",
+  "nodes": [
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "a",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "a",
+        ],
+        "width": 7.3,
+      },
+      "outline": "M-12,-19.1L12,-19.1A6,6 0 0 1 18,-13.1L18,13.1A6,6 0 0 1 12,19.1L-12,19.1A6,6 0 0 1 -18,13.1L-18,-13.1A6,6 0 0 1 -12,-19.1Z",
+      "shape": "rect",
+      "width": 36,
+      "x": 26,
+      "y": 27.1,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "b",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "b",
+        ],
+        "width": 7.96,
+      },
+      "outline": "M-12,-19.1L12,-19.1A6,6 0 0 1 18,-13.1L18,13.1A6,6 0 0 1 12,19.1L-12,19.1A6,6 0 0 1 -18,13.1L-18,-13.1A6,6 0 0 1 -12,-19.1Z",
+      "shape": "rect",
+      "width": 36,
+      "x": 26,
+      "y": 113.3,
+    },
+  ],
+  "size": {
+    "height": 140.4,
+    "width": 52,
+  },
+}
+`;
+
+exports[`layoutGraph golden scenes > 'self loop' matches its golden scene 1`] = `
+{
+  "clusters": [],
+  "edges": [
+    {
+      "arrow": "arrow",
+      "arrowD": "M44,36.1L53,33.1L53,39.1Z",
+      "classes": [],
+      "d": "M44,18.1L74,18.1Q80,18.1 80,24.1L80,30.1Q80,36.1 74,36.1L53,36.1",
+      "id": "a->a#0",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "retry",
+          ],
+          "width": 26.73,
+        },
+        "x": 97.36,
+        "y": 27.1,
+      },
+      "line": "solid",
+      "points": [
+        {
+          "x": 44,
+          "y": 18.1,
+        },
+        {
+          "x": 80,
+          "y": 18.1,
+        },
+        {
+          "x": 80,
+          "y": 36.1,
+        },
+        {
+          "x": 53,
+          "y": 36.1,
+        },
+      ],
+      "reversed": false,
+      "source": "a",
+      "startArrow": "none",
+      "target": "a",
+    },
+    {
+      "arrow": "arrow",
+      "arrowD": "M26,94.2L23,85.2L29,85.2Z",
+      "classes": [],
+      "d": "M26,46.2L26,85.2",
+      "id": "a->b#1",
+      "line": "solid",
+      "points": [
+        {
+          "x": 26,
+          "y": 46.2,
+        },
+        {
+          "x": 26,
+          "y": 85.2,
+        },
+      ],
+      "reversed": false,
+      "source": "a",
+      "startArrow": "none",
+      "target": "b",
+    },
+  ],
+  "family": "flowchart",
+  "kind": "graph",
+  "nodes": [
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "a",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "a",
+        ],
+        "width": 7.3,
+      },
+      "outline": "M-12,-19.1L12,-19.1A6,6 0 0 1 18,-13.1L18,13.1A6,6 0 0 1 12,19.1L-12,19.1A6,6 0 0 1 -18,13.1L-18,-13.1A6,6 0 0 1 -12,-19.1Z",
+      "shape": "rect",
+      "width": 36,
+      "x": 26,
+      "y": 27.1,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "b",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "b",
+        ],
+        "width": 7.96,
+      },
+      "outline": "M-12,-19.1L12,-19.1A6,6 0 0 1 18,-13.1L18,13.1A6,6 0 0 1 12,19.1L-12,19.1A6,6 0 0 1 -18,13.1L-18,-13.1A6,6 0 0 1 -12,-19.1Z",
+      "shape": "rect",
+      "width": 36,
+      "x": 26,
+      "y": 113.3,
+    },
+  ],
+  "size": {
+    "height": 140.4,
+    "width": 118.73,
+  },
+}
+`;
+
+exports[`layoutGraph golden scenes > 'single node' matches its golden scene 1`] = `
+{
+  "clusters": [],
+  "edges": [],
+  "family": "flowchart",
+  "kind": "graph",
+  "nodes": [
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "only",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "only",
+        ],
+        "width": 26.38,
+      },
+      "outline": "M-21.19,-19.1L21.19,-19.1A6,6 0 0 1 27.19,-13.1L27.19,13.1A6,6 0 0 1 21.19,19.1L-21.19,19.1A6,6 0 0 1 -27.19,13.1L-27.19,-13.1A6,6 0 0 1 -21.19,-19.1Z",
+      "shape": "rect",
+      "width": 54.38,
+      "x": 35.19,
+      "y": 27.1,
+    },
+  ],
+  "size": {
+    "height": 54.2,
+    "width": 70.38,
+  },
+}
+`;

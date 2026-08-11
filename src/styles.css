@@ -1,4 +1,11 @@
+/*
+ * Layer order, declared before the Tailwind import so `diagram` lands between preflight and the
+ * utilities: the diagram library's own rules sit above `base`, the house binding sits above them,
+ * and any Tailwind utility (or unlayered rule) still wins over both with no `!important`.
+ */
+@layer theme, base, diagram.library, diagram.house, components, utilities;
 @import 'tailwindcss';
+@import './components/diagram/diagram.css';
 @plugin '@tailwindcss/typography';
 
 /*
@@ -863,6 +870,16 @@
   margin-block: 0;
 }
 
+/* The sr-only utility is 0,1,0 like typography's element rules, so a chart's
+   fallback <table> inside prose gets typography's width back and — absolutely
+   positioned — stretches the page sideways. Reassert the contested box. */
+.prose .sr-only {
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+}
+
 /* Every <pre> inside prose is component chrome (CodeBlock, HighlightedCode) —
    markdown fences never reach the DOM as bare pre. The component's container
    owns padding and rhythm; typography's pre margin would open a dead band
@@ -1057,5 +1074,145 @@
     .catalog-chart-tooltip {
       opacity: 0;
     }
+  }
+}
+
+/*
+ * House binding for the diagram library. One block, zero hex, no dark redeclaration: the semantic
+ * tokens already flip with `data-theme`, so a scheme switch repaints every diagram with no
+ * re-render and no re-layout. Custom properties only — the library owns which element each role
+ * paints, the design system owns what the roles look like.
+ *
+ * `data-class` (from mermaid `classDef` / `class` / `:::`) sets the same custom properties rather
+ * than `fill`, so an authored class composes with everything above instead of overriding it. The
+ * declared paint from a `classDef` is parsed and thrown away — only the name survives.
+ */
+@layer diagram.house {
+  [data-slot='diagram'] {
+    color: var(--color-foreground-muted);
+
+    --diagram-node-fill: var(--color-surface);
+    --diagram-node-fill-hover: var(--color-surface-active);
+    --diagram-node-stroke: var(--color-border-strong);
+    --diagram-node-text: var(--color-foreground);
+
+    --diagram-cluster-fill: var(--color-surface-subtle);
+    /* One step further from the page so a subgraph inside a subgraph reads as inside it. The
+       library applies this at depth 1 and everything below inherits it, so the ramp never runs
+       away. */
+    --diagram-cluster-fill-nested: var(--color-surface-muted);
+    --diagram-cluster-stroke: var(--color-border);
+    --diagram-cluster-text: var(--color-foreground-muted);
+    --diagram-cluster-label-fill: var(--color-surface-subtle);
+
+    --diagram-edge-stroke: var(--color-border-strong);
+    --diagram-edge-text: var(--color-foreground-muted);
+    /* Edge labels are knocked out of their own stroke, so this only ever paints the fallback plate
+       on an edge too short to cut. */
+    --diagram-edge-label-fill: var(--color-background);
+
+    --diagram-arrow-fill: var(--color-border-strong);
+    --diagram-arrow-stroke: var(--color-border-strong);
+    --diagram-arrow-open-fill: var(--color-background);
+
+    --diagram-marker-fill: var(--color-foreground);
+    /* A note is an aside, not a hazard: neutral surface, and the folded corner carries the "note"
+       semantics on its own. The three tokens stay so mermaid's yellow is one override away. */
+    --diagram-note-fill: var(--color-surface-subtle);
+    --diagram-note-stroke: var(--color-border);
+    --diagram-note-text: var(--color-foreground-muted);
+
+    /* Sequence. The lifeline is the quietest line on the page and the activation bar the loudest
+       fill, because "who is doing work right now" is the one thing the drawing is for. */
+    --diagram-participant-fill: var(--color-surface);
+    --diagram-participant-stroke: var(--color-border-strong);
+    --diagram-participant-text: var(--color-foreground);
+    --diagram-lifeline-stroke: var(--color-border);
+    --diagram-activation-fill: var(--color-surface-active);
+    --diagram-activation-stroke: var(--color-border-strong);
+    --diagram-message-stroke: var(--color-border-strong);
+    --diagram-message-text: var(--color-foreground-muted);
+    --diagram-message-label-fill: var(--color-background);
+    --diagram-frame-fill: transparent;
+    --diagram-frame-stroke: var(--color-border);
+    --diagram-frame-text: var(--color-foreground-muted);
+    --diagram-frame-tab-fill: var(--color-surface-subtle);
+
+    /* Slice text is the page background: chart steps are the text-grade anchor of each hue, so
+       they carry the same contrast against the background in either scheme. */
+    --diagram-slice-stroke: var(--color-background);
+    --diagram-slice-text: var(--color-background);
+    --diagram-series-1: var(--color-chart-1);
+    --diagram-series-2: var(--color-chart-2);
+    --diagram-series-3: var(--color-chart-3);
+    --diagram-series-4: var(--color-chart-4);
+    --diagram-series-5: var(--color-chart-5);
+    --diagram-series-6: var(--color-chart-6);
+    --diagram-series-7: var(--color-chart-7);
+    --diagram-series-8: var(--color-chart-8);
+
+    --diagram-legend-text: var(--color-foreground-muted);
+    --diagram-legend-value-text: var(--color-foreground);
+    --diagram-legend-swatch-radius: var(--radius-sm);
+    --diagram-issue-text: var(--color-foreground-muted);
+    --diagram-issue-error-text: var(--color-danger);
+    --diagram-issue-warning-text: var(--color-warning-body);
+    --diagram-issue-marker: var(--color-foreground-subtle);
+    --diagram-issue-code-text: var(--color-foreground-subtle);
+    --diagram-issue-code-fill: var(--color-surface-muted);
+    --diagram-issue-code-font: var(--font-mono, ui-monospace, monospace);
+
+    /* Canvas mode. The grid is the recessed surface behind the drawing, so it reads as paper
+       rather than as a second card. */
+    --diagram-canvas-fill: var(--color-surface-subtle);
+    --diagram-canvas-border: var(--color-border);
+    --diagram-canvas-radius: var(--radius-lg);
+    --diagram-canvas-dot: var(--color-border-strong);
+    --diagram-canvas-ring: var(--color-focus);
+    --diagram-canvas-border-focus: var(--color-ring);
+    --diagram-canvas-control-fill: var(--color-surface);
+    --diagram-canvas-control-fill-hover: var(--color-surface-active);
+    --diagram-canvas-control-border: var(--color-border-strong);
+    --diagram-canvas-control-text: var(--color-foreground);
+  }
+
+  [data-slot='diagram'] [data-class~='danger'] {
+    --diagram-node-fill: var(--color-danger-subtle);
+    --diagram-node-stroke: var(--color-danger-line);
+    --diagram-node-text: var(--color-danger-body);
+    --diagram-node-fill-hover: var(--color-danger-muted);
+    --diagram-edge-stroke: var(--color-danger-line);
+    --diagram-arrow-fill: var(--color-danger-line);
+    --diagram-marker-fill: var(--color-danger);
+  }
+
+  [data-slot='diagram'] [data-class~='success'] {
+    --diagram-node-fill: var(--color-success-subtle);
+    --diagram-node-stroke: var(--color-success-line);
+    --diagram-node-text: var(--color-success-body);
+    --diagram-node-fill-hover: var(--color-success-muted);
+    --diagram-edge-stroke: var(--color-success-line);
+    --diagram-arrow-fill: var(--color-success-line);
+    --diagram-marker-fill: var(--color-success);
+  }
+
+  [data-slot='diagram'] [data-class~='info'] {
+    --diagram-node-fill: var(--color-info-subtle);
+    --diagram-node-stroke: var(--color-info-line);
+    --diagram-node-text: var(--color-info-body);
+    --diagram-node-fill-hover: var(--color-info-muted);
+    --diagram-edge-stroke: var(--color-info-line);
+    --diagram-arrow-fill: var(--color-info-line);
+    --diagram-marker-fill: var(--color-info);
+  }
+
+  [data-slot='diagram'] [data-class~='accent'] {
+    --diagram-node-fill: var(--color-accent);
+    --diagram-node-stroke: var(--color-accent);
+    --diagram-node-text: var(--color-accent-foreground);
+    --diagram-node-fill-hover: var(--color-accent-hover);
+    --diagram-edge-stroke: var(--color-accent);
+    --diagram-arrow-fill: var(--color-accent);
+    --diagram-marker-fill: var(--color-accent);
   }
 }
