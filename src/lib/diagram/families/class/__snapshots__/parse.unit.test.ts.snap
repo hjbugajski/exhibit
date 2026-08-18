@@ -1,0 +1,533 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`parseClass > 'accessibility statements' 1`] = `
+{
+  "accDescr": "Two classes",
+  "accTitle": "Domain model",
+  "classes": [
+    "A {}",
+    "B {}",
+  ],
+  "direction": "TB",
+  "namespaces": [],
+  "relations": [
+    "A none--arrow B",
+  ],
+}
+`;
+
+exports[`parseClass > 'aggregation' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "classes": [
+    "Order {}",
+    "Coupon {}",
+  ],
+  "direction": "TB",
+  "namespaces": [],
+  "relations": [
+    "Order aggregation--none Coupon",
+  ],
+}
+`;
+
+exports[`parseClass > 'annotation inside a body' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "classes": [
+    "Shape <<interface>> {+area() float}",
+  ],
+  "direction": "TB",
+  "namespaces": [],
+  "relations": [],
+}
+`;
+
+exports[`parseClass > 'association' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "classes": [
+    "Order {}",
+    "Invoice {}",
+  ],
+  "direction": "TB",
+  "namespaces": [],
+  "relations": [
+    "Order none--arrow Invoice",
+  ],
+}
+`;
+
+exports[`parseClass > 'bare class declaration' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "classes": [
+    "Foo {}",
+  ],
+  "direction": "TB",
+  "namespaces": [],
+  "relations": [],
+}
+`;
+
+exports[`parseClass > 'body block' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "classes": [
+    "Foo {+int count; +render() void}",
+  ],
+  "direction": "TB",
+  "namespaces": [],
+  "relations": [],
+}
+`;
+
+exports[`parseClass > 'cardinalities without spaces' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "classes": [
+    "A {}",
+    "B {}",
+  ],
+  "direction": "TB",
+  "namespaces": [],
+  "relations": [
+    ""1" A none--arrow "0..*" B",
+  ],
+}
+`;
+
+exports[`parseClass > 'cardinalities' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "classes": [
+    "Customer {}",
+    "Order {}",
+  ],
+  "direction": "TB",
+  "namespaces": [],
+  "relations": [
+    ""1" Customer none--arrow "many" Order : places",
+  ],
+}
+`;
+
+exports[`parseClass > 'comments are stripped' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "classes": [
+    "A {}",
+    "B {}",
+  ],
+  "direction": "TB",
+  "namespaces": [],
+  "relations": [
+    "A none--arrow B",
+  ],
+}
+`;
+
+exports[`parseClass > 'composition' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "classes": [
+    "Order {}",
+    "OrderLine {}",
+  ],
+  "direction": "TB",
+  "namespaces": [],
+  "relations": [
+    "Order composition--none OrderLine",
+  ],
+}
+`;
+
+exports[`parseClass > 'dependency' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "classes": [
+    "Invoice {}",
+    "Ledger {}",
+  ],
+  "direction": "TB",
+  "namespaces": [],
+  "relations": [
+    "Invoice none..arrow Ledger",
+  ],
+}
+`;
+
+exports[`parseClass > 'direction LR' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "classes": [
+    "A {}",
+    "B {}",
+  ],
+  "direction": "LR",
+  "namespaces": [],
+  "relations": [
+    "A none--arrow B",
+  ],
+}
+`;
+
+exports[`parseClass > 'direction TD maps to TB' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "classes": [
+    "A {}",
+    "B {}",
+  ],
+  "direction": "TB",
+  "namespaces": [],
+  "relations": [
+    "A none--arrow B",
+  ],
+}
+`;
+
+exports[`parseClass > 'dotted link' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "classes": [
+    "Warehouse {}",
+    "Region {}",
+  ],
+  "direction": "TB",
+  "namespaces": [],
+  "relations": [
+    "Warehouse none..none Region",
+  ],
+}
+`;
+
+exports[`parseClass > 'empty body' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "classes": [
+    "Foo {}",
+  ],
+  "direction": "TB",
+  "namespaces": [],
+  "relations": [],
+}
+`;
+
+exports[`parseClass > 'entities in a label' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "classes": [
+    "A {}",
+    "B {}",
+  ],
+  "direction": "TB",
+  "namespaces": [],
+  "relations": [
+    "A none--arrow B : say "hi"",
+  ],
+}
+`;
+
+exports[`parseClass > 'every visibility marker' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "classes": [
+    "Foo {+public; -private; #protected; ~package}",
+  ],
+  "direction": "TB",
+  "namespaces": [],
+  "relations": [],
+}
+`;
+
+exports[`parseClass > 'generic class' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "classes": [
+    "Box "Box<T>" {}",
+  ],
+  "direction": "TB",
+  "namespaces": [],
+  "relations": [],
+}
+`;
+
+exports[`parseClass > 'generic member type' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "classes": [
+    "Foo {-List<Line> lines}",
+  ],
+  "direction": "TB",
+  "namespaces": [],
+  "relations": [],
+}
+`;
+
+exports[`parseClass > 'header only' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "classes": [],
+  "direction": "TB",
+  "namespaces": [],
+  "relations": [],
+}
+`;
+
+exports[`parseClass > 'inheritance' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "classes": [
+    "Animal {}",
+    "Duck {}",
+  ],
+  "direction": "TB",
+  "namespaces": [],
+  "relations": [
+    "Animal inheritance--none Duck",
+  ],
+}
+`;
+
+exports[`parseClass > 'long line' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "classes": [
+    "A {}",
+    "B {}",
+  ],
+  "direction": "TB",
+  "namespaces": [],
+  "relations": [
+    "A none--arrow B",
+  ],
+}
+`;
+
+exports[`parseClass > 'member line' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "classes": [
+    "Foo {+int count}",
+  ],
+  "direction": "TB",
+  "namespaces": [],
+  "relations": [],
+}
+`;
+
+exports[`parseClass > 'method member' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "classes": [
+    "Foo {+render(target) void}",
+  ],
+  "direction": "TB",
+  "namespaces": [],
+  "relations": [],
+}
+`;
+
+exports[`parseClass > 'namespace' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "classes": [
+    "Invoice in billing {}",
+  ],
+  "direction": "TB",
+  "namespaces": [
+    "billing",
+  ],
+  "relations": [],
+}
+`;
+
+exports[`parseClass > 'plain link' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "classes": [
+    "Region {}",
+    "Zone {}",
+  ],
+  "direction": "TB",
+  "namespaces": [],
+  "relations": [
+    "Region none--none Zone",
+  ],
+}
+`;
+
+exports[`parseClass > 'quoted label' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "classes": [
+    "Foo "A friendly name" {}",
+  ],
+  "direction": "TB",
+  "namespaces": [],
+  "relations": [],
+}
+`;
+
+exports[`parseClass > 'realization' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "classes": [
+    "Payment {}",
+    "CardPayment {}",
+  ],
+  "direction": "TB",
+  "namespaces": [],
+  "relations": [
+    "Payment inheritance..none CardPayment",
+  ],
+}
+`;
+
+exports[`parseClass > 'relation label' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "classes": [
+    "Customer {}",
+    "Order {}",
+  ],
+  "direction": "TB",
+  "namespaces": [],
+  "relations": [
+    "Customer none--arrow Order : places",
+  ],
+}
+`;
+
+exports[`parseClass > 'reversed inheritance' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "classes": [
+    "Duck {}",
+    "Animal {}",
+  ],
+  "direction": "TB",
+  "namespaces": [],
+  "relations": [
+    "Duck none--inheritance Animal",
+  ],
+}
+`;
+
+exports[`parseClass > 'self relation' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "classes": [
+    "A {}",
+  ],
+  "direction": "TB",
+  "namespaces": [],
+  "relations": [
+    "A none--arrow A : retries",
+  ],
+}
+`;
+
+exports[`parseClass > 'semicolon separated statements' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "classes": [
+    "A {}",
+    "B {}",
+    "C {}",
+  ],
+  "direction": "TB",
+  "namespaces": [],
+  "relations": [
+    "A none--arrow B",
+    "B none--arrow C",
+  ],
+}
+`;
+
+exports[`parseClass > 'single line body' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "classes": [
+    "Foo {+int count}",
+  ],
+  "direction": "TB",
+  "namespaces": [],
+  "relations": [],
+}
+`;
+
+exports[`parseClass > 'standalone annotation' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "classes": [
+    "Shape <<abstract>> {}",
+  ],
+  "direction": "TB",
+  "namespaces": [],
+  "relations": [],
+}
+`;
+
+exports[`parseClass > 'two way association' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "classes": [
+    "A {}",
+    "B {}",
+  ],
+  "direction": "TB",
+  "namespaces": [],
+  "relations": [
+    "A arrow--arrow B",
+  ],
+}
+`;
+
+exports[`parseClass > 'v2 header' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "classes": [
+    "Foo {}",
+  ],
+  "direction": "TB",
+  "namespaces": [],
+  "relations": [],
+}
+`;

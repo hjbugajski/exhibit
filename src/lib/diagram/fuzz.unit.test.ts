@@ -15,7 +15,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { loadCorpus } from '@testing/diagram/corpus.ts';
-import { assertContractHolds, mutations } from '@testing/diagram/fuzz.ts';
+import { assertContractHolds, createRandom, editCount, mutations } from '@testing/diagram/fuzz.ts';
 
 import { defaultShapes } from './core/shapes/registry.ts';
 import { metricsMeasurer } from './core/text/measurers.ts';
@@ -35,10 +35,31 @@ const options = {
 
 const corpus = loadCorpus();
 
+describe('editCount', () => {
+  it('is one to three, drawn once, whatever the RNG returns', () => {
+    expect(editCount(() => 0)).toBe(1);
+    expect(editCount(() => 0.5)).toBe(2);
+    expect(editCount(() => 0.999_999)).toBe(3);
+  });
+
+  it('consumes exactly one draw, so the mutation stream stays bounded', () => {
+    const random = createRandom(5);
+    let draws = 0;
+
+    editCount(() => {
+      draws += 1;
+
+      return random();
+    });
+
+    expect(draws).toBe(1);
+  });
+});
+
 describe('the pipeline holds its contract on mutated sources', () => {
   it('has a corpus to mutate', () => {
     expect(corpus.length).toBeGreaterThan(20);
-    expect(new Set(corpus.map((fixture) => fixture.family)).size).toBe(4);
+    expect(new Set(corpus.map((fixture) => fixture.family)).size).toBe(7);
   });
 
   it.each(corpus)('$name', ({ source }) => {

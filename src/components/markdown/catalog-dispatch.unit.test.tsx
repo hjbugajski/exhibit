@@ -15,8 +15,8 @@ vi.mock('@/components/catalog/map', () => ({
   Map: () => <div data-testid="catalog-map" />,
 }));
 
-/** Stands in for the real diagram (mermaid needs layout APIs happy-dom lacks) and reports the
- * fence body it was handed. */
+/** Stands in for the real diagram and reports the fence body it was handed — what dispatch owes it
+ * is the source, not a drawing. */
 vi.mock('@/components/catalog/mermaid', () => ({
   Mermaid: ({ props }: { props: { code: string } }) => (
     <div data-code={props.code} data-testid="catalog-mermaid" />

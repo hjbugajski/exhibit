@@ -14,6 +14,7 @@ import { buildDiagram } from '@/lib/diagram/build';
 import { round2 } from '@/lib/diagram/core/geometry/path';
 import { metricsMeasurer } from '@/lib/diagram/core/text/measurers';
 import { describeScene } from '@/lib/diagram/describe';
+import type { Diagnostic } from '@/lib/diagram/types';
 
 afterEach(() => {
   cleanup();
@@ -192,7 +193,7 @@ describe('Diagram.Root', () => {
 
   it('omits the scene width when nothing could be drawn', () => {
     const { container } = render(
-      <Diagram.Root source="gantt\n  title Release">
+      <Diagram.Root source="not a diagram at all">
         <Diagram.Svg />
       </Diagram.Root>,
     );
@@ -551,6 +552,44 @@ describe('the render boundary', () => {
     logged.mockRestore();
   });
 
+  it('contains a child that throws again in the degraded pass', () => {
+    // The `Fallback` shape: renders — and here fails — precisely when there is no scene, which is
+    // the state the boundary itself puts the tree in. Nothing may escape to the app.
+    function Unrecoverable() {
+      const { scene } = useDiagramScene();
+
+      if (scene) {
+        return null;
+      }
+
+      throw new Error('chunk failed to load');
+    }
+
+    const components: DiagramComponents = {
+      Node: () => {
+        throw new Error('override exploded');
+      },
+    };
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+    let escaped: unknown = null;
+
+    try {
+      render(
+        <Diagram.Root components={components} source={FLOW}>
+          <Diagram.Svg />
+          <Unrecoverable />
+        </Diagram.Root>,
+      );
+    } catch (cause) {
+      escaped = cause;
+    }
+
+    expect(escaped).toBeNull();
+    expect(screen.queryByText('chunk failed to load')).toBeNull();
+
+    logged.mockRestore();
+  });
+
   it('tries again once the pipeline produces something new', () => {
     let explode = true;
     const components: DiagramComponents = {
@@ -753,6 +792,45 @@ describe('diagnostics', () => {
     expect(issues[1]?.textContent).toContain('Click');
     expect(issues[2]?.textContent).toContain("'style'");
   });
+
+  it('collapses a repeated note into one line with a count', () => {
+    const nodes = Array.from({ length: 12 }, (_, index) => `n${index}`);
+    const source = [
+      'flowchart TD',
+      ...nodes.slice(1).map((node, index) => `  ${nodes[index]} --> ${node}`),
+      ...nodes.map((node) => `  style ${node} fill:#f00`),
+    ].join('\n');
+    const { container } = render(full(source));
+    const styling = [...container.querySelectorAll('[data-part="issue"]')].filter((issue) =>
+      issue.textContent?.includes("'style'"),
+    );
+
+    expect(styling).toHaveLength(1);
+    expect(styling[0]?.textContent).toContain('12');
+  });
+
+  it('caps a long list of distinct issues and counts the rest', () => {
+    function Distinct() {
+      const diagram = useDiagram(FLOW);
+      const diagnostics: Diagnostic[] = Array.from({ length: 14 }, (_, index) => ({
+        severity: 'info',
+        code: 'unsupported-construct',
+        message: `Note number ${index}.`,
+      }));
+
+      return (
+        <Diagram.Root diagram={{ ...diagram, diagnostics }} source={FLOW}>
+          <Diagram.Issues />
+        </Diagram.Root>
+      );
+    }
+
+    const { container } = render(<Distinct />);
+    const issues = [...container.querySelectorAll('[data-part="issue"]')];
+
+    expect(issues.length).toBeLessThan(14);
+    expect(issues.at(-1)?.textContent).toMatch(/\d+ more/);
+  });
 });
 
 describe('HouseDiagram', () => {
@@ -815,11 +893,11 @@ describe('HouseDiagram', () => {
   });
 
   it('names a family it recognizes but does not draw', () => {
-    const { container } = render(<HouseDiagram source={'gantt\n  section a'} />);
+    const { container } = render(<HouseDiagram source={'mindmap\n  root'} />);
     const issue = container.querySelector('[data-part="issue"]');
 
     expect(issue?.getAttribute('data-code')).toBe('unsupported-diagram-type');
-    expect(issue?.textContent).toContain('Gantt charts');
+    expect(issue?.textContent).toContain('Mind maps');
   });
 });
 

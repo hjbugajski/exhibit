@@ -140,6 +140,22 @@ function collectLabels(scene: Scene): string[] {
     return texts;
   }
 
+  if (scene.kind === 'gantt') {
+    for (const task of scene.tasks) {
+      texts.push(...task.label.box.lines);
+    }
+
+    for (const tick of scene.ticks) {
+      texts.push(...tick.label.box.lines);
+    }
+
+    for (const section of scene.sections) {
+      texts.push(...(section.label?.box.lines ?? []));
+    }
+
+    return texts;
+  }
+
   for (const node of scene.nodes) {
     texts.push(...node.label.lines);
   }

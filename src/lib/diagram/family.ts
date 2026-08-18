@@ -4,7 +4,10 @@
  * factory. The `DiagramFamily` contract itself lives in types.ts.
  */
 
+import { classFamily } from './families/class/family.ts';
+import { erFamily } from './families/er/family.ts';
 import { flowchartFamily } from './families/flowchart/family.ts';
+import { ganttFamily } from './families/gantt/family.ts';
 import { pieFamily } from './families/pie/family.ts';
 import { sequenceFamily } from './families/sequence/family.ts';
 import { stateFamily } from './families/state/family.ts';
@@ -14,7 +17,10 @@ export const builtinFamilies: readonly DiagramFamily[] = [
   flowchartFamily,
   sequenceFamily,
   stateFamily,
+  classFamily,
+  erFamily,
   pieFamily,
+  ganttFamily,
 ];
 
 export function findFamily(

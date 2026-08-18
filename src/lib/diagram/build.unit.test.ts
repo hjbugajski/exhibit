@@ -8,7 +8,7 @@ import {
   resolveLayoutOptions,
 } from './build.ts';
 import { metricsMeasurer } from './core/text/measurers.ts';
-import { detectFamily, readHeader } from './detect.ts';
+import { deferredFamily, detectFamily, readHeader } from './detect.ts';
 import { builtinFamilies } from './family.ts';
 import { defaultMetrics, densityPresets } from './metrics.ts';
 import type { BuildOptions, DiagramFamily, DiagramIR } from './types.ts';
@@ -50,12 +50,24 @@ describe('detectFamily', () => {
   });
 
   it('is null for an unknown or empty source', () => {
-    expect(detectFamily('gantt')).toBeNull();
+    expect(detectFamily('mindmap')).toBeNull();
     expect(detectFamily('   ')).toBeNull();
   });
 
   it('honours a caller family list', () => {
     expect(detectFamily('flowchart TD', [])).toBeNull();
+  });
+});
+
+describe('deferredFamily', () => {
+  it('names a family the table carries', () => {
+    expect(deferredFamily('journey\n  title A day')).toBe('User-journey diagrams');
+  });
+
+  it('never answers with an inherited property, whatever the header word is', () => {
+    for (const header of ['constructor', 'toString', '__proto__', 'valueOf', 'hasOwnProperty']) {
+      expect(deferredFamily(header)).toBeNull();
+    }
   });
 });
 
@@ -70,9 +82,9 @@ describe('parseDiagram', () => {
 
   it('names a mermaid family it recognizes but does not draw', () => {
     for (const [source, name] of [
-      ['gantt\n  section a', 'Gantt charts'],
+      ['mindmap\n  root', 'Mind maps'],
       ['journey\n  title A day', 'User-journey diagrams'],
-      ['classDiagram-v2\n  class A', 'Class diagrams'],
+      ['timeline\n  title A year', 'Timelines'],
     ] as const) {
       const { ir, diagnostics } = parseDiagram(source);
 
@@ -91,10 +103,10 @@ describe('parseDiagram', () => {
   });
 
   it('names a deferred family behind a leading init directive', () => {
-    const { diagnostics } = parseDiagram('%%{init: {}}%%\ngantt\n  section a');
+    const { diagnostics } = parseDiagram('%%{init: {}}%%\nmindmap\n  root');
 
     expect(diagnostics[0]?.code).toBe('unsupported-diagram-type');
-    expect(diagnostics[0]?.message).toContain('Gantt charts');
+    expect(diagnostics[0]?.message).toContain('Mind maps');
   });
 
   it('refuses a source over the character limit', () => {

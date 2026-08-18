@@ -1,0 +1,9 @@
+gantt
+  dateFormat DD-MM-YYYY
+  axisFormat %d/%m
+  section Chain
+    Design            :des, 05-02-2024, 4d
+    Build             :after des, 6d
+    Test              :test, after des build, 3d
+    Document          :2d
+    Sign off          :milestone, after test, 0d

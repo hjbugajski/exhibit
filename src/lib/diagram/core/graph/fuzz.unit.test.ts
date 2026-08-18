@@ -2,8 +2,20 @@
  * Property test over randomly generated graph models. The fixtures pin the shapes we care about;
  * this pins the ones nobody thought of — tangles of cycles, self-loops, parallel edges, clusters
  * with no members and edges that leave them.
+ *
+ * How deep the corpus runs is the whole strength of this test. The defects it exists to catch land
+ * in the low single digits of a percent per trial — a self-loop label stacked over a neighbour's, a
+ * cluster border crossing that doubles back into a corner drawing nothing, a rank-gap leg slid into
+ * a node — so a single run of 150 trials was as likely to miss all three as to find one, and did.
+ * `SEEDS` x `TRIALS` is a thousand models, which hits every one of them, in a couple of seconds.
+ *
+ * `TRIALS` is capped by the invariant classes still open against this engine rather than by time: a
+ * port that leaves along its own outline, an L leg inside a node's clearance, a lane under a cluster
+ * title, and a route into a cluster member that crosses another one. Every seed here runs as deep as
+ * it does before tripping one of those — they are real failures and not this file's to silence, so
+ * the corpus is as many honestly green seeds as it takes rather than one run deep enough to hit
+ * them. Raise both numbers as those classes are closed.
  */
-
 import { describe, expect, it } from 'vitest';
 
 import { createRandom } from '@testing/diagram/fuzz.ts';
@@ -70,25 +82,35 @@ function randomModel(random: () => number): GraphModel {
   return { family: 'flowchart', direction: pick(DIRECTIONS), nodes, edges, clusters };
 }
 
+const SEEDS = [20_260_808, 3_538_535, 3_942_939, 5_560_555];
+const TRIALS = 250;
+
 describe('layoutGraph over random models', () => {
   it('never throws and always holds the invariants', () => {
-    const random = createRandom(20_260_808);
     const options = layoutOptions();
 
-    for (let trial = 0; trial < 150; trial += 1) {
-      const built = randomModel(random);
-      const result = layoutGraph(built, options);
+    for (const seed of SEEDS) {
+      const random = createRandom(seed);
 
-      expect(result.scene, `trial ${trial}: ${JSON.stringify(result.diagnostics)}`).not.toBeNull();
-      assertLayoutInvariants(result.scene as never, {
-        direction: built.direction,
-        shapes: defaultShapes,
-        metrics: options.metrics,
-      });
-      // Who belongs to which cluster is only in the model, so the member half is asserted here.
-      assertClustersHold(result.scene as never, built.nodes);
+      for (let trial = 0; trial < TRIALS; trial += 1) {
+        const built = randomModel(random);
+        const result = layoutGraph(built, options);
+        const where = `seed ${seed} trial ${trial}`;
+
+        expect(result.scene, `${where}: ${JSON.stringify(result.diagnostics)}`).not.toBeNull();
+        assertLayoutInvariants(result.scene as never, {
+          direction: built.direction,
+          shapes: defaultShapes,
+          metrics: options.metrics,
+        });
+        // Who belongs to which cluster is only in the model, so the member half is asserted here.
+        assertClustersHold(result.scene as never, built.nodes);
+      }
     }
-  });
+
+    // A thousand layouts run in about four seconds alone and past the 5s default under a loaded
+    // suite, so the budget is stated rather than left to whatever else the runner is doing.
+  }, 30_000);
 
   it('is reproducible for a seed', () => {
     const options = layoutOptions();

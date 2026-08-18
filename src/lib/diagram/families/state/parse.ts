@@ -8,6 +8,7 @@
 
 import { StatementError, reportStatementError } from '../../core/diagnostics.ts';
 import type { Direction } from '../../core/graph/model.ts';
+import { ACC_DESCR_BLOCK, readDescriptionBlock } from '../../core/lex/acc.ts';
 import type { LogicalLine } from '../../core/lex/lines.ts';
 import { readLines, splitHeader } from '../../core/lex/lines.ts';
 import { Scanner } from '../../core/lex/scanner.ts';
@@ -25,6 +26,7 @@ const AS = /as\b/y;
 const OF = /of\b/y;
 const PLACEMENT = /(left|right)\b/y;
 const END_NOTE = /^end\s+note$/i;
+const HIDE_EMPTY = /^hide\s+empty\s+description$/i;
 const CONCURRENCY = /^--+$/;
 
 const DIRECTIONS: Record<string, Direction> = {
@@ -204,7 +206,24 @@ function stateStatement(draft: Draft, scanner: Scanner, span: Span): void {
 
   if (scanner.eat('{')) {
     declare(draft, id, 'composite', label, span);
-    draft.stack.push(id);
+
+    // `state A { }` opens and closes on one physical line. Leaving it on the stack would parent
+    // every later statement to it, so the brace is honoured here rather than only by a lone `}`.
+    const rest = readRestOfLine(scanner).trim();
+    const closed = rest.endsWith('}');
+    const members = (closed ? rest.slice(0, -1) : rest).trim();
+
+    if (members) {
+      draft.report.warn(
+        'unsupported-construct',
+        `A composite state's members must be on their own lines; '${members}' was dropped.`,
+        span,
+      );
+    }
+
+    if (!closed) {
+      draft.stack.push(id);
+    }
 
     return;
   }
@@ -425,6 +444,20 @@ function statement(draft: Draft, line: LogicalLine): void {
       );
 
       return;
+    case 'hide':
+      // Only the one directive mermaid spells this way; `hide` is otherwise a legal state name, so
+      // anything else falls through to be read as a transition.
+      if (HIDE_EMPTY.test(text)) {
+        draft.report.info(
+          'unsupported-construct',
+          '`hide empty description` is recognized but not applied; a state with no description is drawn as a plain box either way.',
+          line.span,
+        );
+
+        return;
+      }
+
+      break;
     default:
       break;
   }
@@ -435,7 +468,11 @@ function statement(draft: Draft, line: LogicalLine): void {
 
 export function parseState(source: string, ctx: ParseContext): ParseResult<StateIR> {
   const report = ctx.report;
-  const { header: first, statements } = splitHeader(readLines(source));
+  // A state description runs from its `:` to the end of the line, so an unquoted `;` in one is
+  // label text rather than a statement break — mermaid's grammar reads it the same way.
+  const { header: first, statements } = splitHeader(
+    readLines(source, { descriptionAfterColon: true }),
+  );
 
   if (!first || !HEADER.test(first.text)) {
     report.error(
@@ -459,7 +496,19 @@ export function parseState(source: string, ctx: ParseContext): ParseResult<State
   };
   const before = report.count;
 
-  for (const line of statements) {
+  for (let index = 0; index < statements.length; index += 1) {
+    const line = statements[index] as LogicalLine;
+    const block = draft.pendingNote ? null : ACC_DESCR_BLOCK.exec(line.text);
+
+    if (block) {
+      const read = readDescriptionBlock(statements, index, block[1] ?? '', report);
+
+      draft.accDescr = read.description;
+      index = read.end;
+
+      continue;
+    }
+
     try {
       statement(draft, line);
     } catch (cause) {

@@ -14,6 +14,8 @@
  * a scene this size is exactly the case a binding renders its source fallback beside.
  */
 
+import { MAX_DETAILS, capped, count } from './core/text/prose.ts';
+import { describeGanttScene } from './families/gantt/describe.ts';
 import type {
   GraphScene,
   PieScene,
@@ -57,29 +59,14 @@ const FAMILY_NAMES: Record<string, string> = {
   flowchart: 'Flowchart',
   sequence: 'Sequence diagram',
   state: 'State diagram',
+  class: 'Class diagram',
+  er: 'Entity-relationship diagram',
   pie: 'Pie chart',
+  gantt: 'Gantt chart',
 };
-
-/** Detail lines before the tail becomes a count. Roughly one screen of a browse-mode list. */
-const MAX_DETAILS = 40;
 
 /** Names printed in full inside a summary clause before the rest become a count. */
 const MAX_NAMED = 3;
-
-function count(n: number, singular: string): string {
-  return `${n} ${n === 1 ? singular : `${singular}s`}`;
-}
-
-function capped(lines: readonly string[], noun: string): string[] {
-  if (lines.length <= MAX_DETAILS) {
-    return [...lines];
-  }
-
-  return [
-    ...lines.slice(0, MAX_DETAILS),
-    `…and ${count(lines.length - MAX_DETAILS, `more ${noun}`)}.`,
-  ];
-}
 
 function named(names: readonly string[], limit: number = MAX_NAMED): string {
   if (names.length <= limit) {
@@ -103,12 +90,20 @@ function heading(scene: Scene): string {
   return scene.title ? `${family} "${scene.title}"` : family;
 }
 
+/**
+ * A stacked label is a compartment, not a name. A class box's label is its whole member list, and
+ * "Invoice +String number -List lines +total() Money is connected to Line" is not a sentence — so
+ * when a family recorded a bare `name` beside a label of several lines, the name is what is read.
+ * A one-line label is already the name it would print, and a state marker's label is empty, so both
+ * read exactly as they did.
+ */
 function nameOf(node: SceneNode | undefined, id: string): string {
   if (!node) {
     return id;
   }
 
-  const text = node.label.lines.join(' ').trim();
+  const stacked = node.label.lines.length > 1 ? node.name?.trim() : '';
+  const text = stacked || node.label.lines.join(' ').trim();
 
   return text || node.name || SHAPE_NAMES[node.shape] || node.id;
 }
@@ -387,6 +382,10 @@ function describeSequence(scene: SequenceScene): SceneDescription {
 export function describeScene(scene: Scene): SceneDescription {
   if (scene.kind === 'pie') {
     return describePie(scene);
+  }
+
+  if (scene.kind === 'gantt') {
+    return describeGanttScene(scene, heading(scene));
   }
 
   return scene.kind === 'sequence' ? describeSequence(scene) : describeGraph(scene);

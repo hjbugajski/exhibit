@@ -4,12 +4,11 @@ import type { Spec } from '@json-render/core';
  * A diagram-led artifact: the design review a Claude would publish after reading this repo's
  * publish path — prose carrying the argument, diagrams carrying the shapes that prose is bad at.
  *
- * It is also the end-to-end check that diagrams work outside /dev/library. Four of the five
- * sources are drawn by the in-repo engine (flowchart with nested subgraphs and edge labels, a
- * composite state machine with a choice pseudostate and a return edge, a sequence with
- * activations, a self-message and an alt frame, and a pie); the rollout gantt is a family the
- * engine recognizes but defers, so it exercises the mermaid.js path instead. Every source is
- * either lifted from the showcase demos or built out of the same constructs, so each one draws.
+ * It is also the end-to-end check that diagrams work outside /dev/library. All five sources are
+ * drawn by the in-repo engine — a flowchart with nested subgraphs and edge labels, a composite
+ * state machine with a choice pseudostate and a return edge, a sequence with activations, a
+ * self-message and an alt frame, a pie, and a rollout gantt with relative task dates. Every source
+ * is either lifted from the showcase demos or built out of the same constructs, so each one draws.
  */
 export const publishPathReviewFixture: Spec = {
   root: 'root',

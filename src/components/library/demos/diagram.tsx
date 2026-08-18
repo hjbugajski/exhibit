@@ -180,11 +180,11 @@ const sources = {
   MCP->>MCP: prune old versions
   deactivate MCP`,
 
-  gantt: `gantt
-  title Release
-  section Build
-  Draft :a1, 2026-01-01, 3d
-  Review :after a1, 2d`,
+  deferred: `mindmap
+  root((exhibit))
+    catalog
+      blocks
+    gallery`,
 
   audit: `flowchart LR
   Measure[Measure the label] -->|compare| Render[Render the label]
@@ -750,7 +750,7 @@ function DiagramDemo() {
               A recognized but deferred family falls back to its source
             </p>
             <div className="bg-surface rounded-xl border p-4">
-              <HouseDiagram source={sources.gantt} />
+              <HouseDiagram source={sources.deferred} />
             </div>
           </div>
         </div>
@@ -773,7 +773,7 @@ export const diagramDemo: LibraryDemo = {
   slug: 'diagram',
   title: 'Diagram',
   description:
-    'The mermaid-syntax diagram library: flowchart, sequence, state and pie, drawn by the in-repo layout engine with every paint decision left to the design system.',
+    'The mermaid-syntax diagram library: flowchart, sequence, state, class, ER, pie and gantt, drawn by the in-repo layout engine with every paint decision left to the design system.',
   group: 'Examples',
   render: () => <DiagramDemo />,
 };

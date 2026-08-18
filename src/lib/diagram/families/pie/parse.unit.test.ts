@@ -63,6 +63,25 @@ describe('parsePie', () => {
   });
 });
 
+describe('parsePie accessibility blocks', () => {
+  it('reads a multi-line accDescr block', () => {
+    const { ir, diagnostics } = parse(
+      'pie\n  accDescr {\n    a share\n    of things\n  }\n  "A" : 1',
+    );
+
+    expect(codes(diagnostics)).toEqual([]);
+    expect(ir?.accDescr).toBe('a share of things');
+    expect((ir as PieIR).slices).toHaveLength(1);
+  });
+
+  it('warns about an accDescr block that is never closed', () => {
+    const { ir, diagnostics } = parse('pie\n  accDescr {\n    dangling');
+
+    expect(codes(diagnostics)).toEqual(['unclosed-block']);
+    expect(ir?.accDescr).toBe('dangling');
+  });
+});
+
 describe('parsePie diagnostics', () => {
   it('reports a missing header', () => {
     const { ir, diagnostics } = parse('flowchart TD');

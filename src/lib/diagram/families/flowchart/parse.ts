@@ -12,6 +12,7 @@
  */
 
 import { StatementError, reportStatementError } from '../../core/diagnostics.ts';
+import { ACC_DESCR_BLOCK, readDescriptionBlock } from '../../core/lex/acc.ts';
 import type { LogicalLine } from '../../core/lex/lines.ts';
 import { readLines, splitHeader } from '../../core/lex/lines.ts';
 import { Scanner } from '../../core/lex/scanner.ts';
@@ -241,7 +242,6 @@ const CLASS_DEF = /^classDef\s+([\p{L}\p{N}_.,-]+)(?:\s+.*)?$/u;
 const DIRECTION_STATEMENT = /^direction\s+([A-Za-z]+)\s*$/;
 const ACC_TITLE = /^accTitle\s*:\s*(.*)$/;
 const ACC_DESCR_LINE = /^accDescr\s*:\s*(.*)$/;
-const ACC_DESCR_BLOCK = /^accDescr\s*\{\s*(.*)$/;
 
 interface PendingNode {
   id: string;
@@ -301,7 +301,10 @@ class FlowchartParser {
       const block = ACC_DESCR_BLOCK.exec(line.text);
 
       if (block) {
-        index = this.readDescriptionBlock(statements, index, block[1] ?? '');
+        const read = readDescriptionBlock(statements, index, block[1] ?? '', this.report);
+
+        this.accDescr = read.description;
+        index = read.end;
         continue;
       }
 
@@ -378,48 +381,6 @@ class FlowchartParser {
       line.span,
       Object.keys(DIRECTIONS),
     );
-  }
-
-  /** Consumes an `accDescr { … }` block and returns the index of its last line. */
-  private readDescriptionBlock(
-    lines: readonly LogicalLine[],
-    start: number,
-    first: string,
-  ): number {
-    const parts: string[] = [];
-    let index = start;
-    let closed = false;
-    let text = first.trim();
-
-    for (;;) {
-      if (text.endsWith('}')) {
-        closed = true;
-        text = text.slice(0, -1).trim();
-      }
-
-      if (text) {
-        parts.push(text);
-      }
-
-      if (closed || index + 1 >= lines.length) {
-        break;
-      }
-
-      index += 1;
-      text = (lines[index] as LogicalLine).text;
-    }
-
-    if (!closed) {
-      this.report.warn(
-        'unclosed-block',
-        'accDescr block is missing its closing brace.',
-        (lines[start] as LogicalLine).span,
-      );
-    }
-
-    this.accDescr = parts.join(' ');
-
-    return index;
   }
 
   private statement(line: LogicalLine): void {

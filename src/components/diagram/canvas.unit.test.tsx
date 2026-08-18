@@ -434,6 +434,18 @@ describe('pointer', () => {
 
     expect(Number(view(canvas).k)).toBeGreaterThan(1);
   });
+
+  it('keeps the pinched point under the fingers when the midpoint also moves', () => {
+    const { canvas } = renderCanvas();
+
+    pointer(canvas, 'pointerdown', { pointerId: 1, clientX: 100, clientY: 100 });
+    pointer(canvas, 'pointerdown', { pointerId: 2, clientX: 200, clientY: 100 });
+    // Spread 100 -> 300 (k = 3) while the midpoint slides 150 -> 250: the canvas point under the
+    // old midpoint must land under the new one, not twice the delta away.
+    pointer(canvas, 'pointermove', { pointerId: 2, clientX: 400, clientY: 100 });
+
+    expect(view(canvas)).toMatchObject({ x: '-200px', y: '-200px', k: '3' });
+  });
 });
 
 describe('fit', () => {

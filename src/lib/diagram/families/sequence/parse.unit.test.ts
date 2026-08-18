@@ -172,6 +172,25 @@ describe('parseSequence structure', () => {
   });
 });
 
+describe('parseSequence accessibility blocks', () => {
+  it('reads a multi-line accDescr block', () => {
+    const { ir, diagnostics } = parse(
+      `${header}\n  accDescr {\n    some description\n    over two lines\n  }\n  A->>B: x`,
+    );
+
+    expect(codes(diagnostics)).toEqual([]);
+    expect(ir?.accDescr).toBe('some description over two lines');
+    expect((ir as SequenceIR).events).toHaveLength(1);
+  });
+
+  it('warns about an accDescr block that is never closed', () => {
+    const { ir, diagnostics } = parse(`${header}\n  accDescr {\n    dangling`);
+
+    expect(codes(diagnostics)).toEqual(['unclosed-block']);
+    expect(ir?.accDescr).toBe('dangling');
+  });
+});
+
 describe('parseSequence recovery', () => {
   it('keeps the good statements around a bad one', () => {
     const { ir, diagnostics } = parse(`${header}\n  A->>B: x\n  A B C\n  B->>A: y`);

@@ -9,6 +9,7 @@ import type { ComponentType } from 'react';
 
 import type { Scene } from '@/lib/diagram/types';
 
+import { GanttView } from './gantt-parts';
 import { GraphView } from './graph-parts';
 import { PieView } from './pie-parts';
 import { SequenceView } from './sequence-parts';
@@ -20,12 +21,14 @@ export const familyViews: Readonly<Record<string, DiagramFamilyView>> = {
   sequence: SequenceView,
   state: GraphView,
   pie: PieView,
+  gantt: GanttView,
 };
 
 const BY_KIND: Readonly<Record<Scene['kind'], DiagramFamilyView>> = {
   graph: GraphView,
   pie: PieView,
   sequence: SequenceView,
+  gantt: GanttView,
 };
 
 /**

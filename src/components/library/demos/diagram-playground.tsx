@@ -68,6 +68,58 @@ const presets = [
   Joined --> [*]`,
   },
   {
+    id: 'class',
+    label: 'Class',
+    source: `classDiagram
+  class Artifact {
+    <<interface>>
+    +String slug
+    +String title
+    +publish() Version
+  }
+  class Version {
+    +int number
+    +String body
+    +restore() Artifact
+  }
+  class Tag {
+    +String name
+  }
+  Artifact "1" *-- "many" Version : keeps
+  Artifact "many" o-- "many" Tag : filed under`,
+  },
+  {
+    id: 'er',
+    label: 'Entity relationship',
+    source: `erDiagram
+  ARTIFACT ||--o{ VERSION : keeps
+  ARTIFACT }o--o{ TAG : "filed under"
+  ARTIFACT {
+    string slug PK
+    string title
+  }
+  VERSION {
+    int number PK
+    string body
+    string author "who published it"
+  }`,
+  },
+  {
+    id: 'gantt',
+    label: 'Gantt',
+    source: `gantt
+  title Release
+  dateFormat YYYY-MM-DD
+  axisFormat %m-%d
+  excludes weekends
+  section Build
+  Catalog work   :done, catalog, 2026-01-05, 12d
+  Review         :active, review, after catalog, 5d
+  section Ship
+  Cut the tag    :crit, tag, after review, 2d
+  Announced      :milestone, after tag, 0d`,
+  },
+  {
     id: 'pie',
     label: 'Pie',
     source: `pie showData title Artifacts by kind

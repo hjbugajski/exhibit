@@ -16,6 +16,7 @@ import { strokeGap } from '@/lib/diagram/core/graph/spacing.ts';
 import { resolveShape } from '@/lib/diagram/core/shapes/registry.ts';
 import type { DiagramMetrics } from '@/lib/diagram/metrics.ts';
 import type {
+  GanttScene,
   GraphScene,
   Point,
   Rect,
@@ -759,6 +760,54 @@ export function assertRankMonotone(scene: GraphScene, direction: Direction): voi
   }
 }
 
+/**
+ * No polyline doubles back on the rank axis for less than it takes to read as a detour.
+ *
+ * A long reversal is a route: an edge that leaves a cluster the way it came in, a back edge climbing
+ * around the ranks it spans. A short one never is — nothing in the engine plans a jog of a few units
+ * against the flow, so one in the scene is a pass that moved a point without the bound that put it
+ * there, and it is drawn as a stroke folded over itself inside its own corner radii. The threshold is
+ * the lane spacing, which is the smallest distance any pass here deliberately separates geometry by.
+ */
+export function assertNoRankBacktrack(scene: GraphScene, options: InvariantOptions): void {
+  const axis = rankAxis(options.direction);
+  const least = strokeGap(options.metrics);
+
+  for (const edge of scene.edges) {
+    if (edge.source === edge.target) {
+      continue;
+    }
+
+    // Signed runs along the rank axis, consecutive moves the same way merged into one.
+    const runs: number[] = [];
+
+    for (let i = 1; i < edge.points.length; i += 1) {
+      const delta = (edge.points[i] as Point)[axis] - (edge.points[i - 1] as Point)[axis];
+
+      if (Math.abs(delta) < 0.01) {
+        continue;
+      }
+
+      const last = runs.at(-1);
+
+      if (last !== undefined && Math.sign(last) === Math.sign(delta)) {
+        runs[runs.length - 1] = last + delta;
+      } else {
+        runs.push(delta);
+      }
+    }
+
+    // A lateral segment moves nothing along the rank axis, so consecutive runs always alternate
+    // direction: with more than one of them, every run is a reversal of the one beside it.
+    for (const run of runs.length > 1 ? runs : []) {
+      expect(
+        Math.abs(run),
+        `edge ${edge.id} doubles back ${Math.abs(run).toFixed(2)} along ${axis}, too short to be a detour`,
+      ).toBeGreaterThanOrEqual(least - 0.01);
+    }
+  }
+}
+
 function walk(value: unknown, path: string, seen: (path: string, n: number) => void): void {
   if (typeof value === 'number') {
     seen(path, value);
@@ -798,6 +847,14 @@ export function assertFiniteCoordinates(scene: Scene): void {
   if (scene.kind === 'pie') {
     for (const slice of scene.slices) {
       expect(slice.d).not.toMatch(/NaN|Infinity/);
+    }
+
+    return;
+  }
+
+  if (scene.kind === 'gantt') {
+    for (const task of scene.tasks) {
+      expect(task.milestoneD ?? '').not.toMatch(/NaN|Infinity/);
     }
 
     return;
@@ -961,6 +1018,16 @@ export function assertPathQuality(scene: Scene): void {
     return;
   }
 
+  if (scene.kind === 'gantt') {
+    for (const task of scene.tasks) {
+      if (task.milestoneD) {
+        assertPath(`task ${task.id} milestone`, task.milestoneD);
+      }
+    }
+
+    return;
+  }
+
   const paths: [string, string | undefined][] =
     scene.kind === 'sequence'
       ? scene.messages.flatMap((message) => [
@@ -1091,5 +1158,104 @@ export function assertLayoutInvariants(scene: GraphScene, options: InvariantOpti
   assertNoEdgeThroughNode(scene, options);
   assertElbowRoutes(scene, options);
   assertRankMonotone(scene, options.direction);
+  assertNoRankBacktrack(scene, options);
   assertClustersHold(scene);
+}
+
+// -------------------------------------------------------------------------------------- gantt
+
+/**
+ * The five properties a gantt layout cannot get wrong: every number is finite, every bar lies inside
+ * the plotted area, rows step down the page and never share one, the axis reads left to right, and a
+ * section band covers exactly the rows it owns.
+ */
+export function assertGanttInvariants(scene: GanttScene): void {
+  assertFiniteCoordinates(scene);
+  assertPathQuality(scene);
+
+  const chart = scene.chart;
+
+  // A chart with no tasks plots nothing, so it has no area; every other one has to have one.
+  if (scene.tasks.length === 0) {
+    expect(chart.width).toBe(0);
+  } else {
+    expect(chart.width).toBeGreaterThan(0);
+  }
+  expect(scene.size.width).toBeGreaterThanOrEqual(chart.x + chart.width);
+  expect(scene.size.height).toBeGreaterThanOrEqual(chart.y + chart.height);
+
+  for (const task of scene.tasks) {
+    expect(task.bar.x, `${task.id} starts left of the chart`).toBeGreaterThanOrEqual(
+      chart.x - 0.01,
+    );
+    expect(
+      task.bar.x + task.bar.width,
+      `${task.id} runs past the end of the chart`,
+    ).toBeLessThanOrEqual(chart.x + chart.width + 0.01);
+    expect(task.bar.y).toBeGreaterThanOrEqual(chart.y - 0.01);
+    expect(task.bar.y + task.bar.height).toBeLessThanOrEqual(chart.y + chart.height + 0.01);
+    if (task.milestone) {
+      expect(task.bar.width, `${task.id} is a milestone with a length`).toBe(0);
+      expect(task.milestoneD, `${task.id} is a milestone with no diamond`).toBeDefined();
+    } else {
+      expect(task.bar.width, `${task.id} is a bar with no width`).toBeGreaterThan(0);
+      expect(task.milestoneD, `${task.id} is a bar with a diamond`).toBeUndefined();
+    }
+
+    expect(task.label.box.lines.length, `${task.id} has no measured label`).toBeGreaterThan(0);
+    expect(scene.sections[task.section], `${task.id} is in no section`).toBeDefined();
+  }
+
+  const rows = new Map<number, { x: number; width: number; id: string }[]>();
+
+  for (const task of scene.tasks) {
+    const row = Math.round(task.bar.y * 100) / 100;
+
+    rows.set(row, [
+      ...(rows.get(row) ?? []),
+      { x: task.bar.x, width: task.bar.width, id: task.id },
+    ]);
+  }
+
+  for (const [row, bars] of rows) {
+    const ordered = [...bars].sort((a, b) => a.x - b.x);
+
+    for (const [index, bar] of ordered.entries()) {
+      const previous = ordered[index - 1];
+
+      if (previous) {
+        expect(bar.x, `${bar.id} overlaps ${previous.id} on row ${row}`).toBeGreaterThanOrEqual(
+          previous.x + previous.width - 0.01,
+        );
+      }
+    }
+  }
+
+  let previousX = Number.NEGATIVE_INFINITY;
+
+  for (const tick of scene.ticks) {
+    expect(tick.x, 'the axis runs backwards').toBeGreaterThan(previousX);
+    previousX = tick.x;
+    expect(tick.x).toBeGreaterThanOrEqual(chart.x - 0.01);
+    expect(tick.x).toBeLessThanOrEqual(chart.x + chart.width + 0.01);
+    expect(tick.label.box.lines.length).toBeGreaterThan(0);
+  }
+
+  for (const section of scene.sections) {
+    const owned = scene.tasks.filter((task) => task.section === section.index);
+
+    for (const task of owned) {
+      expect(task.bar.y, `${task.id} sits above its own section band`).toBeGreaterThanOrEqual(
+        section.band.y - 0.01,
+      );
+      expect(
+        task.bar.y + task.bar.height,
+        `${task.id} sits below its own section band`,
+      ).toBeLessThanOrEqual(section.band.y + section.band.height + 0.01);
+    }
+
+    if (section.label) {
+      expect(section.label.x + section.label.box.width / 2).toBeLessThanOrEqual(chart.x + 0.01);
+    }
+  }
 }

@@ -430,22 +430,6 @@
   --warning-muted: var(--amber-4);
   --warning-body: var(--amber-12);
   --warning-line: var(--amber-6);
-  /*
-   * Mermaid palette — the one sanctioned hex exception. mermaid's themeVariables
-   * go through khroma, which cannot parse oklch (mermaid #6677), so these mirror
-   * the gray scale by hand: background 1, primary 5, primary-border 8,
-   * secondary 3, tertiary 2, line 9, text 12. Plain rules, not @theme: no
-   * utilities are wanted, and mermaid-inner.tsx resolves them with
-   * getComputedStyle(document.documentElement).
-   */
-  --mermaid-background: #ffffff; /* gray-1 */
-  --mermaid-primary: #e4e4e4; /* gray-5 */
-  --mermaid-primary-text: #090909; /* gray-12 */
-  --mermaid-primary-border: #a0a0a0; /* gray-8 */
-  --mermaid-secondary: #f2f2f2; /* gray-3 */
-  --mermaid-tertiary: #f8f8f8; /* gray-2 */
-  --mermaid-line: #868686; /* gray-9 */
-  --mermaid-text: #090909; /* gray-12 */
   --radius: 0.375rem;
 }
 
@@ -594,15 +578,6 @@
    */
   --overlay: oklch(0 0 0 / 45%);
   --danger-strong: var(--red-8);
-  /* Mermaid palette — same roles, dark gray scale, hand-mirrored in hex. */
-  --mermaid-background: #131518; /* gray-1 */
-  --mermaid-primary: #303234; /* gray-5 */
-  --mermaid-primary-text: #ebebeb; /* gray-12 */
-  --mermaid-primary-border: #5d5e5f; /* gray-8 */
-  --mermaid-secondary: #212326; /* gray-3 */
-  --mermaid-tertiary: #1a1c1f; /* gray-2 */
-  --mermaid-line: #747474; /* gray-9 */
-  --mermaid-text: #ebebeb; /* gray-12 */
 }
 
 /*
@@ -1154,6 +1129,32 @@
     --diagram-legend-text: var(--color-foreground-muted);
     --diagram-legend-value-text: var(--color-foreground);
     --diagram-legend-swatch-radius: var(--radius-sm);
+
+    /* Gantt. Bands are the recessed surface the chart is drawn on, one step apart so alternating
+       rows group without a rule between them. */
+    --diagram-gantt-section-fill: var(--color-surface-subtle);
+    --diagram-gantt-section-fill-alt: var(--color-surface-muted);
+    --diagram-gantt-section-text: var(--color-foreground-muted);
+    --diagram-gantt-axis-stroke: var(--color-border-strong);
+    --diagram-gantt-axis-text: var(--color-foreground-muted);
+    --diagram-gantt-grid-stroke: var(--color-border);
+    --diagram-gantt-bar-fill: var(--color-surface);
+    --diagram-gantt-bar-stroke: var(--color-border-strong);
+    --diagram-gantt-bar-text: var(--color-foreground);
+    --diagram-gantt-label-text: var(--color-foreground-muted);
+    /* Finished, happening now, at risk — the three intents the rest of the system already carries.
+       `done` is the quiet one on purpose: a completed task is history, and a chart where every
+       finished bar shouts hides the two that have not started. */
+    --diagram-gantt-done-fill: var(--color-success-subtle);
+    --diagram-gantt-done-stroke: var(--color-success-line);
+    --diagram-gantt-done-text: var(--color-success-body);
+    --diagram-gantt-active-fill: var(--color-accent);
+    --diagram-gantt-active-stroke: var(--color-accent);
+    --diagram-gantt-active-text: var(--color-accent-foreground);
+    --diagram-gantt-crit-stroke: var(--color-danger-line);
+    --diagram-gantt-milestone-fill: var(--color-foreground);
+    --diagram-gantt-milestone-stroke: var(--color-foreground);
+
     --diagram-issue-text: var(--color-foreground-muted);
     --diagram-issue-error-text: var(--color-danger);
     --diagram-issue-warning-text: var(--color-warning-body);

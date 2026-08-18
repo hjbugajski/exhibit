@@ -438,6 +438,18 @@ export function layoutSequence(
     }
   };
 
+  /**
+   * The bar a participant is drawn with at `depth`, as an extent. A nested bar steps half a width
+   * right of its parent (see the emitter below), so the reserved room has to follow the depth or
+   * the outermost bar of a deep stack falls outside the viewBox.
+   */
+  const barExtent = (id: string, depth: number): [number, number] => {
+    const centre = x[indexOf.get(id) as number] as number;
+    const left = centre - m.activationWidth / 2 + (depth * m.activationWidth) / 2;
+
+    return [left, left + m.activationWidth];
+  };
+
   const activate = (id: string, y: number): void => {
     const stack = openActivations.get(id) ?? [];
     const work: ActivationWork = { participant: id, depth: stack.length, startY: y, endY: y };
@@ -445,18 +457,21 @@ export function layoutSequence(
     stack.push(work);
     openActivations.set(id, stack);
     activations.push(work);
+    extend(...barExtent(id, work.depth));
   };
 
-  const deactivate = (id: string, y: number, span: Span): void => {
+  const deactivate = (id: string, y: number, span: Span): ActivationWork | null => {
     const work = openActivations.get(id)?.pop();
 
     if (!work) {
       report.warn('unexpected-deactivate', `'${id}' was deactivated without being active.`, span);
 
-      return;
+      return null;
     }
 
     work.endY = y;
+
+    return work;
   };
 
   /** Left (`-1`) or right (`1`) edge of the bar a participant is currently drawn with. */
@@ -619,12 +634,14 @@ export function layoutSequence(
       if (event.type === 'activate') {
         activate(event.target, cursor);
       } else {
-        deactivate(event.target, cursor, event.span);
+        const closed = deactivate(event.target, cursor, event.span);
+
+        if (closed) {
+          // The bar was reserved when it opened; recording it again here is what puts it inside a
+          // frame that only the `deactivate` falls in.
+          extend(...barExtent(event.target, closed.depth));
+        }
       }
-
-      const centre = x[indexOf.get(event.target) as number] as number;
-
-      extend(centre - m.activationWidth, centre + m.activationWidth);
 
       continue;
     }
@@ -689,8 +706,16 @@ export function layoutSequence(
   const framed: SceneFrame[] = frames.map((frame) => {
     const pad = m.clusterPadding + m.strokeWidth * 2 * frame.height;
     const left = Math.min(frame.contentX1, x[frame.first] as number) - pad;
-    const right = Math.max(frame.contentX2, x[frame.last] as number) + pad;
     const tabWidth = frame.title.width + m.labelGap * 4;
+    // The label sits beside the tab, and the widening pass cannot always make room for it: a frame
+    // whose events touch one participant spans no gap to widen. The box takes the label's right
+    // edge instead — plus the gap that precedes it, so the text never sits on the border — and the
+    // scene bounds follow the box, which is what keeps the label inside the viewBox.
+    const labelRight =
+      frame.label.lines.length > 0
+        ? left + tabWidth + m.labelGap * 4 + frame.label.width
+        : Number.NEGATIVE_INFINITY;
+    const right = Math.max(Math.max(frame.contentX2, x[frame.last] as number) + pad, labelRight);
     const box: Rect = {
       x: left,
       y: frame.top,

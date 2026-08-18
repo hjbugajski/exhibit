@@ -105,6 +105,34 @@
     --diagram-legend-text: currentColor;
     --diagram-legend-value-text: var(--diagram-legend-text);
     --diagram-legend-swatch-radius: 2px;
+
+    /* Gantt. The bands are the quietest thing on the page and the bars the loudest, because "what
+       is happening when" is the one thing the drawing is for. */
+    --diagram-gantt-section-fill: transparent;
+    /* Alternate bands step once, so a long chart keeps its rows grouped without a second border. */
+    --diagram-gantt-section-fill-alt: var(--diagram-gantt-section-fill);
+    --diagram-gantt-section-text: currentColor;
+    --diagram-gantt-axis-stroke: currentColor;
+    --diagram-gantt-axis-text: currentColor;
+    --diagram-gantt-grid-stroke: currentColor;
+    --diagram-gantt-grid-dash: 2 4;
+    --diagram-gantt-bar-fill: transparent;
+    --diagram-gantt-bar-stroke: currentColor;
+    /* A label inside a bar sits on the fill; one beside it sits on the page. */
+    --diagram-gantt-bar-text: currentColor;
+    --diagram-gantt-label-text: currentColor;
+    --diagram-gantt-done-fill: var(--diagram-gantt-bar-fill);
+    --diagram-gantt-done-stroke: var(--diagram-gantt-bar-stroke);
+    --diagram-gantt-done-text: var(--diagram-gantt-bar-text);
+    --diagram-gantt-active-fill: var(--diagram-gantt-bar-fill);
+    --diagram-gantt-active-stroke: var(--diagram-gantt-bar-stroke);
+    --diagram-gantt-active-text: var(--diagram-gantt-bar-text);
+    /* `crit` is orthogonal to the state — a task may be critical *and* active — so it only ever
+       changes the outline, and the state keeps the fill. */
+    --diagram-gantt-crit-stroke: var(--diagram-gantt-bar-stroke);
+    --diagram-gantt-milestone-fill: transparent;
+    --diagram-gantt-milestone-stroke: currentColor;
+
     --diagram-issue-text: currentColor;
     --diagram-issue-error-text: var(--diagram-issue-text);
     --diagram-issue-warning-text: var(--diagram-issue-text);
@@ -168,7 +196,9 @@
      above without an id, an `!important` or a source-order dependency. Both are measured at these
      sizes in `core/text/measure.ts` — change one and the other has to move with it. */
   [data-slot='diagram'] [data-part='svg'] text[data-part='edge-label-text'],
-  [data-slot='diagram'] [data-part='svg'] text[data-part='message-label-text'] {
+  [data-slot='diagram'] [data-part='svg'] text[data-part='message-label-text'],
+  [data-slot='diagram'] [data-part='svg'] text[data-part='gantt-axis-tick'],
+  [data-slot='diagram'] [data-part='svg'] text[data-part='gantt-task-label'] {
     font-size: var(--diagram-edge-font-size);
   }
 
@@ -508,6 +538,84 @@
   [data-part='legend-value'] {
     color: var(--diagram-legend-value-text);
     font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------------------------------------------------------------------------------- gantt */
+
+  [data-part='gantt-section-band'] {
+    fill: var(--diagram-gantt-section-fill);
+    stroke: none;
+  }
+
+  /* Bands alternate on their own index, so the stripe survives a section with no tasks in it. */
+  [data-part='gantt-section']:nth-child(even) [data-part='gantt-section-band'] {
+    fill: var(--diagram-gantt-section-fill-alt);
+  }
+
+  [data-part='gantt-section-label'] {
+    fill: var(--diagram-gantt-section-text);
+  }
+
+  [data-part='gantt-axis-rule'] {
+    stroke: var(--diagram-gantt-axis-stroke);
+    stroke-width: var(--diagram-stroke-width);
+  }
+
+  [data-part='gantt-axis-tick'] {
+    fill: var(--diagram-gantt-axis-text);
+  }
+
+  /* The grid is a ruler, not a border: dashed and thin, so a bar always reads in front of it. */
+  [data-part='gantt-grid-line'] {
+    stroke: var(--diagram-gantt-grid-stroke);
+    stroke-width: var(--diagram-stroke-width);
+    stroke-dasharray: var(--diagram-gantt-grid-dash);
+  }
+
+  [data-part='gantt-bar'] {
+    fill: var(--diagram-gantt-bar-fill);
+    stroke: var(--diagram-gantt-bar-stroke);
+    stroke-width: var(--diagram-stroke-width);
+  }
+
+  [data-part='gantt-task'][data-state='done'] [data-part='gantt-bar'] {
+    fill: var(--diagram-gantt-done-fill);
+    stroke: var(--diagram-gantt-done-stroke);
+  }
+
+  [data-part='gantt-task'][data-state='active'] [data-part='gantt-bar'] {
+    fill: var(--diagram-gantt-active-fill);
+    stroke: var(--diagram-gantt-active-stroke);
+  }
+
+  [data-part='gantt-task'][data-crit] [data-part='gantt-bar'],
+  [data-part='gantt-task'][data-crit] [data-part='gantt-milestone'] {
+    stroke: var(--diagram-gantt-crit-stroke);
+  }
+
+  [data-part='gantt-milestone'] {
+    fill: var(--diagram-gantt-milestone-fill);
+    stroke: var(--diagram-gantt-milestone-stroke);
+    stroke-width: var(--diagram-stroke-width);
+    stroke-linejoin: round;
+  }
+
+  /* A label inside its bar is painted on the bar's own fill; one placed beside a bar is on the
+     page, and takes the page's text colour whatever the task's state is. */
+  [data-part='gantt-task-label'] {
+    fill: var(--diagram-gantt-label-text);
+  }
+
+  [data-part='gantt-task-label'][data-placement='inside'] {
+    fill: var(--diagram-gantt-bar-text);
+  }
+
+  [data-part='gantt-task-label'][data-placement='inside'][data-state='done'] {
+    fill: var(--diagram-gantt-done-text);
+  }
+
+  [data-part='gantt-task-label'][data-placement='inside'][data-state='active'] {
+    fill: var(--diagram-gantt-active-text);
   }
 
   /* --------------------------------------------------------------------------------- issues */

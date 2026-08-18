@@ -18,7 +18,7 @@ import { defineCatalog } from '@json-render/core';
 import { schema } from '@json-render/react/schema';
 import { z } from 'zod';
 
-import { ALLOWED_FAMILIES, MERMAID_MAX_CHARS } from '@/components/catalog/mermaid-policy';
+import { ALLOWED_FAMILIES, MERMAID_MAX_CHARS } from '@/components/catalog/mermaid-schema';
 
 /** Generous cap for a title/label/short string field. */
 const SHORT_MAX = 500;

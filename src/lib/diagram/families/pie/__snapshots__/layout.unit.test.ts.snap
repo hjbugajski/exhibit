@@ -160,28 +160,28 @@ exports[`pie end to end > 'pie-showdata' matches its golden scene 1`] = `
   "kind": "pie",
   "legend": [
     {
-      "fraction": 0.64,
+      "fraction": 0.6368,
       "id": "slice-0",
       "label": "Markdown",
       "swatchIndex": 0,
       "value": 128,
     },
     {
-      "fraction": 0.32,
+      "fraction": 0.3184,
       "id": "slice-1",
       "label": "HTML",
       "swatchIndex": 1,
       "value": 64,
     },
     {
-      "fraction": 0.04,
+      "fraction": 0.0398,
       "id": "slice-2",
       "label": "Spec",
       "swatchIndex": 2,
       "value": 8,
     },
     {
-      "fraction": 0,
+      "fraction": 0.005,
       "id": "slice-3",
       "label": "Other",
       "swatchIndex": 3,
@@ -198,7 +198,7 @@ exports[`pie end to end > 'pie-showdata' matches its golden scene 1`] = `
     {
       "d": "M138,138L138,8A130,130 0 1 1 39.51,222.85Z",
       "endAngle": 2.43,
-      "fraction": 0.64,
+      "fraction": 0.6368,
       "id": "slice-0",
       "label": "Markdown",
       "labelBox": {
@@ -221,7 +221,7 @@ exports[`pie end to end > 'pie-showdata' matches its golden scene 1`] = `
     {
       "d": "M138,138L39.51,222.85A130,130 0 0 1 101.91,13.11Z",
       "endAngle": 4.43,
-      "fraction": 0.32,
+      "fraction": 0.3184,
       "id": "slice-1",
       "label": "HTML",
       "labelBox": {
@@ -244,7 +244,7 @@ exports[`pie end to end > 'pie-showdata' matches its golden scene 1`] = `
     {
       "d": "M138,138L101.91,13.11A130,130 0 0 1 133.94,8.06Z",
       "endAngle": 4.68,
-      "fraction": 0.04,
+      "fraction": 0.0398,
       "id": "slice-2",
       "label": "Spec",
       "startAngle": 4.43,
@@ -254,7 +254,7 @@ exports[`pie end to end > 'pie-showdata' matches its golden scene 1`] = `
     {
       "d": "M138,138L133.94,8.06A130,130 0 0 1 138,8Z",
       "endAngle": 4.71,
-      "fraction": 0,
+      "fraction": 0.005,
       "id": "slice-3",
       "label": "Other",
       "startAngle": 4.68,

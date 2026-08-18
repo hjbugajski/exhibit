@@ -45,6 +45,36 @@ describe('readLines', () => {
     ]);
   });
 
+  it('keeps a semicolon inside a shape or edge label', () => {
+    const lines = readLines('flowchart LR\nA[Load; then run] --> B\nC(a; b) --> D');
+
+    expect(lines.map((line) => line.text)).toEqual([
+      'flowchart LR',
+      'A[Load; then run] --> B',
+      'C(a; b) --> D',
+    ]);
+  });
+
+  it('still splits a statement that only looks bracketed once the bracket closes', () => {
+    const lines = readLines('A[one] --> B; C[two] --> D');
+
+    expect(lines.map((line) => line.text)).toEqual(['A[one] --> B', 'C[two] --> D']);
+  });
+
+  it('keeps a semicolon in a description when the family reads one to end of line', () => {
+    const lines = readLines('stateDiagram-v2\nA --> B : do x; then y', {
+      descriptionAfterColon: true,
+    });
+
+    expect(lines.map((line) => line.text)).toEqual(['stateDiagram-v2', 'A --> B : do x; then y']);
+  });
+
+  it('splits before a description even when the family reads one to end of line', () => {
+    const lines = readLines('A --> B; B --> C : go; on', { descriptionAfterColon: true });
+
+    expect(lines.map((line) => line.text)).toEqual(['A --> B', 'B --> C : go; on']);
+  });
+
   it('reports the physical indent of the line a statement came from', () => {
     const lines = readLines('stateDiagram-v2\n    state A {\n        B --> C\n    }');
 

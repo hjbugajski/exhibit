@@ -35,6 +35,7 @@ import {
   isFiniteTransform,
   midpoint,
   panBy as panTransform,
+  pinchTransform,
   wheelFactor,
   zoomAt,
 } from './canvas-transform';
@@ -270,15 +271,15 @@ export function useCanvas(scene: Scene | null): CanvasController {
 
         const fromMid = midpoint(before[0] as Point, before[1] as Point);
         const toMid = midpoint(after[0] as Point, after[1] as Point);
-        const origin = localPoint(element, toMid.x, toMid.y);
 
         interactedRef.current = true;
         update(
           (transform) =>
-            panTransform(
-              zoomAt(transform, to / from, origin),
-              toMid.x - fromMid.x,
-              toMid.y - fromMid.y,
+            pinchTransform(
+              transform,
+              to / from,
+              localPoint(element, fromMid.x, fromMid.y),
+              localPoint(element, toMid.x, toMid.y),
             ),
           false,
         );

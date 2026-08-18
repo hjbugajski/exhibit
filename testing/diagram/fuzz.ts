@@ -16,6 +16,7 @@ import type { BuildOptions, Diagnostic } from '@/lib/diagram/types.ts';
 import type { OutlineContext } from './invariants.ts';
 import {
   assertFiniteCoordinates,
+  assertGanttInvariants,
   assertLayoutInvariants,
   assertSequenceInvariants,
 } from './invariants.ts';
@@ -126,6 +127,15 @@ const KINDS: readonly MutationKind[] = [
   'inject',
 ];
 
+/**
+ * How many edits one mutation applies: one, two or three, drawn once. Drawing it inside the loop
+ * condition instead would re-roll the bound every pass, which is a geometric distribution with no
+ * upper bound rather than the documented one to three.
+ */
+export function editCount(random: () => number): number {
+  return 1 + Math.floor(random() * 3);
+}
+
 /** `count` deterministic mutations of `source`, one to three edits each. */
 export function mutations(source: string, count: number, seed = 1): string[] {
   const random = createRandom(seed);
@@ -133,8 +143,9 @@ export function mutations(source: string, count: number, seed = 1): string[] {
 
   for (let i = 0; i < count; i += 1) {
     let mutated = source;
+    const edits = editCount(random);
 
-    for (let edit = 0; edit <= Math.floor(random() * 3); edit += 1) {
+    for (let edit = 0; edit < edits; edit += 1) {
       mutated = mutateOnce(
         mutated,
         random,
@@ -217,6 +228,12 @@ export function assertContractHolds(source: string, options: ContractOptions): v
 
   if (laid.scene.kind === 'pie') {
     assertFiniteCoordinates(laid.scene);
+
+    return;
+  }
+
+  if (laid.scene.kind === 'gantt') {
+    assertGanttInvariants(laid.scene);
 
     return;
   }

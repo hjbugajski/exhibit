@@ -1,0 +1,12 @@
+erDiagram
+    CUSTOMER ||--o{ ORDER : places
+    CUSTOMER {
+        string name PK "the customer name"
+        string email UK
+        int loyaltyPoints
+    }
+    ORDER {
+        int id PK
+        string customerName FK, UK
+        string[] tags
+    }

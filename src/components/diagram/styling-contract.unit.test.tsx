@@ -200,7 +200,9 @@ describe('theming contract', () => {
       .filter((id): id is string => id !== null);
     const roots = new Set(ids.map((id) => id.replace(/-(title|description)$/, '')));
 
-    expect(roots.size).toBeLessThanOrEqual(1);
+    // Exactly one, not "at most one": zero would mean the aria-labelledby/-describedby wiring the
+    // `-title`/`-description` suffixes above strip has vanished, which this test is the only guard for.
+    expect(roots.size).toBe(1);
     expect(figure.querySelectorAll('defs')).toHaveLength(0);
     expect(figure.querySelectorAll('marker')).toHaveLength(0);
   });
@@ -280,6 +282,13 @@ describe('part coverage', () => {
     'frame',
     'frames',
     'frame-labels',
+    'gantt-axis',
+    'gantt-bars',
+    'gantt-grid',
+    'gantt-labels',
+    'gantt-section',
+    'gantt-sections',
+    'gantt-task',
     'lifelines',
     'message-label',
     'messages',

@@ -226,6 +226,35 @@ describe('layoutPie degenerate inputs', () => {
   });
 });
 
+describe('golden precision', () => {
+  // The legend prints a fraction as `Math.round(fraction * 1000) / 10`, so two neighbours that
+  // render as different percentages must snapshot as different numbers.
+  it('keeps two fractions apart when the legend would print them apart', () => {
+    const first = goldenScene(
+      laid(
+        ir([
+          ['A', 5451],
+          ['B', 4549],
+        ]),
+      ).scene,
+    ) as {
+      legend: { fraction: number }[];
+    };
+    const second = goldenScene(
+      laid(
+        ir([
+          ['A', 5549],
+          ['B', 4451],
+        ]),
+      ).scene,
+    ) as {
+      legend: { fraction: number }[];
+    };
+
+    expect(first.legend[0]?.fraction).not.toBe(second.legend[0]?.fraction);
+  });
+});
+
 describe('pie end to end', () => {
   it('has fixtures to run', () => {
     expect(corpus.length).toBeGreaterThan(1);

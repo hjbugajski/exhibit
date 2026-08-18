@@ -283,7 +283,23 @@ export function layoutGraph(model: GraphModel, options: LayoutOptions): LayoutRe
   }
 
   const selfLoops = edges.filter((edge) => edge.source === edge.target);
-  const loopNodes = new Set(selfLoops.map((edge) => edge.source));
+  const loopPads = new Map<string, number>();
+
+  /*
+   * Clearance a looping node needs beside it: the lobes, and the column of labels stacked outside
+   * the outermost of them (`stackLoopLabels`). A self-loop never enters the layered graph, so the
+   * label virtual node that reserves a rank for every other label (`normalize.ts`) is not there to
+   * reserve this one — without the label in the pad, the column is drawn over whatever the packing
+   * put beside the node. Layout `+x` is the loop side in every direction, which is what `padRight`
+   * holds, and `layoutLabelSizes` is already swapped into that space.
+   */
+  for (const edge of selfLoops) {
+    const label = layoutLabelSizes.get(edge.id);
+    const pad = m.selfLoopSize + (label ? m.labelGap + label.width : 0);
+
+    loopPads.set(edge.source, Math.max(loopPads.get(edge.source) ?? 0, pad));
+  }
+
   const levels = resolveLevels(resolved, tree);
   let placed: Placed;
 
@@ -296,7 +312,7 @@ export function layoutGraph(model: GraphModel, options: LayoutOptions): LayoutRe
       measured,
       clusterTitles,
       layoutLabelSizes,
-      loopNodes,
+      loopPads,
       budget: { used: 0 },
     });
   } catch (cause) {
@@ -342,7 +358,8 @@ interface LayoutContext {
   measured: Map<string, Measured>;
   clusterTitles: Map<string, LabelBox>;
   layoutLabelSizes: Map<string, Size>;
-  loopNodes: Set<string>;
+  /** Extra clearance a node with self-loops needs on layout `+x`: lobes plus stacked labels. */
+  loopPads: Map<string, number>;
   /** Running total of normalized nodes across every level; see `DiagramLimits.layoutNodes`. */
   budget: { used: number };
 }
@@ -369,7 +386,7 @@ function titleHeightOf(context: LayoutContext, clusterId: string): number {
 }
 
 function layoutLevels(model: GraphModel, context: LayoutContext): Placed {
-  const { m, options, tree, levels, measured, layoutLabelSizes, loopNodes } = context;
+  const { m, options, tree, levels, measured, layoutLabelSizes, loopPads } = context;
   const direction = model.direction;
   const byLevel = new Map<string | null, GraphEdge[]>();
 
@@ -399,7 +416,7 @@ function layoutLevels(model: GraphModel, context: LayoutContext): Placed {
         kind: 'real',
         width: size.width,
         height: size.height,
-        padRight: loopNodes.has(node.id) ? m.selfLoopSize : 0,
+        padRight: loopPads.get(node.id) ?? 0,
       });
     }
 
@@ -1486,8 +1503,11 @@ function assemble(model: GraphModel, placed: Placed, context: AssembleContext): 
     });
   }
 
+  // Node boxes only: a leg slid across the gap has to stay out of the ranks either side of it, and
+  // a title band or a label is already a box the route it belongs to was planned around.
   separateLegs(
     prepared.map((entry) => entry.routed),
+    obstacles.flatMap(({ node, rect }) => (node === null ? [] : [rect])),
     axis,
     m,
   );

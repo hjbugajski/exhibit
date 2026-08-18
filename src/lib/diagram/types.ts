@@ -359,7 +359,64 @@ export interface SequenceScene extends SceneBase {
   frames: readonly SceneFrame[];
 }
 
-export type Scene = GraphScene | PieScene | SequenceScene;
+// -------------------------------------------------------------------------------------- gantt
+
+/**
+ * What a bar means, as author intent rather than paint. `crit` is orthogonal in mermaid — a task may
+ * be `crit, active` — so it rides beside the state instead of inside it.
+ */
+export type GanttState = 'default' | 'done' | 'active';
+
+/** A band across the chart holding one `section`'s rows, plus its name in the left gutter. */
+export interface SceneGanttSection {
+  id: string;
+  /** Source order, so a stylesheet can stripe alternate bands. */
+  index: number;
+  band: Rect;
+  /** Absent when the section is the implicit one that holds tasks written before any `section`. */
+  label?: PlacedLabel;
+}
+
+/** One time gridline, with the label the layout already formatted and measured for it. */
+export interface SceneGanttTick {
+  id: string;
+  x: number;
+  label: PlacedLabel;
+}
+
+export interface SceneGanttTask {
+  id: string;
+  /** Index into `GanttScene.sections`. */
+  section: number;
+  /** The bar. Zero width for a milestone, which draws `milestoneD` at `bar.x` instead. */
+  bar: Rect;
+  /** Diamond outline for a milestone, in scene coordinates. */
+  milestoneD?: string;
+  state: GanttState;
+  crit: boolean;
+  milestone: boolean;
+  label: PlacedLabel;
+  /** Where the measured label fitted: inside the bar, or clear of one of its ends. */
+  placement: 'inside' | 'after' | 'before';
+  /**
+   * Start and end in the chart's own `axisFormat`. Never drawn — the text alternative says when a
+   * task runs, and reformatting it there would need the calendar code the renderer cannot have.
+   */
+  startText: string;
+  endText: string;
+  span?: Span;
+}
+
+export interface GanttScene extends SceneBase {
+  kind: 'gantt';
+  /** The plotted area: gridlines run its height and every bar lives inside it. */
+  chart: Rect;
+  sections: readonly SceneGanttSection[];
+  ticks: readonly SceneGanttTick[];
+  tasks: readonly SceneGanttTask[];
+}
+
+export type Scene = GraphScene | PieScene | SequenceScene | GanttScene;
 
 // ------------------------------------------------------------------------------------ families
 

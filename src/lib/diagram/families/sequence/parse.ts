@@ -10,6 +10,7 @@
  */
 
 import { StatementError, reportStatementError } from '../../core/diagnostics.ts';
+import { ACC_DESCR_BLOCK, readDescriptionBlock } from '../../core/lex/acc.ts';
 import type { LogicalLine } from '../../core/lex/lines.ts';
 import { readLines, splitHeader } from '../../core/lex/lines.ts';
 import { Scanner } from '../../core/lex/scanner.ts';
@@ -491,7 +492,19 @@ export function parseSequence(source: string, ctx: ParseContext): ParseResult<Se
   };
   const before = report.count;
 
-  for (const line of statements) {
+  for (let index = 0; index < statements.length; index += 1) {
+    const line = statements[index] as LogicalLine;
+    const block = ACC_DESCR_BLOCK.exec(line.text);
+
+    if (block) {
+      const read = readDescriptionBlock(statements, index, block[1] ?? '', report);
+
+      draft.accDescr = read.description;
+      index = read.end;
+
+      continue;
+    }
+
     try {
       statement(draft, line);
     } catch (cause) {

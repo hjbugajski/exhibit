@@ -130,10 +130,55 @@ describe('parseState structure', () => {
     expect(ir.states.find((state) => state.id === 'Big')?.type).toBe('composite');
   });
 
+  it('closes a composite that opens and closes on one line', () => {
+    const { ir, diagnostics } = parse(`${header}\n  state A { }\n  A --> B\n  state "x" as s1 {}`);
+    const parents = Object.fromEntries(
+      (ir as StateIR).states.map((state) => [state.id, state.parent]),
+    );
+
+    expect(codes(diagnostics)).toEqual([]);
+    expect(parents).toMatchObject({ A: null, B: null, s1: null });
+    expect((ir as StateIR).states.find((state) => state.id === 'A')?.type).toBe('composite');
+  });
+
+  it('keeps a semicolon inside a transition label', () => {
+    const { ir, diagnostics } = parse(`${header}\n  A --> B : do x; then y`);
+
+    expect(codes(diagnostics)).toEqual([]);
+    expect((ir as StateIR).transitions[0]?.label).toEqual(['do x; then y']);
+  });
+
   it('keeps the span of the line a state was declared on', () => {
     const ir = parse(`${header}\n  A --> B`).ir as StateIR;
 
     expect(ir.states[0]?.span).toMatchObject({ line: 2, column: 3 });
+  });
+});
+
+describe('parseState accessibility blocks', () => {
+  it('reads a multi-line accDescr block', () => {
+    const { ir, diagnostics } = parse(
+      `${header}\n  accTitle: T\n  accDescr {\n    some description\n    over two lines\n  }\n  A --> B`,
+    );
+
+    expect(codes(diagnostics)).toEqual([]);
+    expect(ir?.accDescr).toBe('some description over two lines');
+    expect(ir?.accTitle).toBe('T');
+    expect((ir as StateIR).transitions).toHaveLength(1);
+  });
+
+  it('closes an accDescr block that ends on the text line', () => {
+    const { ir, diagnostics } = parse(`${header}\n  accDescr { one line }\n  A --> B`);
+
+    expect(codes(diagnostics)).toEqual([]);
+    expect(ir?.accDescr).toBe('one line');
+  });
+
+  it('warns about an accDescr block that is never closed', () => {
+    const { ir, diagnostics } = parse(`${header}\n  accDescr {\n    dangling`);
+
+    expect(codes(diagnostics)).toEqual(['unclosed-block']);
+    expect(ir?.accDescr).toBe('dangling');
   });
 });
 
@@ -229,6 +274,21 @@ describe('parseState unsupported constructs', () => {
     expect(codes(diagnostics)).toEqual([code]);
     expect(diagnostics[0]?.severity).toBe('info');
     expect((ir as StateIR).transitions).toHaveLength(1);
+  });
+
+  it('reports `hide empty description` rather than failing on it', () => {
+    const { ir, diagnostics } = parse(`${header}\n  hide empty description\n  [*] --> A`);
+
+    expect(codes(diagnostics)).toEqual(['unsupported-construct']);
+    expect(diagnostics[0]?.severity).toBe('info');
+    expect((ir as StateIR).transitions).toHaveLength(1);
+  });
+
+  it('still reads `hide` as a state name anywhere else', () => {
+    const { ir, diagnostics } = parse(`${header}\n  hide --> A`);
+
+    expect(codes(diagnostics)).toEqual([]);
+    expect((ir as StateIR).transitions[0]?.from).toBe('hide');
   });
 
   it('warns about a concurrency separator', () => {

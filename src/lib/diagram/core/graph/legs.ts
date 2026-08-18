@@ -11,10 +11,20 @@
  * Longest first, and a leg that has to move goes toward the rank it is heading for. The leg that
  * travels furthest keeps the lane it turned in and the shorter ones nest inside it, which is the
  * arrangement where no leg crosses the stem of another.
+ *
+ * Two things bound a move, and both are read at the moment it is made rather than when the legs were
+ * collected. The room in the gap comes from the points either side of the leg, and moving one leg of
+ * a route rewrites those points for the next one along it — a window snapshotted up front is a bound
+ * that no longer exists, and placing against it folds the route back on itself. The obstacles are the
+ * node boxes: the gap a leg slides in is only free until the next rank starts, and a leg that has
+ * been handed a window running to a point inside a node can otherwise be moved straight into it. A
+ * lane is refused when it would put the leg through a box its own lane was clear of, so a leg is
+ * never moved into an obstacle, and one that started against one is not held still by it.
  */
 
 import type { DiagramMetrics } from '../../metrics.ts';
-import type { Point } from '../../types.ts';
+import type { Point, Rect } from '../../types.ts';
+import { segmentHitsRect } from '../geometry/intersect.ts';
 import type { Axis } from './route.ts';
 import { strokeGap } from './spacing.ts';
 
@@ -34,14 +44,25 @@ interface Leg {
   /** Index of the first of the leg's two points. */
   at: number;
   rank: number;
-  /** Rank coordinates the leg may move between, with room left for its own corners. */
-  low: number;
-  high: number;
-  /** Which way the rank it is heading for lies. */
-  toward: number;
   span: readonly [number, number];
   length: number;
   order: number;
+}
+
+/** Rank coordinates the leg may move between, with room left for its own corners, as they stand. */
+function windowOf(leg: Leg, axis: Axis, m: DiagramMetrics): { low: number; high: number } {
+  const before = (leg.route.points[leg.at - 1] as Point)[axis];
+  const after = (leg.route.points[leg.at + 2] as Point)[axis];
+
+  return {
+    low: Math.min(before, after) + m.cornerRadius,
+    high: Math.max(before, after) - m.cornerRadius,
+  };
+}
+
+/** Which way the rank the leg is heading for lies, as it stands. */
+function toward(leg: Leg, axis: Axis): number {
+  return Math.sign((leg.route.points[leg.at + 2] as Point)[axis] - leg.rank);
 }
 
 function legsOf(route: LegRoute, order: number, axis: Axis, m: DiagramMetrics): Leg[] {
@@ -66,24 +87,19 @@ function legsOf(route: LegRoute, order: number, axis: Axis, m: DiagramMetrics): 
       continue;
     }
 
-    const low = Math.min(before[axis], after[axis]) + m.cornerRadius;
-    const high = Math.max(before[axis], after[axis]) - m.cornerRadius;
-
-    if (high - low < NEAR) {
-      continue;
-    }
-
-    out.push({
+    const leg: Leg = {
       route,
       at,
       rank,
-      low,
-      high,
-      toward: Math.sign(after[axis] - rank),
       span: [Math.min(from[lateral], to[lateral]), Math.max(from[lateral], to[lateral])] as const,
       length: Math.abs(to[lateral] - from[lateral]),
       order,
-    });
+    };
+    const { low, high } = windowOf(leg, axis, m);
+
+    if (high - low >= NEAR) {
+      out.push(leg);
+    }
   }
 
   return out;
@@ -98,8 +114,26 @@ function overlaps(a: Leg, b: Leg, least: number): boolean {
   return Math.min(a.span[1], b.span[1]) - Math.max(a.span[0], b.span[0]) > least;
 }
 
+/** The leg drawn on `rank`, as a pair of points. */
+function segment(leg: Leg, rank: number, axis: Axis): [Point, Point] {
+  return axis === 'y'
+    ? [
+        { x: leg.span[0], y: rank },
+        { x: leg.span[1], y: rank },
+      ]
+    : [
+        { x: rank, y: leg.span[0] },
+        { x: rank, y: leg.span[1] },
+      ];
+}
+
 /** Cross-axis legs, moved onto lanes of their own wherever two of them share one. */
-export function separateLegs(routes: readonly LegRoute[], axis: Axis, m: DiagramMetrics): void {
+export function separateLegs(
+  routes: readonly LegRoute[],
+  obstacles: readonly Rect[],
+  axis: Axis,
+  m: DiagramMetrics,
+): void {
   const legs: Leg[] = [];
 
   for (const [order, route] of routes.entries()) {
@@ -127,13 +161,28 @@ export function separateLegs(routes: readonly LegRoute[], axis: Axis, m: Diagram
 
     return false;
   };
+  const struck = (leg: Leg, rank: number): readonly Rect[] => {
+    const [from, to] = segment(leg, rank, axis);
+
+    return obstacles.filter((rect) => segmentHitsRect(from, to, rect));
+  };
 
   for (const leg of [...legs].sort((a, b) => b.length - a.length || a.order - b.order)) {
+    const already = struck(leg, leg.rank);
+
     for (let lane = 1; lane <= LANES && clash(leg, leg.rank); lane += 1) {
-      for (const direction of [leg.toward, -leg.toward]) {
+      const { low, high } = windowOf(leg, axis, m);
+      const heading = toward(leg, axis);
+
+      for (const direction of [heading, -heading]) {
         const rank = leg.rank + direction * lane * gap;
 
-        if (rank > leg.low - NEAR && rank < leg.high + NEAR && !clash(leg, rank)) {
+        if (
+          rank > low - NEAR &&
+          rank < high + NEAR &&
+          !clash(leg, rank) &&
+          struck(leg, rank).every((rect) => already.includes(rect))
+        ) {
           const points = leg.route.points;
           const label = leg.route.labelPoint;
 

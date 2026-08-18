@@ -12,9 +12,6 @@ const sources = new Map(
     .map(([id, element]) => [id, (element.props as { code: string }).code] as const),
 );
 
-/** The one family the engine recognizes but defers — it falls back to mermaid.js in the app. */
-const DEFERRED = 'rollout-diagram';
-
 describe('publishPathReviewFixture', () => {
   it('is a valid artifact spec', () => {
     expect(validateArtifactSpec(publishPathReviewFixture).valid).toBe(true);
@@ -26,23 +23,14 @@ describe('publishPathReviewFixture', () => {
       'lifecycle-diagram',
       'exchange-diagram',
       'mix-diagram',
-      DEFERRED,
+      'rollout-diagram',
     ]);
   });
 
-  it.each([...sources].filter(([id]) => id !== DEFERRED))('draws %s cleanly', (_id, code) => {
+  it.each([...sources])('draws %s cleanly', (_id, code) => {
     const { scene, diagnostics } = buildDiagram(code, { measurer: metricsMeasurer });
 
     expect(diagnostics.filter((diagnostic) => diagnostic.severity === 'error')).toEqual([]);
     expect(scene).not.toBeNull();
-  });
-
-  it('leaves the gantt to the mermaid.js fallback', () => {
-    const { scene, diagnostics } = buildDiagram(sources.get(DEFERRED) ?? '', {
-      measurer: metricsMeasurer,
-    });
-
-    expect(scene).toBeNull();
-    expect(diagnostics.map((diagnostic) => diagnostic.code)).toContain('unsupported-diagram-type');
   });
 });

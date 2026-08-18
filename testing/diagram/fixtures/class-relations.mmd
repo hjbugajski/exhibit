@@ -1,0 +1,11 @@
+classDiagram
+  direction LR
+  Customer "1" --> "many" Order : places
+  Order *-- OrderLine
+  Order o-- Coupon
+  Order --> Invoice
+  Payment <|.. CardPayment
+  Invoice ..> Ledger : posts to
+  Warehouse .. Region
+  Shipment --|> Movement
+  Region -- Zone

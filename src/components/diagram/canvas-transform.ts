@@ -60,6 +60,21 @@ export function panBy(transform: CanvasTransform, dx: number, dy: number): Canva
   return { ...transform, x: transform.x + dx, y: transform.y + dy };
 }
 
+/**
+ * One pinch step: the canvas point under `from` (the midpoint before the move) ends up under `to`
+ * (the midpoint after it), scaled by `factor`. Composition order is the whole point — anchoring the
+ * zoom at the *new* midpoint and then panning by the delta counts that delta twice, by `(factor−1)`
+ * of it per event, which is why a pinch that also drags slides out from under the fingers.
+ */
+export function pinchTransform(
+  transform: CanvasTransform,
+  factor: number,
+  from: Point,
+  to: Point,
+): CanvasTransform {
+  return panBy(zoomAt(transform, factor, from), to.x - from.x, to.y - from.y);
+}
+
 export function centerTransform(scene: Size, viewport: Size, k: number): CanvasTransform {
   return {
     k,

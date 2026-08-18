@@ -5,9 +5,12 @@ import { chain, cluster, layoutOptions, model } from '@testing/diagram/graph-fix
 import {
   assertClustersHold,
   assertDeterministic,
+  assertLabelsUnstruck,
   assertLayoutInvariants,
   assertNoEdgeThroughNode,
   assertNoNodeOverlap,
+  assertNoRankBacktrack,
+  assertPathQuality,
   assertTitlesUnstruck,
 } from '@testing/diagram/invariants.ts';
 
@@ -658,6 +661,104 @@ describe('layoutGraph density', () => {
       const scene = laid(fixtures[6]?.model as GraphModel, { orderSweeps }).scene;
 
       assertNoNodeOverlap(scene as never);
+    }
+  });
+});
+
+describe('layoutGraph regressions', () => {
+  const directions = ['TB', 'BT', 'LR', 'RL'] as const;
+  const context = (direction: Direction) => ({
+    direction,
+    shapes: defaultShapes,
+    metrics: options.metrics,
+  });
+
+  it('reserves room beside a looping node for the loop label, not just the lobe', () => {
+    // The loop's label is stacked outside the outermost lobe, past the clearance the lobe alone
+    // needs; without it in the node's pad the column lands on the labels of its neighbours.
+    for (const direction of directions) {
+      const scene = laid(
+        model({
+          direction,
+          nodes: [
+            { id: 'n3', label: 'Node 3' },
+            { id: 'n1', label: 'Node 1', cluster: 'g2' },
+            { id: 'n8', label: 'Node 8', cluster: 'g2' },
+            { id: 'n16', label: 'Node 16' },
+          ],
+          edges: [
+            { from: 'n3', to: 'n3', label: 'a longer edge label here' },
+            { from: 'n3', to: 'n1' },
+            { from: 'n16', to: 'n8', label: 'ok' },
+          ],
+          clusters: [cluster('g2', null, 'Group 2')],
+        }),
+      ).scene as GraphScene;
+
+      assertLabelsUnstruck(scene, context(direction));
+    }
+  });
+
+  it('leaves a cluster on the chord it is drawn along, not on a ray from the cluster centre', () => {
+    // An end buried in a cluster with no gutter plan crosses the border where its own chord does.
+    // Crossing where a ray from the box's centre does puts that point past the node's port, and the
+    // route runs out to it and straight back.
+    for (const direction of directions) {
+      const scene = laid(
+        model({
+          direction,
+          nodes: [
+            { id: 'n1', label: 'Node 1' },
+            { id: 'n6', label: 'Node 6' },
+            { id: 'n9', label: 'Node 9' },
+            { id: 'n2', label: 'Node 2', cluster: 'g3' },
+            { id: 'n4', label: 'Node 4', cluster: 'g3' },
+          ],
+          edges: [
+            { from: 'n1', to: 'n6', label: 'a longer edge label here' },
+            { from: 'n4', to: 'n2' },
+            { from: 'n1', to: 'n9' },
+            { from: 'n2', to: 'n6' },
+          ],
+          clusters: [cluster('g3')],
+        }),
+      ).scene as GraphScene;
+
+      assertNoRankBacktrack(scene, context(direction));
+      assertPathQuality(scene);
+    }
+  });
+
+  it('keeps a leg spread across a rank gap out of the nodes either side of it', () => {
+    for (const direction of directions) {
+      const scene = laid(
+        model({
+          direction,
+          nodes: [
+            ...[0, 2, 3, 6, 7, 10, 16].map((n) => ({
+              id: `n${n}`,
+              label: `Node ${n}`,
+              cluster: 'g0',
+            })),
+            ...[1, 9, 11, 12, 14].map((n) => ({ id: `n${n}`, label: `Node ${n}` })),
+          ],
+          edges: [
+            { from: 'n12', to: 'n3' },
+            { from: 'n2', to: 'n11' },
+            { from: 'n0', to: 'n14' },
+            { from: 'n10', to: 'n3' },
+            { from: 'n10', to: 'n14', label: 'ok' },
+            { from: 'n9', to: 'n6', label: 'ok' },
+            { from: 'n10', to: 'n1' },
+            { from: 'n2', to: 'n12' },
+            { from: 'n11', to: 'n7', label: 'ok' },
+          ],
+          clusters: [cluster('g0')],
+        }),
+      ).scene as GraphScene;
+
+      assertNoEdgeThroughNode(scene, context(direction));
+      assertNoRankBacktrack(scene, context(direction));
     }
   });
 });

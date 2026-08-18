@@ -89,8 +89,8 @@ describe('diagram demo page', () => {
     render(diagramDemo.render());
 
     // The fallback is the source block, so the panel must not print it a second time.
-    expect(screen.getAllByText(/gantt/).length).toBe(1);
-    expect(screen.getAllByText(/Gantt charts aren’t supported yet/).length).toBe(1);
+    expect(screen.getAllByText(/mindmap/).length).toBe(1);
+    expect(screen.getAllByText(/Mind maps aren’t supported yet/).length).toBe(1);
     expect(screen.queryByText(/No diagram type recognized/)).toBeNull();
   });
 

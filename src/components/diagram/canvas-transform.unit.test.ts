@@ -25,6 +25,7 @@ import {
   isFiniteTransform,
   midpoint,
   panBy,
+  pinchTransform,
   wheelFactor,
   zoomAt,
 } from './canvas-transform';
@@ -88,6 +89,40 @@ describe('zoomAt', () => {
 describe('panBy', () => {
   it('translates in screen pixels and leaves the zoom alone', () => {
     expect(panBy({ x: 4, y: 8, k: 2 }, 10, -3)).toEqual({ x: 14, y: 5, k: 2 });
+  });
+});
+
+describe('pinchTransform', () => {
+  const cases: [CanvasTransform, number, Point, Point][] = [
+    // Pure zoom: the midpoint never moves.
+    [IDENTITY, 1.2, { x: 300, y: 200 }, { x: 300, y: 200 }],
+    // Pure pan: two fingers translating without spreading.
+    [{ x: -40, y: 25, k: 1.5 }, 1, { x: 120, y: 90 }, { x: 190, y: 40 }],
+    // The normal gesture: spread and drag at once, which is where double-counting shows up.
+    [{ x: -40, y: 25, k: 1.5 }, 1.1, { x: 120, y: 90 }, { x: 140, y: 105 }],
+    [{ x: 12, y: -8, k: 0.6 }, 0.85, { x: 400, y: 300 }, { x: 330, y: 360 }],
+  ];
+
+  it.each(cases)(
+    'keeps the pinched canvas point under the moving midpoint (%o × %f, %o -> %o)',
+    (transform, factor, from, to) => {
+      const next = pinchTransform(transform, factor, from, to);
+      const before = toCanvas(transform, from);
+      const after = toCanvas(next, to);
+
+      expect(after.x).toBeCloseTo(before.x, 9);
+      expect(after.y).toBeCloseTo(before.y, 9);
+    },
+  );
+
+  it('does not drift when a stationary gesture is repeated', () => {
+    let view: CanvasTransform = { x: -40, y: 25, k: 1.5 };
+
+    for (let step = 0; step < 20; step += 1) {
+      view = pinchTransform(view, 1, { x: 200, y: 150 }, { x: 200, y: 150 });
+    }
+
+    expect(view).toEqual({ x: -40, y: 25, k: 1.5 });
   });
 });
 

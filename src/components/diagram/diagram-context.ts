@@ -116,6 +116,21 @@ export interface DiagramClassNames {
   frameSection?: string;
   frameTitle?: string;
   frameLabel?: string;
+  ganttSections?: string;
+  ganttSection?: string;
+  ganttSectionBand?: string;
+  ganttSectionLabel?: string;
+  ganttGrid?: string;
+  ganttGridLine?: string;
+  ganttAxis?: string;
+  ganttAxisRule?: string;
+  ganttAxisTick?: string;
+  ganttBars?: string;
+  ganttTask?: string;
+  ganttBar?: string;
+  ganttMilestone?: string;
+  ganttLabels?: string;
+  ganttTaskLabel?: string;
   /** Canvas mode: the viewport, the transformed wrapper, and the control cluster. */
   canvas?: string;
   canvasScene?: string;

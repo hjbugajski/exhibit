@@ -430,14 +430,43 @@ function ordered(diagnostics: readonly Diagnostic[]): readonly Diagnostic[] {
   );
 }
 
+/** Distinct lines printed before the remainder becomes a single count. */
+const ISSUE_LIMIT = 8;
+
+/**
+ * One line per distinct diagnostic, in `ordered`'s order, carrying how many times it was reported.
+ * An ordinary flowchart reports the same `style` note once per node, and forty identical sentences
+ * under the drawing say nothing the first one did not — the count does.
+ */
+function collapse(diagnostics: readonly Diagnostic[]): { diagnostic: Diagnostic; count: number }[] {
+  const lines = new Map<string, { diagnostic: Diagnostic; count: number }>();
+
+  for (const diagnostic of ordered(diagnostics)) {
+    const key = JSON.stringify([diagnostic.severity, diagnostic.code, diagnostic.message]);
+    const line = lines.get(key);
+
+    if (line) {
+      line.count += 1;
+    } else {
+      lines.set(key, { diagnostic, count: 1 });
+    }
+  }
+
+  return [...lines.values()];
+}
+
 /**
  * Renders nothing when the source was clean, so it is safe to leave in every composition. Severity
  * is carried by a marker as well as by colour (`diagram.css` keys `::before` off `data-severity`),
- * and the code is printed from `data-code` — so a consumer's own `<li>` markup stays viable.
+ * and the code is printed from `data-code` — so a consumer's own `<li>` markup stays viable. The
+ * overflow line carries no `data-code`, which is what keeps the code chip off it.
  */
 function Issues({ className, render, children, ...props }: DiagramIssuesProps) {
   const { classNames } = useDiagramConfig();
   const { diagnostics } = useDiagramScene();
+  const lines = collapse(diagnostics);
+  const shown = lines.slice(0, ISSUE_LIMIT);
+  const elided = lines.length - shown.length;
 
   return useRender({
     enabled: diagnostics.length > 0,
@@ -446,9 +475,8 @@ function Issues({ className, render, children, ...props }: DiagramIssuesProps) {
     props: {
       'data-part': 'issues',
       className: cn(classNames.issues, className),
-      children:
-        children ??
-        ordered(diagnostics).map((diagnostic, index) => (
+      children: children ?? [
+        ...shown.map(({ diagnostic, count }, index) => (
           <li
             key={index}
             data-part="issue"
@@ -456,9 +484,15 @@ function Issues({ className, render, children, ...props }: DiagramIssuesProps) {
             data-code={diagnostic.code}
             className={classNames.issue}
           >
-            {diagnostic.message}
+            {count > 1 ? `${diagnostic.message} (×${count})` : diagnostic.message}
           </li>
         )),
+        elided > 0 ? (
+          <li key="elided" data-part="issue" data-severity="info" className={classNames.issue}>
+            {`and ${elided} more.`}
+          </li>
+        ) : null,
+      ],
       ...props,
     },
   });

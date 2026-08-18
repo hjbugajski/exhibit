@@ -1,10 +1,9 @@
 import { catalogDemo } from '@/components/library/catalog-demo';
 
 /*
- * Both engines behind the block, side by side in one control. The first three headers detect into
- * the house engine and draw inline; `gantt` is a family mermaid.js renders and the house engine
- * does not, so it is the honest picture of the fallback; `mindmap` is outside mermaid's own
- * allowlist and lands on the source-with-a-reason shape that ends both paths.
+ * Every family the block draws, side by side in one control. All but the last detect into the house
+ * engine and draw inline; `mindmap` is recognized but not drawn yet, so it lands on the
+ * source-with-a-reason shape every undrawable source ends on.
  */
 const samples = {
   'flowchart (house)': `flowchart TD
@@ -24,13 +23,31 @@ const samples = {
   "Tables" : 26
   "Diagrams" : 17
   "Charts" : 9`,
-  'gantt (stock mermaid)': `gantt
+  'class (house)': `classDiagram
+  class Artifact {
+    +String slug
+    +String title
+    +publish() Version
+  }
+  class Version {
+    +int number
+    +String body
+  }
+  Artifact "1" *-- "many" Version : keeps`,
+  'er (house)': `erDiagram
+  ARTIFACT ||--o{ VERSION : keeps
+  ARTIFACT }o--o{ TAG : "filed under"
+  VERSION {
+    int number PK
+    string body
+  }`,
+  'gantt (house)': `gantt
   title Release
   dateFormat YYYY-MM-DD
   section Build
   Catalog work :2026-01-05, 12d
   Review       :2026-01-17, 5d`,
-  'rejected (mindmap)': `mindmap
+  'mindmap (unsupported → source)': `mindmap
   root((exhibit))
     specs
     markdown`,
@@ -42,7 +59,7 @@ export const catalogMermaidDemo = catalogDemo({
   slug: 'catalog-mermaid',
   title: 'Mermaid',
   description:
-    'Mermaid diagram source: flowchart, sequence, state and pie draw in the house engine; other diagram types go to mermaid.js inside a script-less sandboxed frame, and unsupported ones degrade to their source with a reason.',
+    'Mermaid diagram source: flowchart, sequence, state, class, ER, pie and gantt draw in the house engine; every other diagram type keeps its source on screen with the reason it was not drawn.',
   controls: {
     sample: { kind: 'select', label: 'Sample', options: kinds, defaultValue: 'flowchart (house)' },
   },

@@ -30,7 +30,7 @@ describe('separateLegs', () => {
   it('leaves legs that miss each other on the lane they turned in', () => {
     const routes = [transfer(0, 100), transfer(200, 300)];
 
-    separateLegs(routes, 'y', m);
+    separateLegs(routes, [], 'y', m);
 
     expect(routes.map((route) => route.points[1]?.y)).toEqual([100, 100]);
   });
@@ -39,7 +39,7 @@ describe('separateLegs', () => {
     const long = transfer(0, 300);
     const short = transfer(100, 200);
 
-    separateLegs([long, short], 'y', m);
+    separateLegs([long, short], [], 'y', m);
 
     expect(long.points[1]?.y).toBe(100);
     expect(long.points[2]?.y).toBe(100);
@@ -60,7 +60,7 @@ describe('separateLegs', () => {
     const long = up(0, 300);
     const short = up(100, 200);
 
-    separateLegs([long, short], 'y', m);
+    separateLegs([long, short], [], 'y', m);
 
     expect(long.points[1]?.y).toBe(100);
     expect(short.points[1]?.y).toBe(100 - gap);
@@ -71,7 +71,7 @@ describe('separateLegs', () => {
     // and the one behind it is not.
     const routes = [transfer(0, 300, 100, 200), transfer(100, 200, 100, 110)];
 
-    separateLegs(routes, 'y', m);
+    separateLegs(routes, [], 'y', m);
 
     expect(routes[1]?.points[1]?.y).toBe(100 - gap);
   });
@@ -84,7 +84,7 @@ describe('separateLegs', () => {
       { x: 200, y: 104 },
     ]);
 
-    separateLegs([transfer(0, 300, 100, 200), pinched], 'y', m);
+    separateLegs([transfer(0, 300, 100, 200), pinched], [], 'y', m);
 
     expect(pinched.points[1]?.y).toBe(100);
   });
@@ -92,7 +92,7 @@ describe('separateLegs', () => {
   it('spreads the legs of one rank gap across it when several collide', () => {
     const routes = [transfer(0, 300), transfer(50, 280), transfer(80, 260)];
 
-    separateLegs(routes, 'y', m);
+    separateLegs(routes, [], 'y', m);
 
     const lanes = routes.map((route) => route.points[1]?.y as number);
 
@@ -109,7 +109,7 @@ describe('separateLegs', () => {
     const long = transfer(0, 300);
     const short = transfer(100, 200);
 
-    separateLegs([long, short], 'y', m);
+    separateLegs([long, short], [], 'y', m);
 
     expect(short.labelPoint).toEqual({ x: 150, y: 100 + gap });
     expect(long.labelPoint).toEqual({ x: 150, y: 100 });
@@ -120,7 +120,7 @@ describe('separateLegs', () => {
     const short = transfer(100, 200);
 
     short.labelPoint = { x: 150, y: 40 };
-    separateLegs([long, short], 'y', m);
+    separateLegs([long, short], [], 'y', m);
 
     expect(short.labelPoint).toEqual({ x: 150, y: 40 });
   });
@@ -131,7 +131,7 @@ describe('separateLegs', () => {
     const long = transfer(0, 300);
     const crossing = transfer(298, 302);
 
-    separateLegs([long, crossing], 'y', m);
+    separateLegs([long, crossing], [], 'y', m);
 
     expect(crossing.points[1]?.y).toBe(100);
   });
@@ -145,16 +145,72 @@ describe('separateLegs', () => {
     ]);
     const straight = transfer(0, 60);
 
-    separateLegs([lobe, straight], 'y', m);
+    separateLegs([lobe, straight], [], 'y', m);
 
     expect(lobe.points[1]?.y).toBe(100);
+  });
+
+  it('places the second leg of a route against where the first one ended up', () => {
+    // Two lateral legs of one route, one rank-axis segment apart: moving the long one rewrites the
+    // bound the short one is placed against, so a window read once up front is already stale.
+    const moved = route([
+      { x: 0, y: 0 },
+      { x: 0, y: 100 },
+      { x: 40, y: 100 },
+      { x: 40, y: 116 },
+      { x: 200, y: 116 },
+      { x: 200, y: 300 },
+    ]);
+    const crowd = [
+      route([
+        { x: 40, y: 50 },
+        { x: 40, y: 116 },
+        { x: 500, y: 116 },
+        { x: 500, y: 300 },
+      ]),
+      route([
+        { x: 40, y: 50 },
+        { x: 40, y: 125 },
+        { x: 500, y: 125 },
+        { x: 500, y: 300 },
+      ]),
+      route([
+        { x: 20, y: 50 },
+        { x: 20, y: 100 },
+        { x: -400, y: 100 },
+        { x: -400, y: 300 },
+      ]),
+    ];
+
+    separateLegs([...crowd, moved], [], 'y', m);
+
+    const ranks = moved.points.map((point) => point.y);
+
+    // The route ran down the page before the pass and still does, and its own two legs are either a
+    // lane apart or on the same lane — never the 2 units of overlap this pass exists to remove.
+    expect(ranks).toEqual([...ranks].sort((a, b) => a - b));
+
+    const between = Math.abs((moved.points[3] as Point).y - (moved.points[1] as Point).y);
+
+    expect(between === 0 || between >= gap - 0.01, `${between}`).toBe(true);
+  });
+
+  it('refuses a lane that would slide a leg into a node it was clear of', () => {
+    // The window runs to the far point, which is a node centre on the next rank: without the box in
+    // the obstacle set the displaced leg lands inside it.
+    const blocked = transfer(100, 200, 100, 200);
+    const node = { x: 90, y: 104, width: 120, height: 38 };
+
+    separateLegs([transfer(0, 300, 100, 200), blocked], [node], 'y', m);
+
+    expect((blocked.points[1] as Point).y).toBe(100 - gap);
   });
 
   it('runs on the cross axis when ranks run across x', () => {
     const long = route([{ x: 0, y: 0 }, ...transfer(0, 300).points.map(swap)]);
     const short = route([{ x: 0, y: 0 }, ...transfer(100, 200).points.map(swap)]);
 
-    separateLegs([long, short], 'x', m);
+    separateLegs([long, short], [], 'x', m);
 
     expect(short.points[2]?.x).toBe(100 + gap);
   });

@@ -13,7 +13,7 @@ import { buildDiagram, defaultLimits, resolveLayoutOptions } from '../../build.t
 import { Reporter } from '../../core/diagnostics.ts';
 import { metricsMeasurer } from '../../core/text/measurers.ts';
 import { resolveMetrics } from '../../metrics.ts';
-import type { BuildOptions, Diagnostic, SequenceScene } from '../../types.ts';
+import type { BuildOptions, Diagnostic, PlacedLabel, Rect, SequenceScene } from '../../types.ts';
 import type { SequenceIR } from './ir.ts';
 import { layoutSequence } from './layout.ts';
 import { parseSequence } from './parse.ts';
@@ -241,6 +241,25 @@ describe('sequence activations', () => {
     expect(inner?.box.x).toBeGreaterThan(outer?.box.x as number);
   });
 
+  it('reserves scene width for the outermost bar of a deep stack', () => {
+    const scene = built(
+      `${header}\n  A->>B: 1\n${'  activate B\n'.repeat(7)}${'  deactivate B\n'.repeat(7)}`,
+    );
+
+    for (const bar of scene.activations) {
+      expect(bar.box.x + bar.box.width, `${bar.id} runs past the scene`).toBeLessThanOrEqual(
+        scene.size.width,
+      );
+    }
+  });
+
+  it('reserves scene width for a bar a message opened', () => {
+    const scene = built(`${header}\n  participant A\n  participant B\n  A->>+B: work`);
+    const bar = scene.activations[0]?.box as Rect;
+
+    expect(bar.x + bar.width).toBeLessThanOrEqual(scene.size.width);
+  });
+
   it('runs an unclosed bar to the foot of the lifeline and says so', () => {
     const result = buildDiagram(`${header}\n  A->>+B: work`, options);
     const scene = result.scene as SequenceScene;
@@ -355,6 +374,29 @@ describe('sequence frames', () => {
     expect((inner?.box.y as number) + (inner?.box.height as number)).toBeLessThan(
       (outer?.box.y as number) + (outer?.box.height as number),
     );
+  });
+
+  it('keeps a long label inside the scene when the frame touches one participant', () => {
+    const scene = built(
+      `${header}\n  participant A\n  participant B\n  A->>B: hi\n  loop while the queue is not empty\n    Note over B: work\n  end`,
+    );
+    const [frame] = scene.frames;
+    const label = frame?.label as PlacedLabel;
+
+    expect(label.x + label.box.width / 2).toBeLessThanOrEqual(scene.size.width);
+    expect(label.x - label.box.width / 2).toBeGreaterThanOrEqual(0);
+    expect(label.x + label.box.width / 2).toBeLessThanOrEqual(
+      (frame?.box.x as number) + (frame?.box.width as number),
+    );
+  });
+
+  it('keeps a long label inside the scene on a single-participant diagram', () => {
+    const scene = built(
+      `${header}\n  loop retry until the publish endpoint answers\n    activate A\n    deactivate A\n  end`,
+    );
+    const label = scene.frames[0]?.label as PlacedLabel;
+
+    expect(label.x + label.box.width / 2).toBeLessThanOrEqual(scene.size.width);
   });
 
   it('encloses a note drawn inside it', () => {

@@ -3,7 +3,7 @@ import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 
 import { validateArtifactSpec } from '@/catalog/validate';
-import { ALLOWED_FAMILIES } from '@/components/catalog/mermaid-policy';
+import { ALLOWED_FAMILIES } from '@/components/catalog/mermaid-schema';
 import type { ArtifactListItem, ArtifactType, Db } from '@/database/repository';
 import {
   appendVersion,

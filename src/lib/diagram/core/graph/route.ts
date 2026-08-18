@@ -11,7 +11,7 @@
 import type { DiagramMetrics } from '../../metrics.ts';
 import type { ArrowKind, EdgeShape, Point, Rect, ShapeDef, Size } from '../../types.ts';
 import { arrowHead } from '../geometry/arrow.ts';
-import { rayRect, rectsOverlap } from '../geometry/intersect.ts';
+import { clipSegmentToRect, rayRect, rectsOverlap } from '../geometry/intersect.ts';
 import { distance } from '../geometry/path.ts';
 import type { Direction } from './model.ts';
 import { portPoint } from './ports.ts';
@@ -125,12 +125,39 @@ function portOn(endpoint: RouteEndpoint, toward: Point, m: DiagramMetrics, axis:
   return { x: endpoint.centre.x + hit.x, y: endpoint.centre.y + hit.y };
 }
 
-/** Where a chord aimed at `toward` leaves a collapsed cluster's box. */
+/**
+ * Which way an end buried in a collapsed cluster faces: where a chord aimed at `toward` leaves the
+ * cluster's box, measured from the box's own centre. It is the cluster that is opaque to the level
+ * above, so this is one locus for every end inside it — both ends of an edge aim at the same point
+ * and the ports they are given agree, which is an edge drawn as one run rather than one with a jog.
+ */
 export function borderPoint(border: Rect, toward: Point): Point {
   const centre = { x: border.x + border.width / 2, y: border.y + border.height / 2 };
   const hit = rayRect(border, { x: toward.x - centre.x, y: toward.y - centre.y });
 
   return { x: centre.x + hit.x, y: centre.y + hit.y };
+}
+
+/**
+ * Where the chord from `from` to `toward` leaves that box, or null when it never crosses it. This is
+ * the waypoint the trail is actually drawn through, and it is a point on the chord and nowhere else.
+ *
+ * The aim is the wrong answer here for the reason the cluster is not the node: an endpoint sits
+ * wherever the packing put it inside a box that may be far wider, so the ray from the box's centre
+ * can land on the side face past the node's own port. The trail then runs out to that crossing and
+ * straight back — three collinear points the align pass flattens into a corner with nowhere to turn,
+ * emitted as a `Q` that draws nothing over a stroke painted twice.
+ */
+function borderCrossing(border: Rect, from: Point, toward: Point): Point | null {
+  const clip = clipSegmentToRect(from, toward, border);
+
+  if (!clip) {
+    return null;
+  }
+
+  const t = clip[1];
+
+  return { x: from.x + (toward.x - from.x) * t, y: from.y + (toward.y - from.y) * t };
 }
 
 /**
@@ -457,7 +484,15 @@ export function routeEdge(
   if (input.sourceDetour) {
     centres.push(...input.sourceDetour);
   } else if (input.sourceBorder) {
-    centres.push(borderPoint(input.sourceBorder, input.interior[0] ?? input.target.centre));
+    const crossing = borderCrossing(
+      input.sourceBorder,
+      input.source.centre,
+      input.interior[0] ?? input.target.centre,
+    );
+
+    if (crossing) {
+      centres.push(crossing);
+    }
   }
 
   centres.push(...input.interior);
@@ -465,7 +500,15 @@ export function routeEdge(
   if (input.targetDetour) {
     centres.push(...input.targetDetour);
   } else if (input.targetBorder) {
-    centres.push(borderPoint(input.targetBorder, input.interior.at(-1) ?? input.source.centre));
+    const crossing = borderCrossing(
+      input.targetBorder,
+      input.target.centre,
+      input.interior.at(-1) ?? input.source.centre,
+    );
+
+    if (crossing) {
+      centres.push(crossing);
+    }
   }
 
   centres.push(input.target.centre);

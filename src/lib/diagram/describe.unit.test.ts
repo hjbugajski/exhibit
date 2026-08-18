@@ -239,6 +239,45 @@ describe('describeScene for a graph', () => {
   });
 });
 
+describe('describeScene for a class diagram', () => {
+  it('announces a class by its name rather than by its compartment stack', () => {
+    const description = describeScene(
+      scene(
+        'classDiagram\n  class Invoice {\n    +String number\n    +total() Money\n  }\n  Invoice *-- Line',
+      ),
+    );
+
+    expect(description.summary).toBe('Class diagram: 2 nodes, 1 connection.');
+    expect(description.details).toEqual(['Invoice is connected to Line.']);
+  });
+});
+
+describe('describeScene for an entity-relationship diagram', () => {
+  it('names an entity by itself and reads the relationship label', () => {
+    const description = describeScene(
+      scene(
+        'erDiagram\n  CUSTOMER ||--o{ ORDER : places\n  ORDER {\n    int number PK\n    string note\n  }',
+      ),
+    );
+
+    expect(description.summary).toBe('Entity-relationship diagram: 2 nodes, 1 connection.');
+    expect(description.details).toEqual(['CUSTOMER is connected to ORDER, labelled places.']);
+  });
+});
+
+describe('describeScene for a gantt chart', () => {
+  it('names the chart and reads every row', () => {
+    const description = describeScene(
+      scene('gantt\n  title Plan\n  section Build\n  Draft :2024-03-04, 2d'),
+    );
+
+    expect(description.summary).toBe(
+      'Gantt chart "Plan": 1 task, 1 section, 2024-03-04 to 2024-03-06.',
+    );
+    expect(description.details).toEqual(['Section Build.', 'Draft: 2024-03-04 to 2024-03-06.']);
+  });
+});
+
 describe('describeScene for a pie chart', () => {
   it('lists every slice with its share', () => {
     const description = describeScene(

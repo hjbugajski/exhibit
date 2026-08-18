@@ -3,6 +3,12 @@
  * newlines and top-level `;` (excluding the one that closes a `#entity;`), drops blanks, and keeps a
  * span per line so a diagnostic can point at the source. `%%{…}%%` directives are deliberately NOT treated as comments: they must survive to
  * the parser so it can report them as unsupported rather than silently honoring them.
+ *
+ * "Top-level" means outside quotes and outside a `[…]` or `(…)` shape, because mermaid's lexers read
+ * those as label text: `A[Load; then run]` is one node, not two torn statements. Braces are *not*
+ * label context — a class body (`class A { +x; +y() }`) is exactly where mermaid does split — and
+ * whether a `:` opens a description that runs to the end of the line is a per-grammar answer, so it
+ * is a rule the family passes in rather than something this splitter can decide.
  */
 
 import type { Span } from '../../types.ts';
@@ -14,7 +20,16 @@ export interface LogicalLine {
   indent: number;
 }
 
-export function readLines(source: string): LogicalLine[] {
+export interface LineRules {
+  /**
+   * True when an unquoted top-level `:` opens a description that runs to the end of the physical
+   * line, so a `;` after it is label text (mermaid's state grammar). Off for grammars that end a
+   * statement at `;` even inside a message text (mermaid's sequence grammar).
+   */
+  descriptionAfterColon?: boolean;
+}
+
+export function readLines(source: string, rules: LineRules = {}): LogicalLine[] {
   const lines: LogicalLine[] = [];
   let offset = 0;
   let lineNumber = 1;
@@ -24,7 +39,7 @@ export function readLines(source: string): LogicalLine[] {
     const end = newline === -1 ? source.length : newline;
     const raw = source.slice(offset, end).replace(/\r$/, '');
 
-    collectStatements(lines, stripComment(raw), offset, lineNumber);
+    collectStatements(lines, stripComment(raw), offset, lineNumber, rules);
 
     if (newline === -1) {
       break;
@@ -94,10 +109,13 @@ function collectStatements(
   raw: string,
   lineOffset: number,
   lineNumber: number,
+  rules: LineRules,
 ): void {
   const indent = raw.length - raw.trimStart().length;
   let start = 0;
   let quoted = false;
+  let brackets = 0;
+  let described = false;
 
   for (let i = 0; i <= raw.length; i += 1) {
     const char = raw[i];
@@ -107,7 +125,25 @@ function collectStatements(
       continue;
     }
 
-    if (i < raw.length && (quoted || char !== ';' || closesEntity(raw, i))) {
+    if (!quoted && (char === '[' || char === '(')) {
+      brackets += 1;
+      continue;
+    }
+
+    if (!quoted && brackets > 0 && (char === ']' || char === ')')) {
+      brackets -= 1;
+      continue;
+    }
+
+    if (!quoted && brackets === 0 && char === ':' && rules.descriptionAfterColon) {
+      described = true;
+      continue;
+    }
+
+    if (
+      i < raw.length &&
+      (quoted || brackets > 0 || described || char !== ';' || closesEntity(raw, i))
+    ) {
       continue;
     }
 

@@ -1,0 +1,296 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`parseEr > 'accessibility statements' 1`] = `
+{
+  "accDescr": "Who buys what",
+  "accTitle": "Orders",
+  "entities": [
+    "A",
+    "B",
+  ],
+  "relationships": [
+    "A (exactly-one) -- (exactly-one) B : has",
+  ],
+}
+`;
+
+exports[`parseEr > 'alias kept from either mention' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "entities": [
+    "p "Person"",
+    "B",
+  ],
+  "relationships": [
+    "p (exactly-one) -- (exactly-one) B : has",
+  ],
+}
+`;
+
+exports[`parseEr > 'aliased entity' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "entities": [
+    "p "Person"",
+  ],
+  "relationships": [],
+}
+`;
+
+exports[`parseEr > 'array and generic types' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "entities": [
+    "A { string[] tags; list~int~ ids }",
+  ],
+  "relationships": [],
+}
+`;
+
+exports[`parseEr > 'attribute block' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "entities": [
+    "CUSTOMER { string name; int age }",
+  ],
+  "relationships": [],
+}
+`;
+
+exports[`parseEr > 'attribute keys and comment' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "entities": [
+    "CUSTOMER { string name PK "the name"; string other FK+UK }",
+  ],
+  "relationships": [],
+}
+`;
+
+exports[`parseEr > 'bare entity' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "entities": [
+    "CUSTOMER",
+  ],
+  "relationships": [],
+}
+`;
+
+exports[`parseEr > 'block on an entity named by a relatio…' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "entities": [
+    "A { int id PK }",
+    "B",
+  ],
+  "relationships": [
+    "A (exactly-one) -- (exactly-one) B : has",
+  ],
+}
+`;
+
+exports[`parseEr > 'comments are stripped' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "entities": [
+    "A",
+    "B",
+  ],
+  "relationships": [
+    "A (exactly-one) -- (exactly-one) B : has",
+  ],
+}
+`;
+
+exports[`parseEr > 'empty attribute block' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "entities": [
+    "A",
+  ],
+  "relationships": [],
+}
+`;
+
+exports[`parseEr > 'empty relationship label' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "entities": [
+    "A",
+    "B",
+  ],
+  "relationships": [
+    "A (exactly-one) -- (exactly-one) B",
+  ],
+}
+`;
+
+exports[`parseEr > 'header only' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "entities": [],
+  "relationships": [],
+}
+`;
+
+exports[`parseEr > 'label breaks and entities' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "entities": [
+    "A",
+    "B",
+  ],
+  "relationships": [
+    "A (exactly-one) -- (exactly-one) B : first | "x"",
+  ],
+}
+`;
+
+exports[`parseEr > 'non-identifying relationship' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "entities": [
+    "A",
+    "B",
+  ],
+  "relationships": [
+    "A (one-or-more) .. (one-or-more) B : uses",
+  ],
+}
+`;
+
+exports[`parseEr > 'one or more both ends' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "entities": [
+    "A",
+    "B",
+  ],
+  "relationships": [
+    "A (one-or-more) -- (one-or-more) B : some",
+  ],
+}
+`;
+
+exports[`parseEr > 'one relationship' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "entities": [
+    "CUSTOMER",
+    "ORDER",
+  ],
+  "relationships": [
+    "CUSTOMER (exactly-one) -- (zero-or-more) ORDER : places",
+  ],
+}
+`;
+
+exports[`parseEr > 'quoted entity' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "entities": [
+    "Customer Account "Customer Account"",
+  ],
+  "relationships": [],
+}
+`;
+
+exports[`parseEr > 'quoted relationship label' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "entities": [
+    "A",
+    "B",
+  ],
+  "relationships": [
+    "A (exactly-one) -- (exactly-one) B : has exactly one",
+  ],
+}
+`;
+
+exports[`parseEr > 'relationship without a label' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "entities": [
+    "A",
+    "B",
+  ],
+  "relationships": [
+    "A (exactly-one) -- (exactly-one) B",
+  ],
+}
+`;
+
+exports[`parseEr > 'relationship without spaces' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "entities": [
+    "CUSTOMER",
+    "ORDER",
+  ],
+  "relationships": [
+    "CUSTOMER (exactly-one) -- (zero-or-more) ORDER : places",
+  ],
+}
+`;
+
+exports[`parseEr > 'self relationship' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "entities": [
+    "A",
+  ],
+  "relationships": [
+    "A (exactly-one) -- (zero-or-more) A : supervises",
+  ],
+}
+`;
+
+exports[`parseEr > 'zero or more both ends' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "entities": [
+    "A",
+    "B",
+  ],
+  "relationships": [
+    "A (zero-or-more) -- (zero-or-more) B : many",
+  ],
+}
+`;
+
+exports[`parseEr > 'zero or one both ends' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "entities": [
+    "A",
+    "B",
+  ],
+  "relationships": [
+    "A (zero-or-one) -- (zero-or-one) B : maybe",
+  ],
+}
+`;
