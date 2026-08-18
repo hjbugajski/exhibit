@@ -1,0 +1,12 @@
+sequenceDiagram
+  autonumber
+  participant C as Claude
+  participant M as MCP endpoint
+  participant A as Better Auth
+  C->>+M: publish_spec
+  M->>+A: verify bearer token
+  A-->>-M: token claims
+  activate M
+  M->>M: validate spec
+  deactivate M
+  M-->>-C: artifact url

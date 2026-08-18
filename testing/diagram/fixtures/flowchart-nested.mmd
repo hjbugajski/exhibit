@@ -1,0 +1,11 @@
+flowchart TB
+  accTitle: Release pipeline
+  A[Author] --> B
+  subgraph pipeline [Pipeline]
+    B[Build] --> C[Test]
+    subgraph deploy [Deploy]
+      C --> D[Stage]
+      D -->|approved| E[Prod]
+    end
+  end
+  E --> F([Done])

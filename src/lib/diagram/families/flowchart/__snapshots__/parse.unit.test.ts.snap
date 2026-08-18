@@ -1,0 +1,728 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`parseFlowchart > 'a failed statement commits nothing' 1`] = `
+"direction TB
+node B rect "B"
+node C rect "C"
+edge B->C#0 B->C solid none/arrow len=1"
+`;
+
+exports[`parseFlowchart > 'accDescr block' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B solid none/arrow len=1
+accDescr "first line second line""
+`;
+
+exports[`parseFlowchart > 'accDescr on one line' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B solid none/arrow len=1
+accDescr "How a draft ships""
+`;
+
+exports[`parseFlowchart > 'accTitle' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B solid none/arrow len=1
+accTitle "Publish flow""
+`;
+
+exports[`parseFlowchart > 'arrow links chain' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+node C rect "C"
+edge A->B#0 A->B solid none/arrow len=1
+edge B->C#1 B->C solid none/arrow len=1"
+`;
+
+exports[`parseFlowchart > 'backslash-n splits lines' 1`] = `
+"direction TB
+node A rect "one | two""
+`;
+
+exports[`parseFlowchart > 'bare node keeps its id as the label' 1`] = `
+"direction TB
+node A rect "A""
+`;
+
+exports[`parseFlowchart > 'bare subgraph titles itself' 1`] = `
+"direction TB
+node A rect "A" in One
+node B rect "B" in One
+edge A->B#0 A->B solid none/arrow len=1
+cluster One parent=null "One""
+`;
+
+exports[`parseFlowchart > 'blank lines are skipped' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B solid none/arrow len=1"
+`;
+
+exports[`parseFlowchart > 'br splits lines' 1`] = `
+"direction TB
+node A rect "one | two | three""
+`;
+
+exports[`parseFlowchart > 'class assigns to several nodes' 1`] = `
+"direction TB
+node A rect "A" :::danger
+node B rect "B" :::danger
+edge A->B#0 A->B solid none/arrow len=1"
+`;
+
+exports[`parseFlowchart > 'class names accumulate' 1`] = `
+"direction TB
+node A rect "A" :::one,two"
+`;
+
+exports[`parseFlowchart > 'classDef registers several names' 1`] = `
+"direction TB
+node A rect "A"
+classDefs a,b"
+`;
+
+exports[`parseFlowchart > 'classDef registers the name only' 1`] = `
+"direction TB
+node A rect "A"
+classDefs danger"
+`;
+
+exports[`parseFlowchart > 'click is ignored' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B solid none/arrow len=1"
+`;
+
+exports[`parseFlowchart > 'comments are stripped' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B solid none/arrow len=1"
+`;
+
+exports[`parseFlowchart > 'cycle' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+node C rect "C"
+edge A->B#0 A->B solid none/arrow len=1
+edge B->C#1 B->C solid none/arrow len=1
+edge C->A#2 C->A solid none/arrow len=1"
+`;
+
+exports[`parseFlowchart > 'direction inside a subgraph is ignored' 1`] = `
+"direction TB
+node A rect "A" in sg
+node B rect "B" in sg
+edge A->B#0 A->B solid none/arrow len=1
+cluster sg parent=null "sg""
+`;
+
+exports[`parseFlowchart > 'dotted links chain' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+node C rect "C"
+edge A->B#0 A->B dotted none/arrow len=1
+edge B->C#1 B->C dotted none/arrow len=1"
+`;
+
+exports[`parseFlowchart > 'duplicate subgraph id is renamed' 1`] = `
+"direction TB
+node A rect "A" in sg
+node B rect "B" in sg#2
+cluster sg parent=null "sg"
+cluster sg#2 parent=null "sg""
+`;
+
+exports[`parseFlowchart > 'edge arrow' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B solid none/arrow len=1"
+`;
+
+exports[`parseFlowchart > 'edge circle cap' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B solid none/circle len=1"
+`;
+
+exports[`parseFlowchart > 'edge cross cap' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B solid none/cross len=1"
+`;
+
+exports[`parseFlowchart > 'edge dotted arrow' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B dotted none/arrow len=1"
+`;
+
+exports[`parseFlowchart > 'edge dotted open' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B dotted none/none len=1"
+`;
+
+exports[`parseFlowchart > 'edge double arrow' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B solid arrow/arrow len=1"
+`;
+
+exports[`parseFlowchart > 'edge double circle cap' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B solid circle/circle len=1"
+`;
+
+exports[`parseFlowchart > 'edge double cross cap' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B solid cross/cross len=1"
+`;
+
+exports[`parseFlowchart > 'edge double dotted' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B dotted arrow/arrow len=1"
+`;
+
+exports[`parseFlowchart > 'edge double thick' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B thick arrow/arrow len=1"
+`;
+
+exports[`parseFlowchart > 'edge invisible' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B solid none/none len=1 invisible"
+`;
+
+exports[`parseFlowchart > 'edge open' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B solid none/none len=1"
+`;
+
+exports[`parseFlowchart > 'edge thick arrow' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B thick none/arrow len=1"
+`;
+
+exports[`parseFlowchart > 'edge thick open' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B thick none/none len=1"
+`;
+
+exports[`parseFlowchart > 'edges cross between two subgraphs' 1`] = `
+"direction LR
+node A rect "A" in a
+node B rect "B" in a
+node C rect "C" in b
+node D rect "D" in b
+edge A->B#0 A->B solid none/arrow len=1
+edge C->D#1 C->D solid none/arrow len=1
+edge B->C#2 B->C solid none/arrow len=1
+cluster a parent=null "a"
+cluster b parent=null "b""
+`;
+
+exports[`parseFlowchart > 'entities decode' 1`] = `
+"direction TB
+node A rect ""q" # : ;""
+`;
+
+exports[`parseFlowchart > 'every statement failing yields no ir' 1`] = `"<no ir>"`;
+
+exports[`parseFlowchart > 'extra dashes lengthen the arrow' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B solid none/arrow len=2"
+`;
+
+exports[`parseFlowchart > 'extra dashes lengthen the open link' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B solid none/none len=2"
+`;
+
+exports[`parseFlowchart > 'extra dots lengthen the dotted link' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B dotted none/arrow len=2"
+`;
+
+exports[`parseFlowchart > 'extra equals lengthen the thick link' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B thick none/none len=2"
+`;
+
+exports[`parseFlowchart > 'extra tildes lengthen the invisible l…' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B solid none/none len=2 invisible"
+`;
+
+exports[`parseFlowchart > 'fan group expands to a product' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+node C rect "C"
+node D rect "D"
+edge A->C#0 A->C solid none/arrow len=1
+edge A->D#1 A->D solid none/arrow len=1
+edge B->C#2 B->C solid none/arrow len=1
+edge B->D#3 B->D solid none/arrow len=1"
+`;
+
+exports[`parseFlowchart > 'fan group inside a chain' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+node C rect "C"
+node D rect "D"
+edge A->B#0 A->B solid none/arrow len=1
+edge A->C#1 A->C solid none/arrow len=1
+edge B->D#2 B->D solid none/arrow len=1
+edge C->D#3 C->D solid none/arrow len=1"
+`;
+
+exports[`parseFlowchart > 'forward references auto-create nodes' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "Named"
+edge A->B#0 A->B solid none/arrow len=1"
+`;
+
+exports[`parseFlowchart > 'header BT' 1`] = `
+"direction BT
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B solid none/arrow len=1"
+`;
+
+exports[`parseFlowchart > 'header RL' 1`] = `
+"direction RL
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B solid none/arrow len=1"
+`;
+
+exports[`parseFlowchart > 'header TD maps to TB' 1`] = `
+"direction TB
+node A rect "A""
+`;
+
+exports[`parseFlowchart > 'header graph LR' 1`] = `
+"direction LR
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B solid none/arrow len=1"
+`;
+
+exports[`parseFlowchart > 'header only is an empty diagram' 1`] = `"direction TB"`;
+
+exports[`parseFlowchart > 'header without a direction' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B solid none/arrow len=1"
+`;
+
+exports[`parseFlowchart > 'init directive is ignored' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B solid none/arrow len=1"
+`;
+
+exports[`parseFlowchart > 'inline label dotted' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B dotted none/arrow len=1 "later""
+`;
+
+exports[`parseFlowchart > 'inline label lengthens with the closer' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B solid none/arrow len=3 "far""
+`;
+
+exports[`parseFlowchart > 'inline label on an open link' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B solid none/none len=1 "maybe""
+`;
+
+exports[`parseFlowchart > 'inline label thick' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B thick none/arrow len=1 "go""
+`;
+
+exports[`parseFlowchart > 'inline label without spaces' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B solid none/arrow len=1 "yes""
+`;
+
+exports[`parseFlowchart > 'inline label' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B solid none/arrow len=1 "yes""
+`;
+
+exports[`parseFlowchart > 'internal whitespace collapses' 1`] = `
+"direction TB
+node A rect "x y""
+`;
+
+exports[`parseFlowchart > 'labels chain without merging' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+node C rect "C"
+edge A->B#0 A->B solid none/arrow len=1 "yes"
+edge B->C#1 B->C solid none/arrow len=1 "no""
+`;
+
+exports[`parseFlowchart > 'link length caps at four' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B solid none/arrow len=4"
+`;
+
+exports[`parseFlowchart > 'linkStyle is ignored' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B solid none/arrow len=1"
+`;
+
+exports[`parseFlowchart > 'markdown string is reported' 1`] = `
+"direction TB
+node A rect "**bold**""
+`;
+
+exports[`parseFlowchart > 'membership latches to the first subgr…' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B" in sg
+node C rect "C" in sg
+node D rect "D"
+edge A->B#0 A->B solid none/arrow len=1
+edge B->C#1 B->C solid none/arrow len=1
+edge C->D#2 C->D solid none/arrow len=1
+cluster sg parent=null "sg""
+`;
+
+exports[`parseFlowchart > 'missing class name after triple colon' 1`] = `
+"direction TB
+node C rect "C"
+node D rect "D"
+edge C->D#0 C->D solid none/arrow len=1"
+`;
+
+exports[`parseFlowchart > 'nested subgraphs' 1`] = `
+"direction TB
+node A rect "A" in inner
+node B rect "B" in inner
+edge A->B#0 A->B solid none/arrow len=1
+cluster outer parent=null "outer"
+cluster inner parent=outer "inner""
+`;
+
+exports[`parseFlowchart > 'node metadata is ignored' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B solid none/arrow len=1"
+`;
+
+exports[`parseFlowchart > 'numeric entity decodes' 1`] = `
+"direction TB
+node A rect "→ go""
+`;
+
+exports[`parseFlowchart > 'one bad line among five leaves the re…' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+node C rect "C"
+node D rect "D"
+node E rect "E"
+edge A->B#0 A->B solid none/arrow len=1
+edge B->C#1 B->C solid none/arrow len=1
+edge C->D#2 C->D solid none/arrow len=1
+edge D->E#3 D->E solid none/arrow len=1"
+`;
+
+exports[`parseFlowchart > 'open links chain' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+node C rect "C"
+edge A->B#0 A->B solid none/none len=1
+edge B->C#1 B->C solid none/none len=1"
+`;
+
+exports[`parseFlowchart > 'pipe label' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B solid none/arrow len=1 "yes""
+`;
+
+exports[`parseFlowchart > 'quoted label keeps a bracket' 1`] = `
+"direction TB
+node A rect "closes ] here""
+`;
+
+exports[`parseFlowchart > 'renderer suffix is ignored' 1`] = `
+"direction LR
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B solid none/arrow len=1"
+`;
+
+exports[`parseFlowchart > 'self loop' 1`] = `
+"direction TB
+node A rect "A"
+edge A->A#0 A->A solid none/arrow len=1"
+`;
+
+exports[`parseFlowchart > 'semicolons separate statements' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+node C rect "C"
+edge A->B#0 A->B solid none/arrow len=1
+edge B->C#1 B->C solid none/arrow len=1"
+`;
+
+exports[`parseFlowchart > 'shape asymmetric' 1`] = `
+"direction TB
+node A asymmetric "Flag""
+`;
+
+exports[`parseFlowchart > 'shape chain does not swallow later br…' 1`] = `
+"direction TB
+node A subroutine "sub"
+node B cylinder "db"
+node C stadium "sta"
+edge A->B#0 A->B solid none/arrow len=1
+edge B->C#1 B->C solid none/arrow len=1"
+`;
+
+exports[`parseFlowchart > 'shape circle' 1`] = `
+"direction TB
+node A circle "Circle""
+`;
+
+exports[`parseFlowchart > 'shape cylinder' 1`] = `
+"direction TB
+node A cylinder "Store""
+`;
+
+exports[`parseFlowchart > 'shape diamond' 1`] = `
+"direction TB
+node A diamond "Choice""
+`;
+
+exports[`parseFlowchart > 'shape double circle' 1`] = `
+"direction TB
+node A double-circle "Double""
+`;
+
+exports[`parseFlowchart > 'shape hexagon' 1`] = `
+"direction TB
+node A hexagon "Hex""
+`;
+
+exports[`parseFlowchart > 'shape parallelogram alt' 1`] = `
+"direction TB
+node A parallelogram-alt "Output""
+`;
+
+exports[`parseFlowchart > 'shape parallelogram' 1`] = `
+"direction TB
+node A parallelogram "Input""
+`;
+
+exports[`parseFlowchart > 'shape rect' 1`] = `
+"direction TB
+node A rect "Rect""
+`;
+
+exports[`parseFlowchart > 'shape round' 1`] = `
+"direction TB
+node A round "Round""
+`;
+
+exports[`parseFlowchart > 'shape stadium' 1`] = `
+"direction TB
+node A stadium "Stadium""
+`;
+
+exports[`parseFlowchart > 'shape subroutine' 1`] = `
+"direction TB
+node A subroutine "Sub""
+`;
+
+exports[`parseFlowchart > 'shape trapezoid alt' 1`] = `
+"direction TB
+node A trapezoid-alt "Trap""
+`;
+
+exports[`parseFlowchart > 'shape trapezoid' 1`] = `
+"direction TB
+node A trapezoid "Trap""
+`;
+
+exports[`parseFlowchart > 'shapes declared inside a fan group' 1`] = `
+"direction TB
+node A rect "One"
+node B round "Two"
+node C rect "C"
+edge A->C#0 A->C solid none/arrow len=1
+edge B->C#1 B->C solid none/arrow len=1"
+`;
+
+exports[`parseFlowchart > 'slanted shapes on one line stay separ…' 1`] = `
+"direction TB
+node A trapezoid "x"
+node B trapezoid-alt "y"
+edge A->B#0 A->B solid none/arrow len=1"
+`;
+
+exports[`parseFlowchart > 'stray end is dropped' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B solid none/arrow len=1"
+`;
+
+exports[`parseFlowchart > 'style is ignored' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B solid none/arrow len=1"
+`;
+
+exports[`parseFlowchart > 'subgraph with a quoted title' 1`] = `
+"direction TB
+node A rect "A" in sg
+cluster sg parent=null "Build & Test""
+`;
+
+exports[`parseFlowchart > 'subgraph with an id and a title' 1`] = `
+"direction TB
+node A rect "A" in sg
+node B rect "B" in sg
+edge A->B#0 A->B solid none/arrow len=1
+cluster sg parent=null "Pipeline""
+`;
+
+exports[`parseFlowchart > 'subgraph with no name' 1`] = `
+"direction TB
+node A rect "A" in subgraph1
+cluster subgraph1 parent=null"
+`;
+
+exports[`parseFlowchart > 'top-level direction statement' 1`] = `
+"direction RL
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B solid none/arrow len=1"
+`;
+
+exports[`parseFlowchart > 'triple colon after a shape' 1`] = `
+"direction TB
+node A rect "Text" :::danger"
+`;
+
+exports[`parseFlowchart > 'triple colon shorthand' 1`] = `
+"direction TB
+node A rect "A" :::danger
+node B rect "B"
+edge A->B#0 A->B solid none/arrow len=1"
+`;
+
+exports[`parseFlowchart > 'unclosed accDescr block' 1`] = `
+"direction TB
+accDescr "dangling""
+`;
+
+exports[`parseFlowchart > 'unclosed subgraph auto-closes' 1`] = `
+"direction TB
+node A rect "A" in sg
+node B rect "B" in sg
+edge A->B#0 A->B solid none/arrow len=1
+cluster sg parent=null "sg""
+`;
+
+exports[`parseFlowchart > 'unknown direction falls back to TB' 1`] = `
+"direction TB
+node A rect "A"
+node B rect "B"
+edge A->B#0 A->B solid none/arrow len=1"
+`;
+
+exports[`parseFlowchart > 'unterminated metadata is one error' 1`] = `
+"direction TB
+node C rect "C"
+node D rect "D"
+edge C->D#0 C->D solid none/arrow len=1"
+`;
+
+exports[`parseFlowchart > 'unterminated shape is one error' 1`] = `
+"direction TB
+node C rect "C"
+node D rect "D"
+edge C->D#0 C->D solid none/arrow len=1"
+`;
+
+exports[`parseFlowchart > 'whitespace-only label is empty' 1`] = `
+"direction TB
+node A rect """
+`;

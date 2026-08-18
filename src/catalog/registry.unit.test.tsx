@@ -20,7 +20,7 @@ vi.mock('@/components/catalog/map', () => ({
   Map: () => <div data-testid="catalog-map" />,
 }));
 
-/** mermaid needs layout APIs happy-dom lacks; the diagram is validated in the browser instead. */
+/** The block is covered by its own suite; here only its presence in the registry is at stake. */
 vi.mock('@/components/catalog/mermaid', () => ({
   Mermaid: () => <div data-testid="catalog-mermaid" />,
 }));

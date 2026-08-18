@@ -1,0 +1,13 @@
+stateDiagram-v2
+  direction LR
+  [*] --> Split
+  state Split <<fork>>
+  Split --> Render
+  Split --> Index
+  Render --> Merge
+  Index --> Merge
+  state Merge <<join>>
+  state Choose <<choice>>
+  Merge --> Choose
+  Choose --> Done : ok
+  Choose --> Failed : error

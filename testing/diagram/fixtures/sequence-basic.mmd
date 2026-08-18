@@ -1,0 +1,10 @@
+sequenceDiagram
+  participant C as Claude
+  participant M as MCP endpoint
+  actor Owner
+  C->>M: publish_spec
+  M-->>C: artifact url
+  C-)M: fire and forget
+  M--xC: dropped
+  C->M: no head at all
+  Owner->>Owner: reads the gallery

@@ -1,0 +1,7 @@
+flowchart TD
+  Kick[Kickoff] --> Build
+  Kick --> Ship
+  subgraph release [Release]
+    Build[Build] --> Ship[Ship]
+  end
+  Ship --> Done[Done]

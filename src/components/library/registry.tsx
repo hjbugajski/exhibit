@@ -33,6 +33,8 @@ import { catalogTabsDemo } from '@/components/library/demos/catalog-tabs';
 import { catalogTimelineDemo } from '@/components/library/demos/catalog-timeline';
 import { checkboxDemo } from '@/components/library/demos/checkbox';
 import { collapsibleDemo } from '@/components/library/demos/collapsible';
+import { diagramDemo } from '@/components/library/demos/diagram';
+import { diagramPlaygroundDemo } from '@/components/library/demos/diagram-playground';
 import { dialogDemo } from '@/components/library/demos/dialog';
 import { dropdownMenuDemo } from '@/components/library/demos/dropdown-menu';
 import { emptyDemo } from '@/components/library/demos/empty';
@@ -43,6 +45,7 @@ import { kitchenSinkDemo } from '@/components/library/demos/kitchen-sink';
 import { mapDemo } from '@/components/library/demos/map';
 import { popoverDemo } from '@/components/library/demos/popover';
 import { progressDemo } from '@/components/library/demos/progress';
+import { publishPathReviewDemo } from '@/components/library/demos/publish-path-review';
 import { radioGroupDemo } from '@/components/library/demos/radio-group';
 import { selectDemo } from '@/components/library/demos/select';
 import { separatorDemo } from '@/components/library/demos/separator';
@@ -108,6 +111,9 @@ export const libraryDemos: LibraryDemo[] = [
   catalogTabsDemo,
   catalogTimelineDemo,
   // Examples
+  diagramDemo,
+  diagramPlaygroundDemo,
+  publishPathReviewDemo,
   kitchenSinkDemo,
   flowDemo,
   specSandboxDemo,

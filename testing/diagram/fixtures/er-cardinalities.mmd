@@ -1,0 +1,10 @@
+erDiagram
+    accTitle: Every crow's foot
+    accDescr: One relationship per cardinality pair
+    A |o--o| B : "zero or one both ends"
+    B ||--|| C : exactly one
+    C }o--o{ D : zero or more
+    D }|--|{ E : one or more
+    E |o..|{ F : mixed and non-identifying
+    F ||..o| G : ""
+    p[Person] }o--|| "Customer Account" : owns

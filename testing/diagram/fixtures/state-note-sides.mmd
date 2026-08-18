@@ -1,0 +1,6 @@
+stateDiagram-v2
+  [*] --> Draft
+  Draft --> Review : submit
+  note left of Draft : the author owns this
+  note right of Review : two reviewers
+  Review --> Published

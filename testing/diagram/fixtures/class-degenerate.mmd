@@ -1,0 +1,12 @@
+classDiagram
+  class A
+  class B["  spaced   label  "]
+  A --> A : loops
+  A"1"-->"0..*"B
+  class C {
+  }
+  C :
+  C : +readsTheWholeLedgerTwiceBeforeAnswering() void
+  B ..> C
+  class A
+  D -- A

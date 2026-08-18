@@ -1,0 +1,7 @@
+flowchart TB
+  A[Author] --> B
+  subgraph pipeline [Pipeline]
+    B[Build] --> C[Test]
+    C --> D[Deploy]
+  end
+  D --> E[Done]

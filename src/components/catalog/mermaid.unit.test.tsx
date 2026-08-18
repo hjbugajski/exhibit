@@ -1,42 +1,54 @@
 // @vitest-environment happy-dom
 import { cleanup, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
-import { Mermaid, MermaidFallback } from '@/components/catalog/mermaid';
+import { Mermaid } from '@/components/catalog/mermaid';
 
-/** The real leaf imports mermaid, which needs layout APIs happy-dom doesn't have. */
-vi.mock('@/components/catalog/mermaid-inner', () => ({
-  default: ({ props }: { props: { code: string } }) => <div>drew {props.code}</div>,
-}));
+afterEach(cleanup);
 
-afterEach(() => {
-  cleanup();
-  vi.restoreAllMocks();
-});
+const HOUSE = 'flowchart TD\n A --> B';
+// Recognized, not drawn: the diagnostic has to name the family, not the header.
+const DEFERRED = 'journey\n  title A day\n  section Publish\n  Write: 5: Claude';
+// A header the engine claims over a body it cannot parse.
+const UNPARSEABLE = 'flowchart TD\n A[oops\n B(oops';
 
 describe('Mermaid', () => {
-  it('shows a placeholder of the diagram height before the renderer mounts', () => {
-    // Without an IntersectionObserver the wrapper mounts immediately, so take it away.
-    vi.stubGlobal('IntersectionObserver', undefined);
+  it('draws a family the house engine knows, in the page and with no frame', () => {
+    const { container } = render(<Mermaid props={{ code: HOUSE }} />);
 
-    const { container } = render(<Mermaid props={{ code: 'flowchart TD\n A --> B' }} />);
-
-    expect(container.querySelector('.h-64')).toBeTruthy();
-    expect(screen.queryByText(/drew/)).toBeNull();
+    expect(container.querySelector('[data-part="svg"]')).toBeTruthy();
+    expect(container.querySelector('iframe')).toBeNull();
+    expect(container.querySelector('pre')).toBeNull();
   });
 
-  it('mounts the renderer once the diagram nears the viewport', async () => {
-    render(<Mermaid props={{ code: 'flowchart TD\n A --> B' }} />);
+  it('carries exactly one flow rhythm wrapper', () => {
+    const { container } = render(<Mermaid props={{ code: HOUSE }} />);
 
-    expect(await screen.findByText('drew flowchart TD A --> B')).toBeTruthy();
+    expect(container.querySelectorAll('.my-6')).toHaveLength(1);
   });
-});
 
-describe('MermaidFallback', () => {
-  it('keeps the source visible next to the reason', () => {
-    render(<MermaidFallback code="flowchart TD" message="This diagram couldn’t be drawn." />);
+  it('keeps a deferred family’s source on screen under a diagnostic that names it', () => {
+    const { container } = render(<Mermaid props={{ code: DEFERRED }} />);
 
-    expect(screen.getByText('This diagram couldn’t be drawn.')).toBeTruthy();
-    expect(screen.getByText('flowchart TD')).toBeTruthy();
+    expect(container.querySelector('[data-part="svg"]')).toBeNull();
+    expect(screen.getByText(/User-journey diagrams aren’t supported yet/)).toBeTruthy();
+    expect(container.querySelector('pre')?.textContent).toContain('title A day');
+  });
+
+  it('degrades to the source when a claimed family cannot be drawn', () => {
+    const { container } = render(<Mermaid props={{ code: UNPARSEABLE }} />);
+
+    expect(container.querySelector('[data-part="svg"]')).toBeNull();
+    expect(container.querySelector('pre')?.textContent).toContain('A[oops');
+    expect(container.querySelectorAll('[data-part="issue"]').length).toBeGreaterThan(0);
+  });
+
+  it('renders hostile source as text, never as markup', () => {
+    const hostile = '<img src=x onerror="alert(1)"><script>alert(2)</script>';
+    const { container } = render(<Mermaid props={{ code: hostile }} />);
+
+    expect(container.querySelector('img')).toBeNull();
+    expect(container.querySelector('script')).toBeNull();
+    expect(container.textContent).toContain('onerror');
   });
 });

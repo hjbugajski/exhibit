@@ -1,0 +1,149 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`parsePie > 'a label that looks like a keyword' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "showData": false,
+  "slices": [
+    "title = 2",
+    "showData = 3",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parsePie > 'accessibility statements' 1`] = `
+{
+  "accDescr": "A pie",
+  "accTitle": "Types",
+  "showData": false,
+  "slices": [
+    "A = 1",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parsePie > 'bare header' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "showData": false,
+  "slices": [],
+  "title": undefined,
+}
+`;
+
+exports[`parsePie > 'comments and semicolons' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "showData": false,
+  "slices": [
+    "A = 1",
+    "B = 2",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parsePie > 'decimal values' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "showData": false,
+  "slices": [
+    "Half = 0.5",
+    "Quarter = 0.25",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parsePie > 'declaration order is preserved' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "showData": false,
+  "slices": [
+    "Zulu = 1",
+    "Alpha = 9",
+    "Mike = 5",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parsePie > 'label whitespace collapses' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "showData": false,
+  "slices": [
+    "spread out = 3",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parsePie > 'showData and title on the header' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "showData": true,
+  "slices": [
+    "Markdown = 42",
+  ],
+  "title": "Artifact types",
+}
+`;
+
+exports[`parsePie > 'showData on the header' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "showData": true,
+  "slices": [
+    "Markdown = 42",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parsePie > 'title on its own line' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "showData": false,
+  "slices": [
+    "Markdown = 42",
+  ],
+  "title": "Artifact types",
+}
+`;
+
+exports[`parsePie > 'title on the header' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "showData": false,
+  "slices": [
+    "Markdown = 42",
+  ],
+  "title": "Artifact types",
+}
+`;
+
+exports[`parsePie > 'zero values' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "showData": false,
+  "slices": [
+    "None = 0",
+    "Also none = 0",
+  ],
+  "title": undefined,
+}
+`;

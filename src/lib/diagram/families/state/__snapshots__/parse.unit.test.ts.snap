@@ -1,0 +1,468 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`parseState > 'accessibility statements' 1`] = `
+{
+  "accDescr": "Two states",
+  "accTitle": "Publish flow",
+  "direction": "TB",
+  "notes": [],
+  "states": [
+    "simple A",
+    "simple B",
+  ],
+  "transitions": [
+    "A --> B",
+  ],
+}
+`;
+
+exports[`parseState > 'blank label is dropped' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "direction": "TB",
+  "notes": [],
+  "states": [
+    "simple A",
+    "simple B",
+  ],
+  "transitions": [
+    "A --> B",
+  ],
+}
+`;
+
+exports[`parseState > 'choice stereotype' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "direction": "TB",
+  "notes": [],
+  "states": [
+    "choice Pick",
+    "simple A",
+  ],
+  "transitions": [
+    "Pick --> A",
+  ],
+}
+`;
+
+exports[`parseState > 'comments are stripped' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "direction": "TB",
+  "notes": [],
+  "states": [
+    "simple A",
+    "simple B",
+  ],
+  "transitions": [
+    "A --> B",
+  ],
+}
+`;
+
+exports[`parseState > 'composite declared before it is opened' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "direction": "TB",
+  "notes": [],
+  "states": [
+    "simple A",
+    "composite Big",
+    "simple B in Big",
+    "simple C in Big",
+  ],
+  "transitions": [
+    "A --> Big",
+    "B --> C",
+  ],
+}
+`;
+
+exports[`parseState > 'composite state' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "direction": "TB",
+  "notes": [],
+  "states": [
+    "start [*]start0",
+    "composite Active",
+    "start [*]start1 in Active",
+    "simple Warming in Active",
+    "simple Ready in Active",
+    "end [*]end2",
+  ],
+  "transitions": [
+    "[*]start0 --> Active",
+    "[*]start1 --> Warming",
+    "Warming --> Ready",
+    "Active --> [*]end2",
+  ],
+}
+`;
+
+exports[`parseState > 'description statement' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "direction": "TB",
+  "notes": [],
+  "states": [
+    "simple A "waiting for work"",
+  ],
+  "transitions": [],
+}
+`;
+
+exports[`parseState > 'direction LR' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "direction": "LR",
+  "notes": [],
+  "states": [
+    "simple A",
+    "simple B",
+  ],
+  "transitions": [
+    "A --> B",
+  ],
+}
+`;
+
+exports[`parseState > 'direction TD maps to TB' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "direction": "TB",
+  "notes": [],
+  "states": [
+    "simple A",
+    "simple B",
+  ],
+  "transitions": [
+    "A --> B",
+  ],
+}
+`;
+
+exports[`parseState > 'entities outside quotes' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "direction": "TB",
+  "notes": [],
+  "states": [
+    "simple A",
+    "simple B",
+  ],
+  "transitions": [
+    "A --> B : say "hi"",
+  ],
+}
+`;
+
+exports[`parseState > 'fork and join' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "direction": "TB",
+  "notes": [],
+  "states": [
+    "fork F",
+    "join J",
+  ],
+  "transitions": [],
+}
+`;
+
+exports[`parseState > 'header only' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "direction": "TB",
+  "notes": [],
+  "states": [],
+  "transitions": [],
+}
+`;
+
+exports[`parseState > 'label breaks and entities' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "direction": "TB",
+  "notes": [],
+  "states": [
+    "simple A",
+    "simple B",
+  ],
+  "transitions": [
+    "A --> B : first | second "quoted"",
+  ],
+}
+`;
+
+exports[`parseState > 'long arrow' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "direction": "TB",
+  "notes": [],
+  "states": [
+    "simple A",
+    "simple B",
+  ],
+  "transitions": [
+    "A --> B",
+  ],
+}
+`;
+
+exports[`parseState > 'nested composite states' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "direction": "TB",
+  "notes": [],
+  "states": [
+    "composite Outer",
+    "composite Inner in Outer",
+    "simple A in Inner",
+    "simple B in Inner",
+    "simple C in Outer",
+  ],
+  "transitions": [
+    "A --> B",
+    "Inner --> C",
+  ],
+}
+`;
+
+exports[`parseState > 'note block' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "direction": "TB",
+  "notes": [
+    "left of B: two lines | of prose",
+  ],
+  "states": [
+    "simple A",
+    "simple B",
+  ],
+  "transitions": [
+    "A --> B",
+  ],
+}
+`;
+
+exports[`parseState > 'note on one line' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "direction": "TB",
+  "notes": [
+    "right of A: starts here",
+  ],
+  "states": [
+    "simple A",
+    "simple B",
+  ],
+  "transitions": [
+    "A --> B",
+  ],
+}
+`;
+
+exports[`parseState > 'quoted composite state' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "direction": "TB",
+  "notes": [],
+  "states": [
+    "composite Active "Doing work"",
+    "simple A in Active",
+    "simple B in Active",
+  ],
+  "transitions": [
+    "A --> B",
+  ],
+}
+`;
+
+exports[`parseState > 'quoted state declaration' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "direction": "TB",
+  "notes": [],
+  "states": [
+    "simple s2 "Long description"",
+  ],
+  "transitions": [],
+}
+`;
+
+exports[`parseState > 'self transition' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "direction": "TB",
+  "notes": [],
+  "states": [
+    "simple A",
+  ],
+  "transitions": [
+    "A --> A : retry",
+  ],
+}
+`;
+
+exports[`parseState > 'semicolon separated statements' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "direction": "TB",
+  "notes": [],
+  "states": [
+    "simple A",
+    "simple B",
+    "simple C",
+  ],
+  "transitions": [
+    "A --> B",
+    "B --> C",
+  ],
+}
+`;
+
+exports[`parseState > 'start and end markers' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "direction": "TB",
+  "notes": [],
+  "states": [
+    "start [*]start0",
+    "simple Idle",
+    "end [*]end1",
+  ],
+  "transitions": [
+    "[*]start0 --> Idle",
+    "Idle --> [*]end1",
+  ],
+}
+`;
+
+exports[`parseState > 'state keyword declaration' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "direction": "TB",
+  "notes": [],
+  "states": [
+    "simple Alone",
+  ],
+  "transitions": [],
+}
+`;
+
+exports[`parseState > 'state keyword with description' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "direction": "TB",
+  "notes": [],
+  "states": [
+    "simple Alone "idle"",
+  ],
+  "transitions": [],
+}
+`;
+
+exports[`parseState > 'transition label' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "direction": "TB",
+  "notes": [],
+  "states": [
+    "simple Idle",
+    "simple Running",
+  ],
+  "transitions": [
+    "Idle --> Running : start",
+  ],
+}
+`;
+
+exports[`parseState > 'transition without spaces' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "direction": "TB",
+  "notes": [],
+  "states": [
+    "simple Idle",
+    "simple Running",
+  ],
+  "transitions": [
+    "Idle --> Running",
+  ],
+}
+`;
+
+exports[`parseState > 'two descriptions append' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "direction": "TB",
+  "notes": [],
+  "states": [
+    "simple A "first | second"",
+  ],
+  "transitions": [],
+}
+`;
+
+exports[`parseState > 'two start markers stay separate' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "direction": "TB",
+  "notes": [],
+  "states": [
+    "start [*]start0",
+    "simple A",
+    "start [*]start1",
+    "simple B",
+  ],
+  "transitions": [
+    "[*]start0 --> A",
+    "[*]start1 --> B",
+  ],
+}
+`;
+
+exports[`parseState > 'v1 header' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "direction": "TB",
+  "notes": [],
+  "states": [
+    "simple A",
+    "simple B",
+  ],
+  "transitions": [
+    "A --> B",
+  ],
+}
+`;

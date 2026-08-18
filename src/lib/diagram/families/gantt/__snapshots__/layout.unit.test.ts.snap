@@ -1,0 +1,1593 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`gantt layout > 'gantt-basic' matches its golden scene 1`] = `
+{
+  "caption": "Publishing pipeline",
+  "chart": {
+    "height": 128,
+    "width": 414.67,
+    "x": 8,
+    "y": 32.8,
+  },
+  "family": "gantt",
+  "kind": "gantt",
+  "sections": [
+    {
+      "band": {
+        "height": 128,
+        "width": 414.67,
+        "x": 8,
+        "y": 32.8,
+      },
+      "id": "section-0",
+      "index": 0,
+    },
+  ],
+  "size": {
+    "height": 168.8,
+    "width": 430.67,
+  },
+  "tasks": [
+    {
+      "bar": {
+        "height": 24,
+        "width": 155.5,
+        "x": 8,
+        "y": 36.8,
+      },
+      "crit": false,
+      "endText": "03-07",
+      "id": "spec",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "Draft the spec",
+          ],
+          "width": 80.62,
+        },
+        "x": 85.75,
+        "y": 48.8,
+      },
+      "milestone": false,
+      "placement": "inside",
+      "section": 0,
+      "span": {
+        "column": 3,
+        "length": 47,
+        "line": 5,
+        "offset": 79,
+      },
+      "startText": "03-04",
+      "state": "done",
+    },
+    {
+      "bar": {
+        "height": 24,
+        "width": 103.67,
+        "x": 163.5,
+        "y": 68.8,
+      },
+      "crit": false,
+      "endText": "03-09",
+      "id": "review",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "Review the spec",
+          ],
+          "width": 93.53,
+        },
+        "x": 215.33,
+        "y": 80.8,
+      },
+      "milestone": false,
+      "placement": "inside",
+      "section": 0,
+      "span": {
+        "column": 3,
+        "length": 51,
+        "line": 6,
+        "offset": 129,
+      },
+      "startText": "03-07",
+      "state": "active",
+    },
+    {
+      "bar": {
+        "height": 24,
+        "width": 51.83,
+        "x": 370.83,
+        "y": 100.8,
+      },
+      "crit": true,
+      "endText": "03-12",
+      "id": "ship",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "Ship it",
+          ],
+          "width": 35.26,
+        },
+        "x": 396.75,
+        "y": 112.8,
+      },
+      "milestone": false,
+      "placement": "inside",
+      "section": 0,
+      "span": {
+        "column": 3,
+        "length": 47,
+        "line": 7,
+        "offset": 183,
+      },
+      "startText": "03-11",
+      "state": "default",
+    },
+    {
+      "bar": {
+        "height": 24,
+        "width": 0,
+        "x": 422.67,
+        "y": 132.8,
+      },
+      "crit": false,
+      "endText": "03-12",
+      "id": "retro",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "Retrospective",
+          ],
+          "width": 78.51,
+        },
+        "x": 367.41,
+        "y": 144.8,
+      },
+      "milestone": true,
+      "milestoneD": "M422.67,132.8L434.67,144.8L422.67,156.8L410.67,144.8Z",
+      "placement": "before",
+      "section": 0,
+      "span": {
+        "column": 3,
+        "length": 53,
+        "line": 8,
+        "offset": 233,
+      },
+      "startText": "03-12",
+      "state": "default",
+    },
+  ],
+  "ticks": [
+    {
+      "id": "tick-0",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "03-04",
+          ],
+          "width": 35.83,
+        },
+        "x": 8,
+        "y": 20.4,
+      },
+      "x": 8,
+    },
+    {
+      "id": "tick-1",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "03-05",
+          ],
+          "width": 35.21,
+        },
+        "x": 59.83,
+        "y": 20.4,
+      },
+      "x": 59.83,
+    },
+    {
+      "id": "tick-2",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "03-06",
+          ],
+          "width": 35.52,
+        },
+        "x": 111.67,
+        "y": 20.4,
+      },
+      "x": 111.67,
+    },
+    {
+      "id": "tick-3",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "03-07",
+          ],
+          "width": 34.87,
+        },
+        "x": 163.5,
+        "y": 20.4,
+      },
+      "x": 163.5,
+    },
+    {
+      "id": "tick-4",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "03-08",
+          ],
+          "width": 35.51,
+        },
+        "x": 215.33,
+        "y": 20.4,
+      },
+      "x": 215.33,
+    },
+    {
+      "id": "tick-5",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "03-09",
+          ],
+          "width": 35.52,
+        },
+        "x": 267.17,
+        "y": 20.4,
+      },
+      "x": 267.17,
+    },
+    {
+      "id": "tick-6",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "03-10",
+          ],
+          "width": 32.96,
+        },
+        "x": 319,
+        "y": 20.4,
+      },
+      "x": 319,
+    },
+    {
+      "id": "tick-7",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "03-11",
+          ],
+          "width": 30.27,
+        },
+        "x": 370.83,
+        "y": 20.4,
+      },
+      "x": 370.83,
+    },
+    {
+      "id": "tick-8",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "03-12",
+          ],
+          "width": 32.71,
+        },
+        "x": 422.67,
+        "y": 20.4,
+      },
+      "x": 422.67,
+    },
+  ],
+  "title": "Publishing pipeline",
+}
+`;
+
+exports[`gantt layout > 'gantt-degenerate' matches its golden scene 1`] = `
+{
+  "chart": {
+    "height": 160,
+    "width": 873.21,
+    "x": 8,
+    "y": 32.8,
+  },
+  "family": "gantt",
+  "kind": "gantt",
+  "sections": [
+    {
+      "band": {
+        "height": 160,
+        "width": 873.21,
+        "x": 8,
+        "y": 32.8,
+      },
+      "id": "section-0",
+      "index": 0,
+    },
+  ],
+  "size": {
+    "height": 200.8,
+    "width": 889.21,
+  },
+  "tasks": [
+    {
+      "bar": {
+        "height": 24,
+        "width": 87.32,
+        "x": 619.25,
+        "y": 36.8,
+      },
+      "crit": false,
+      "endText": "2024-03-12",
+      "id": "nope",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "Bad date",
+          ],
+          "width": 50.34,
+        },
+        "x": 662.91,
+        "y": 48.8,
+      },
+      "milestone": false,
+      "placement": "inside",
+      "section": 0,
+      "span": {
+        "column": 3,
+        "length": 41,
+        "line": 6,
+        "offset": 98,
+      },
+      "startText": "2024-03-11",
+      "state": "default",
+    },
+    {
+      "bar": {
+        "height": 24,
+        "width": 174.64,
+        "x": 706.57,
+        "y": 68.8,
+      },
+      "crit": false,
+      "endText": "2024-03-14",
+      "id": "task-1",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "Dangling dependency",
+          ],
+          "width": 124.77,
+        },
+        "x": 793.89,
+        "y": 80.8,
+      },
+      "milestone": false,
+      "placement": "inside",
+      "section": 0,
+      "span": {
+        "column": 3,
+        "length": 36,
+        "line": 7,
+        "offset": 142,
+      },
+      "startText": "2024-03-12",
+      "state": "default",
+    },
+    {
+      "bar": {
+        "height": 24,
+        "width": 2,
+        "x": 619.25,
+        "y": 100.8,
+      },
+      "crit": false,
+      "endText": "2024-03-11",
+      "id": "back",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "Backwards",
+          ],
+          "width": 62.82,
+        },
+        "x": 656.66,
+        "y": 112.8,
+      },
+      "milestone": false,
+      "placement": "after",
+      "section": 0,
+      "span": {
+        "column": 3,
+        "length": 49,
+        "line": 8,
+        "offset": 181,
+      },
+      "startText": "2024-03-11",
+      "state": "default",
+    },
+    {
+      "bar": {
+        "height": 24,
+        "width": 87.32,
+        "x": 8,
+        "y": 132.8,
+      },
+      "crit": false,
+      "endText": "2024-03-05",
+      "id": "task-3",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "Duplicate",
+          ],
+          "width": 53.85,
+        },
+        "x": 51.66,
+        "y": 144.8,
+      },
+      "milestone": false,
+      "placement": "inside",
+      "section": 0,
+      "span": {
+        "column": 3,
+        "length": 41,
+        "line": 9,
+        "offset": 233,
+      },
+      "startText": "2024-03-04",
+      "state": "default",
+    },
+    {
+      "bar": {
+        "height": 24,
+        "width": 87.32,
+        "x": 95.32,
+        "y": 164.8,
+      },
+      "crit": false,
+      "endText": "2024-03-06",
+      "id": "task-4",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 33.6,
+          "lineHeight": 16.8,
+          "lines": [
+            "A name far too long to ever fit",
+            "inside its own bar",
+          ],
+          "width": 169.95,
+        },
+        "x": 271.62,
+        "y": 176.8,
+      },
+      "milestone": false,
+      "placement": "after",
+      "section": 0,
+      "span": {
+        "column": 3,
+        "length": 66,
+        "line": 10,
+        "offset": 277,
+      },
+      "startText": "2024-03-05",
+      "state": "default",
+    },
+  ],
+  "ticks": [
+    {
+      "id": "tick-0",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "2024-03-04",
+          ],
+          "width": 71.32,
+        },
+        "x": 8,
+        "y": 20.4,
+      },
+      "x": 8,
+    },
+    {
+      "id": "tick-1",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "2024-03-05",
+          ],
+          "width": 70.69,
+        },
+        "x": 95.32,
+        "y": 20.4,
+      },
+      "x": 95.32,
+    },
+    {
+      "id": "tick-2",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "2024-03-06",
+          ],
+          "width": 71.01,
+        },
+        "x": 182.64,
+        "y": 20.4,
+      },
+      "x": 182.64,
+    },
+    {
+      "id": "tick-3",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "2024-03-07",
+          ],
+          "width": 70.36,
+        },
+        "x": 269.96,
+        "y": 20.4,
+      },
+      "x": 269.96,
+    },
+    {
+      "id": "tick-4",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "2024-03-08",
+          ],
+          "width": 71,
+        },
+        "x": 357.28,
+        "y": 20.4,
+      },
+      "x": 357.28,
+    },
+    {
+      "id": "tick-5",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "2024-03-09",
+          ],
+          "width": 71.01,
+        },
+        "x": 444.6,
+        "y": 20.4,
+      },
+      "x": 444.6,
+    },
+    {
+      "id": "tick-6",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "2024-03-10",
+          ],
+          "width": 68.45,
+        },
+        "x": 531.92,
+        "y": 20.4,
+      },
+      "x": 531.92,
+    },
+    {
+      "id": "tick-7",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "2024-03-11",
+          ],
+          "width": 65.76,
+        },
+        "x": 619.25,
+        "y": 20.4,
+      },
+      "x": 619.25,
+    },
+    {
+      "id": "tick-8",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "2024-03-12",
+          ],
+          "width": 68.2,
+        },
+        "x": 706.57,
+        "y": 20.4,
+      },
+      "x": 706.57,
+    },
+    {
+      "id": "tick-9",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "2024-03-13",
+          ],
+          "width": 68.29,
+        },
+        "x": 793.89,
+        "y": 20.4,
+      },
+      "x": 793.89,
+    },
+    {
+      "id": "tick-10",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "2024-03-14",
+          ],
+          "width": 68.63,
+        },
+        "x": 881.21,
+        "y": 20.4,
+      },
+      "x": 881.21,
+    },
+  ],
+}
+`;
+
+exports[`gantt layout > 'gantt-dependencies' matches its golden scene 1`] = `
+{
+  "chart": {
+    "height": 160,
+    "width": 502.34,
+    "x": 71.33,
+    "y": 32.8,
+  },
+  "family": "gantt",
+  "kind": "gantt",
+  "sections": [
+    {
+      "band": {
+        "height": 160,
+        "width": 565.66,
+        "x": 8,
+        "y": 32.8,
+      },
+      "id": "section-0",
+      "index": 0,
+      "label": {
+        "box": {
+          "baseline": 13.78,
+          "height": 18.2,
+          "lineHeight": 18.2,
+          "lines": [
+            "Chain",
+          ],
+          "width": 35.33,
+        },
+        "x": 39.66,
+        "y": 112.8,
+      },
+    },
+  ],
+  "size": {
+    "height": 200.8,
+    "width": 581.66,
+  },
+  "tasks": [
+    {
+      "bar": {
+        "height": 24,
+        "width": 200.93,
+        "x": 71.33,
+        "y": 36.8,
+      },
+      "crit": false,
+      "endText": "09/02",
+      "id": "des",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "Design",
+          ],
+          "width": 39.37,
+        },
+        "x": 171.79,
+        "y": 48.8,
+      },
+      "milestone": false,
+      "placement": "inside",
+      "section": 0,
+      "span": {
+        "column": 5,
+        "length": 38,
+        "line": 5,
+        "offset": 69,
+      },
+      "startText": "05/02",
+      "state": "default",
+    },
+    {
+      "bar": {
+        "height": 24,
+        "width": 301.4,
+        "x": 272.26,
+        "y": 68.8,
+      },
+      "crit": false,
+      "endText": "15/02",
+      "id": "task-1",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "Build",
+          ],
+          "width": 28.51,
+        },
+        "x": 422.96,
+        "y": 80.8,
+      },
+      "milestone": false,
+      "placement": "inside",
+      "section": 0,
+      "span": {
+        "column": 5,
+        "length": 32,
+        "line": 6,
+        "offset": 112,
+      },
+      "startText": "09/02",
+      "state": "default",
+    },
+    {
+      "bar": {
+        "height": 24,
+        "width": 150.7,
+        "x": 272.26,
+        "y": 100.8,
+      },
+      "crit": false,
+      "endText": "12/02",
+      "id": "test",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "Test",
+          ],
+          "width": 25.02,
+        },
+        "x": 347.61,
+        "y": 112.8,
+      },
+      "milestone": false,
+      "placement": "inside",
+      "section": 0,
+      "span": {
+        "column": 5,
+        "length": 44,
+        "line": 7,
+        "offset": 149,
+      },
+      "startText": "09/02",
+      "state": "default",
+    },
+    {
+      "bar": {
+        "height": 24,
+        "width": 100.47,
+        "x": 422.96,
+        "y": 132.8,
+      },
+      "crit": false,
+      "endText": "14/02",
+      "id": "task-3",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "Document",
+          ],
+          "width": 58.35,
+        },
+        "x": 473.2,
+        "y": 144.8,
+      },
+      "milestone": false,
+      "placement": "inside",
+      "section": 0,
+      "span": {
+        "column": 5,
+        "length": 21,
+        "line": 8,
+        "offset": 198,
+      },
+      "startText": "12/02",
+      "state": "default",
+    },
+    {
+      "bar": {
+        "height": 24,
+        "width": 0,
+        "x": 422.96,
+        "y": 164.8,
+      },
+      "crit": false,
+      "endText": "12/02",
+      "id": "task-4",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "Sign off",
+          ],
+          "width": 44.52,
+        },
+        "x": 461.23,
+        "y": 176.8,
+      },
+      "milestone": true,
+      "milestoneD": "M422.96,164.8L434.96,176.8L422.96,188.8L410.96,176.8Z",
+      "placement": "after",
+      "section": 0,
+      "span": {
+        "column": 5,
+        "length": 44,
+        "line": 9,
+        "offset": 224,
+      },
+      "startText": "12/02",
+      "state": "default",
+    },
+  ],
+  "ticks": [
+    {
+      "id": "tick-0",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "05/02",
+          ],
+          "width": 33.92,
+        },
+        "x": 71.33,
+        "y": 20.4,
+      },
+      "x": 71.33,
+    },
+    {
+      "id": "tick-1",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "06/02",
+          ],
+          "width": 34.23,
+        },
+        "x": 121.56,
+        "y": 20.4,
+      },
+      "x": 121.56,
+    },
+    {
+      "id": "tick-2",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "07/02",
+          ],
+          "width": 33.58,
+        },
+        "x": 171.79,
+        "y": 20.4,
+      },
+      "x": 171.79,
+    },
+    {
+      "id": "tick-3",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "08/02",
+          ],
+          "width": 34.22,
+        },
+        "x": 222.03,
+        "y": 20.4,
+      },
+      "x": 222.03,
+    },
+    {
+      "id": "tick-4",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "09/02",
+          ],
+          "width": 34.23,
+        },
+        "x": 272.26,
+        "y": 20.4,
+      },
+      "x": 272.26,
+    },
+    {
+      "id": "tick-5",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "10/02",
+          ],
+          "width": 31.67,
+        },
+        "x": 322.5,
+        "y": 20.4,
+      },
+      "x": 322.5,
+    },
+    {
+      "id": "tick-6",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "11/02",
+          ],
+          "width": 28.98,
+        },
+        "x": 372.73,
+        "y": 20.4,
+      },
+      "x": 372.73,
+    },
+    {
+      "id": "tick-7",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "12/02",
+          ],
+          "width": 31.42,
+        },
+        "x": 422.96,
+        "y": 20.4,
+      },
+      "x": 422.96,
+    },
+    {
+      "id": "tick-8",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "13/02",
+          ],
+          "width": 31.52,
+        },
+        "x": 473.2,
+        "y": 20.4,
+      },
+      "x": 473.2,
+    },
+    {
+      "id": "tick-9",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "14/02",
+          ],
+          "width": 31.85,
+        },
+        "x": 523.43,
+        "y": 20.4,
+      },
+      "x": 523.43,
+    },
+    {
+      "id": "tick-10",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "15/02",
+          ],
+          "width": 31.23,
+        },
+        "x": 573.66,
+        "y": 20.4,
+      },
+      "x": 573.66,
+    },
+  ],
+}
+`;
+
+exports[`gantt layout > 'gantt-sections' matches its golden scene 1`] = `
+{
+  "caption": "Quarter plan",
+  "chart": {
+    "height": 192,
+    "width": 453.16,
+    "x": 97.73,
+    "y": 32.8,
+  },
+  "family": "gantt",
+  "kind": "gantt",
+  "sections": [
+    {
+      "band": {
+        "height": 64,
+        "width": 542.9,
+        "x": 8,
+        "y": 32.8,
+      },
+      "id": "section-0",
+      "index": 0,
+      "label": {
+        "box": {
+          "baseline": 13.78,
+          "height": 18.2,
+          "lineHeight": 18.2,
+          "lines": [
+            "Discovery",
+          ],
+          "width": 61.73,
+        },
+        "x": 52.87,
+        "y": 64.8,
+      },
+    },
+    {
+      "band": {
+        "height": 64,
+        "width": 542.9,
+        "x": 8,
+        "y": 96.8,
+      },
+      "id": "section-1",
+      "index": 1,
+      "label": {
+        "box": {
+          "baseline": 13.78,
+          "height": 18.2,
+          "lineHeight": 18.2,
+          "lines": [
+            "Build",
+          ],
+          "width": 30.89,
+        },
+        "x": 52.87,
+        "y": 128.8,
+      },
+    },
+    {
+      "band": {
+        "height": 64,
+        "width": 542.9,
+        "x": 8,
+        "y": 160.8,
+      },
+      "id": "section-2",
+      "index": 2,
+      "label": {
+        "box": {
+          "baseline": 13.78,
+          "height": 18.2,
+          "lineHeight": 18.2,
+          "lines": [
+            "Launch",
+          ],
+          "width": 45.15,
+        },
+        "x": 52.87,
+        "y": 192.8,
+      },
+    },
+  ],
+  "size": {
+    "height": 232.8,
+    "width": 558.9,
+  },
+  "tasks": [
+    {
+      "bar": {
+        "height": 24,
+        "width": 40.46,
+        "x": 130.1,
+        "y": 36.8,
+      },
+      "crit": false,
+      "endText": "Jan 06",
+      "id": "int",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "Interviews",
+          ],
+          "width": 58.59,
+        },
+        "x": 203.86,
+        "y": 48.8,
+      },
+      "milestone": false,
+      "placement": "after",
+      "section": 0,
+      "span": {
+        "column": 5,
+        "length": 44,
+        "line": 8,
+        "offset": 132,
+      },
+      "startText": "Jan 01",
+      "state": "done",
+    },
+    {
+      "bar": {
+        "height": 24,
+        "width": 24.28,
+        "x": 186.75,
+        "y": 68.8,
+      },
+      "crit": false,
+      "endText": "Jan 11",
+      "id": "syn",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "Synthesis",
+          ],
+          "width": 55.16,
+        },
+        "x": 242.6,
+        "y": 80.8,
+      },
+      "milestone": false,
+      "placement": "after",
+      "section": 0,
+      "span": {
+        "column": 5,
+        "length": 44,
+        "line": 9,
+        "offset": 181,
+      },
+      "startText": "Jan 08",
+      "state": "done",
+    },
+    {
+      "bar": {
+        "height": 24,
+        "width": 145.66,
+        "x": 243.39,
+        "y": 100.8,
+      },
+      "crit": false,
+      "endText": "Feb 02",
+      "id": "cat",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "Catalog blocks",
+          ],
+          "width": 85.08,
+        },
+        "x": 316.22,
+        "y": 112.8,
+      },
+      "milestone": false,
+      "placement": "inside",
+      "section": 1,
+      "span": {
+        "column": 5,
+        "length": 46,
+        "line": 11,
+        "offset": 246,
+      },
+      "startText": "Jan 15",
+      "state": "active",
+    },
+    {
+      "bar": {
+        "height": 24,
+        "width": 234.67,
+        "x": 243.39,
+        "y": 132.8,
+      },
+      "crit": true,
+      "endText": "Feb 13",
+      "id": "eng",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "Diagram engine",
+          ],
+          "width": 89.29,
+        },
+        "x": 360.73,
+        "y": 144.8,
+      },
+      "milestone": false,
+      "placement": "inside",
+      "section": 1,
+      "span": {
+        "column": 5,
+        "length": 52,
+        "line": 12,
+        "offset": 297,
+      },
+      "startText": "Jan 15",
+      "state": "active",
+    },
+    {
+      "bar": {
+        "height": 24,
+        "width": 72.83,
+        "x": 469.97,
+        "y": 164.8,
+      },
+      "crit": false,
+      "endText": "Feb 21",
+      "id": "beta",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "Beta",
+          ],
+          "width": 25.53,
+        },
+        "x": 506.39,
+        "y": 176.8,
+      },
+      "milestone": false,
+      "placement": "inside",
+      "section": 2,
+      "span": {
+        "column": 5,
+        "length": 39,
+        "line": 14,
+        "offset": 371,
+      },
+      "startText": "Feb 12",
+      "state": "default",
+    },
+    {
+      "bar": {
+        "height": 24,
+        "width": 0,
+        "x": 526.62,
+        "y": 196.8,
+      },
+      "crit": false,
+      "endText": "Feb 19",
+      "id": "launch",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "Public launch",
+          ],
+          "width": 76.76,
+        },
+        "x": 472.24,
+        "y": 208.8,
+      },
+      "milestone": true,
+      "milestoneD": "M526.62,196.8L538.62,208.8L526.62,220.8L514.62,208.8Z",
+      "placement": "before",
+      "section": 2,
+      "span": {
+        "column": 5,
+        "length": 52,
+        "line": 15,
+        "offset": 415,
+      },
+      "startText": "Feb 19",
+      "state": "default",
+    },
+  ],
+  "ticks": [
+    {
+      "id": "tick-0",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "Dec 28",
+          ],
+          "width": 40.65,
+        },
+        "x": 97.73,
+        "y": 20.4,
+      },
+      "x": 97.73,
+    },
+    {
+      "id": "tick-1",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "Jan 04",
+          ],
+          "width": 39.39,
+        },
+        "x": 154.38,
+        "y": 20.4,
+      },
+      "x": 154.38,
+    },
+    {
+      "id": "tick-2",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "Jan 11",
+          ],
+          "width": 33.83,
+        },
+        "x": 211.02,
+        "y": 20.4,
+      },
+      "x": 211.02,
+    },
+    {
+      "id": "tick-3",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "Jan 18",
+          ],
+          "width": 36.38,
+        },
+        "x": 267.67,
+        "y": 20.4,
+      },
+      "x": 267.67,
+    },
+    {
+      "id": "tick-4",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "Jan 25",
+          ],
+          "width": 38.51,
+        },
+        "x": 324.32,
+        "y": 20.4,
+      },
+      "x": 324.32,
+    },
+    {
+      "id": "tick-5",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "Feb 01",
+          ],
+          "width": 37.27,
+        },
+        "x": 380.96,
+        "y": 20.4,
+      },
+      "x": 380.96,
+    },
+    {
+      "id": "tick-6",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "Feb 08",
+          ],
+          "width": 39.81,
+        },
+        "x": 437.61,
+        "y": 20.4,
+      },
+      "x": 437.61,
+    },
+    {
+      "id": "tick-7",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "Feb 15",
+          ],
+          "width": 36.82,
+        },
+        "x": 494.25,
+        "y": 20.4,
+      },
+      "x": 494.25,
+    },
+    {
+      "id": "tick-8",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "Feb 22",
+          ],
+          "width": 39.45,
+        },
+        "x": 550.9,
+        "y": 20.4,
+      },
+      "x": 550.9,
+    },
+  ],
+  "title": "Quarter plan",
+}
+`;

@@ -1,0 +1,1165 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`er layout > 'er-attributes' matches its golden scene 1`] = `
+{
+  "clusters": [],
+  "edges": [
+    {
+      "arrow": "none",
+      "classes": [
+        "er-source-exactly-one",
+        "er-target-zero-or-more",
+      ],
+      "d": "M113.99,119L113.99,165M113.99,185.8L113.99,231.8",
+      "id": "CUSTOMER--ORDER#0",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "places",
+          ],
+          "width": 37.6,
+        },
+        "x": 113.99,
+        "y": 175.4,
+      },
+      "line": "solid",
+      "points": [
+        {
+          "x": 113.99,
+          "y": 119,
+        },
+        {
+          "x": 113.99,
+          "y": 175.4,
+        },
+        {
+          "x": 113.99,
+          "y": 231.8,
+        },
+      ],
+      "reversed": false,
+      "source": "CUSTOMER",
+      "span": {
+        "column": 5,
+        "length": 30,
+        "line": 2,
+        "offset": 14,
+      },
+      "startArrow": "none",
+      "target": "ORDER",
+    },
+  ],
+  "family": "er",
+  "kind": "graph",
+  "nodes": [
+    {
+      "classes": [],
+      "height": 111,
+      "id": "CUSTOMER",
+      "label": {
+        "baseline": 13.78,
+        "height": 91,
+        "lineHeight": 18.2,
+        "lines": [
+          "CUSTOMER",
+          "string name PK "the customer",
+          "name"",
+          "string email UK",
+          "int loyaltyPoints",
+        ],
+        "width": 183.97,
+      },
+      "name": "CUSTOMER",
+      "outline": "M-99.99,-55.5L99.99,-55.5A6,6 0 0 1 105.99,-49.5L105.99,49.5A6,6 0 0 1 99.99,55.5L-99.99,55.5A6,6 0 0 1 -105.99,49.5L-105.99,-49.5A6,6 0 0 1 -99.99,-55.5Z",
+      "shape": "rect",
+      "span": {
+        "column": 5,
+        "length": 30,
+        "line": 2,
+        "offset": 14,
+      },
+      "width": 211.97,
+      "x": 113.99,
+      "y": 63.5,
+    },
+    {
+      "classes": [],
+      "height": 92.8,
+      "id": "ORDER",
+      "label": {
+        "baseline": 13.78,
+        "height": 72.8,
+        "lineHeight": 18.2,
+        "lines": [
+          "ORDER",
+          "int id PK",
+          "string customerName FK,UK",
+          "string[] tags",
+        ],
+        "width": 174.72,
+      },
+      "name": "ORDER",
+      "outline": "M-95.36,-46.4L95.36,-46.4A6,6 0 0 1 101.36,-40.4L101.36,40.4A6,6 0 0 1 95.36,46.4L-95.36,46.4A6,6 0 0 1 -101.36,40.4L-101.36,-40.4A6,6 0 0 1 -95.36,-46.4Z",
+      "shape": "rect",
+      "span": {
+        "column": 5,
+        "length": 30,
+        "line": 2,
+        "offset": 14,
+      },
+      "width": 202.72,
+      "x": 113.99,
+      "y": 278.2,
+    },
+  ],
+  "size": {
+    "height": 332.6,
+    "width": 227.97,
+  },
+}
+`;
+
+exports[`er layout > 'er-basic' matches its golden scene 1`] = `
+{
+  "clusters": [],
+  "edges": [
+    {
+      "arrow": "none",
+      "classes": [
+        "er-source-exactly-one",
+        "er-target-zero-or-more",
+      ],
+      "d": "M112.53,46.2L112.53,68.4Q112.53,74.4 106.53,74.4L60.93,74.4Q54.93,74.4 54.93,80.4L54.93,92.2M54.93,113L54.93,159",
+      "id": "CUSTOMER--ORDER#0",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "places",
+          ],
+          "width": 37.6,
+        },
+        "x": 54.93,
+        "y": 102.6,
+      },
+      "line": "solid",
+      "points": [
+        {
+          "x": 112.53,
+          "y": 46.2,
+        },
+        {
+          "x": 112.53,
+          "y": 74.4,
+        },
+        {
+          "x": 54.93,
+          "y": 74.4,
+        },
+        {
+          "x": 54.93,
+          "y": 102.6,
+        },
+        {
+          "x": 54.93,
+          "y": 159,
+        },
+      ],
+      "reversed": false,
+      "source": "CUSTOMER",
+      "span": {
+        "column": 5,
+        "length": 30,
+        "line": 2,
+        "offset": 14,
+      },
+      "startArrow": "none",
+      "target": "ORDER",
+    },
+    {
+      "arrow": "none",
+      "classes": [
+        "er-source-exactly-one",
+        "er-target-one-or-more",
+      ],
+      "d": "M54.93,197.2L54.93,243.2M54.93,264L54.93,310",
+      "id": "ORDER--LINE_ITEM#1",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "contains",
+          ],
+          "width": 48.16,
+        },
+        "x": 54.93,
+        "y": 253.6,
+      },
+      "line": "solid",
+      "points": [
+        {
+          "x": 54.93,
+          "y": 197.2,
+        },
+        {
+          "x": 54.93,
+          "y": 253.6,
+        },
+        {
+          "x": 54.93,
+          "y": 310,
+        },
+      ],
+      "reversed": false,
+      "source": "ORDER",
+      "span": {
+        "column": 5,
+        "length": 33,
+        "line": 3,
+        "offset": 49,
+      },
+      "startArrow": "none",
+      "target": "LINE_ITEM",
+    },
+    {
+      "arrow": "none",
+      "classes": [
+        "er-source-one-or-more",
+        "er-target-one-or-more",
+      ],
+      "d": "M151.55,46.2L151.55,68.4Q151.55,74.4 157.55,74.4L203.16,74.4Q209.16,74.4 209.16,80.4L209.16,92.2M209.16,113L209.16,159",
+      "id": "CUSTOMER--DELIVERY_ADDRESS#2",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "uses",
+          ],
+          "width": 26.77,
+        },
+        "x": 209.16,
+        "y": 102.6,
+      },
+      "line": "dotted",
+      "points": [
+        {
+          "x": 151.55,
+          "y": 46.2,
+        },
+        {
+          "x": 151.55,
+          "y": 74.4,
+        },
+        {
+          "x": 209.16,
+          "y": 74.4,
+        },
+        {
+          "x": 209.16,
+          "y": 102.6,
+        },
+        {
+          "x": 209.16,
+          "y": 159,
+        },
+      ],
+      "reversed": false,
+      "source": "CUSTOMER",
+      "span": {
+        "column": 5,
+        "length": 39,
+        "line": 4,
+        "offset": 87,
+      },
+      "startArrow": "none",
+      "target": "DELIVERY_ADDRESS",
+    },
+  ],
+  "family": "er",
+  "kind": "graph",
+  "nodes": [
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "CUSTOMER",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "CUSTOMER",
+        ],
+        "width": 73.8,
+      },
+      "name": "CUSTOMER",
+      "outline": "M-44.9,-19.1L44.9,-19.1A6,6 0 0 1 50.9,-13.1L50.9,13.1A6,6 0 0 1 44.9,19.1L-44.9,19.1A6,6 0 0 1 -50.9,13.1L-50.9,-13.1A6,6 0 0 1 -44.9,-19.1Z",
+      "shape": "rect",
+      "span": {
+        "column": 5,
+        "length": 30,
+        "line": 2,
+        "offset": 14,
+      },
+      "width": 101.8,
+      "x": 132.04,
+      "y": 27.1,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "ORDER",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "ORDER",
+        ],
+        "width": 43.88,
+      },
+      "name": "ORDER",
+      "outline": "M-29.94,-19.1L29.94,-19.1A6,6 0 0 1 35.94,-13.1L35.94,13.1A6,6 0 0 1 29.94,19.1L-29.94,19.1A6,6 0 0 1 -35.94,13.1L-35.94,-13.1A6,6 0 0 1 -29.94,-19.1Z",
+      "shape": "rect",
+      "span": {
+        "column": 5,
+        "length": 30,
+        "line": 2,
+        "offset": 14,
+      },
+      "width": 71.88,
+      "x": 54.93,
+      "y": 178.1,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "LINE_ITEM",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "LINE_ITEM",
+        ],
+        "width": 65.85,
+      },
+      "name": "LINE_ITEM",
+      "outline": "M-40.93,-19.1L40.93,-19.1A6,6 0 0 1 46.93,-13.1L46.93,13.1A6,6 0 0 1 40.93,19.1L-40.93,19.1A6,6 0 0 1 -46.93,13.1L-46.93,-13.1A6,6 0 0 1 -40.93,-19.1Z",
+      "shape": "rect",
+      "span": {
+        "column": 5,
+        "length": 33,
+        "line": 3,
+        "offset": 49,
+      },
+      "width": 93.85,
+      "x": 54.93,
+      "y": 329.1,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "DELIVERY_ADDRESS",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "DELIVERY_ADDRESS",
+        ],
+        "width": 128.59,
+      },
+      "name": "DELIVERY_ADDRESS",
+      "outline": "M-72.29,-19.1L72.29,-19.1A6,6 0 0 1 78.29,-13.1L78.29,13.1A6,6 0 0 1 72.29,19.1L-72.29,19.1A6,6 0 0 1 -78.29,13.1L-78.29,-13.1A6,6 0 0 1 -72.29,-19.1Z",
+      "shape": "rect",
+      "span": {
+        "column": 5,
+        "length": 39,
+        "line": 4,
+        "offset": 87,
+      },
+      "width": 156.59,
+      "x": 209.16,
+      "y": 178.1,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "PRODUCT",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "PRODUCT",
+        ],
+        "width": 63.58,
+      },
+      "name": "PRODUCT",
+      "outline": "M-39.79,-19.1L39.79,-19.1A6,6 0 0 1 45.79,-13.1L45.79,13.1A6,6 0 0 1 39.79,19.1L-39.79,19.1A6,6 0 0 1 -45.79,13.1L-45.79,-13.1A6,6 0 0 1 -39.79,-19.1Z",
+      "shape": "rect",
+      "span": {
+        "column": 5,
+        "length": 7,
+        "line": 5,
+        "offset": 131,
+      },
+      "width": 91.58,
+      "x": 373.24,
+      "y": 27.1,
+    },
+  ],
+  "size": {
+    "height": 356.2,
+    "width": 427.03,
+  },
+}
+`;
+
+exports[`er layout > 'er-cardinalities' matches its golden scene 1`] = `
+{
+  "clusters": [],
+  "description": "One relationship per cardinality pair",
+  "edges": [
+    {
+      "arrow": "none",
+      "classes": [
+        "er-source-zero-or-one",
+        "er-target-zero-or-one",
+      ],
+      "d": "M82.46,46.2L82.46,92.2M82.46,113L82.46,159",
+      "id": "A--B#0",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "zero or one both ends",
+          ],
+          "width": 125.22,
+        },
+        "x": 82.46,
+        "y": 102.6,
+      },
+      "line": "solid",
+      "points": [
+        {
+          "x": 82.46,
+          "y": 46.2,
+        },
+        {
+          "x": 82.46,
+          "y": 102.6,
+        },
+        {
+          "x": 82.46,
+          "y": 159,
+        },
+      ],
+      "reversed": false,
+      "source": "A",
+      "span": {
+        "column": 5,
+        "length": 36,
+        "line": 4,
+        "offset": 98,
+      },
+      "startArrow": "none",
+      "target": "B",
+    },
+    {
+      "arrow": "none",
+      "classes": [
+        "er-source-exactly-one",
+        "er-target-exactly-one",
+      ],
+      "d": "M82.46,197.2L82.46,243.2M82.46,264L82.46,310",
+      "id": "B--C#1",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "exactly one",
+          ],
+          "width": 65.82,
+        },
+        "x": 82.46,
+        "y": 253.6,
+      },
+      "line": "solid",
+      "points": [
+        {
+          "x": 82.46,
+          "y": 197.2,
+        },
+        {
+          "x": 82.46,
+          "y": 253.6,
+        },
+        {
+          "x": 82.46,
+          "y": 310,
+        },
+      ],
+      "reversed": false,
+      "source": "B",
+      "span": {
+        "column": 5,
+        "length": 24,
+        "line": 5,
+        "offset": 139,
+      },
+      "startArrow": "none",
+      "target": "C",
+    },
+    {
+      "arrow": "none",
+      "classes": [
+        "er-source-zero-or-more",
+        "er-target-zero-or-more",
+      ],
+      "d": "M82.46,348.2L82.46,394.2M82.46,415L82.46,461",
+      "id": "C--D#2",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "zero or more",
+          ],
+          "width": 73.05,
+        },
+        "x": 82.46,
+        "y": 404.6,
+      },
+      "line": "solid",
+      "points": [
+        {
+          "x": 82.46,
+          "y": 348.2,
+        },
+        {
+          "x": 82.46,
+          "y": 404.6,
+        },
+        {
+          "x": 82.46,
+          "y": 461,
+        },
+      ],
+      "reversed": false,
+      "source": "C",
+      "span": {
+        "column": 5,
+        "length": 25,
+        "line": 6,
+        "offset": 168,
+      },
+      "startArrow": "none",
+      "target": "D",
+    },
+    {
+      "arrow": "none",
+      "classes": [
+        "er-source-one-or-more",
+        "er-target-one-or-more",
+      ],
+      "d": "M82.46,499.2L82.46,545.2M82.46,566L82.46,612",
+      "id": "D--E#3",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "one or more",
+          ],
+          "width": 69,
+        },
+        "x": 82.46,
+        "y": 555.6,
+      },
+      "line": "solid",
+      "points": [
+        {
+          "x": 82.46,
+          "y": 499.2,
+        },
+        {
+          "x": 82.46,
+          "y": 555.6,
+        },
+        {
+          "x": 82.46,
+          "y": 612,
+        },
+      ],
+      "reversed": false,
+      "source": "D",
+      "span": {
+        "column": 5,
+        "length": 24,
+        "line": 7,
+        "offset": 198,
+      },
+      "startArrow": "none",
+      "target": "E",
+    },
+    {
+      "arrow": "none",
+      "classes": [
+        "er-source-zero-or-one",
+        "er-target-one-or-more",
+      ],
+      "d": "M82.46,650.2L82.46,696.2M82.46,717L82.46,763",
+      "id": "E--F#4",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "mixed and non-identifying",
+          ],
+          "width": 148.92,
+        },
+        "x": 82.46,
+        "y": 706.6,
+      },
+      "line": "dotted",
+      "points": [
+        {
+          "x": 82.46,
+          "y": 650.2,
+        },
+        {
+          "x": 82.46,
+          "y": 706.6,
+        },
+        {
+          "x": 82.46,
+          "y": 763,
+        },
+      ],
+      "reversed": false,
+      "source": "E",
+      "span": {
+        "column": 5,
+        "length": 38,
+        "line": 8,
+        "offset": 227,
+      },
+      "startArrow": "none",
+      "target": "F",
+    },
+    {
+      "arrow": "none",
+      "classes": [
+        "er-source-exactly-one",
+        "er-target-zero-or-one",
+      ],
+      "d": "M82.46,801.2L82.46,849.2",
+      "id": "F--G#5",
+      "line": "dotted",
+      "points": [
+        {
+          "x": 82.46,
+          "y": 801.2,
+        },
+        {
+          "x": 82.46,
+          "y": 849.2,
+        },
+      ],
+      "reversed": false,
+      "source": "F",
+      "span": {
+        "column": 5,
+        "length": 15,
+        "line": 9,
+        "offset": 270,
+      },
+      "startArrow": "none",
+      "target": "G",
+    },
+    {
+      "arrow": "none",
+      "classes": [
+        "er-source-zero-or-more",
+        "er-target-exactly-one",
+      ],
+      "d": "M275.38,46.2L275.38,92.2M275.38,113L275.38,159",
+      "id": "p--Customer Account#6",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "owns",
+          ],
+          "width": 30.45,
+        },
+        "x": 275.38,
+        "y": 102.6,
+      },
+      "line": "solid",
+      "points": [
+        {
+          "x": 275.38,
+          "y": 46.2,
+        },
+        {
+          "x": 275.38,
+          "y": 102.6,
+        },
+        {
+          "x": 275.38,
+          "y": 159,
+        },
+      ],
+      "reversed": false,
+      "source": "p",
+      "span": {
+        "column": 5,
+        "length": 42,
+        "line": 10,
+        "offset": 290,
+      },
+      "startArrow": "none",
+      "target": "Customer Account",
+    },
+  ],
+  "family": "er",
+  "kind": "graph",
+  "nodes": [
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "A",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "A",
+        ],
+        "width": 8.98,
+      },
+      "name": "A",
+      "outline": "M-12.49,-19.1L12.49,-19.1A6,6 0 0 1 18.49,-13.1L18.49,13.1A6,6 0 0 1 12.49,19.1L-12.49,19.1A6,6 0 0 1 -18.49,13.1L-18.49,-13.1A6,6 0 0 1 -12.49,-19.1Z",
+      "shape": "rect",
+      "span": {
+        "column": 5,
+        "length": 36,
+        "line": 4,
+        "offset": 98,
+      },
+      "width": 36.98,
+      "x": 82.46,
+      "y": 27.1,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "B",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "B",
+        ],
+        "width": 8.51,
+      },
+      "name": "B",
+      "outline": "M-12.25,-19.1L12.25,-19.1A6,6 0 0 1 18.25,-13.1L18.25,13.1A6,6 0 0 1 12.25,19.1L-12.25,19.1A6,6 0 0 1 -18.25,13.1L-18.25,-13.1A6,6 0 0 1 -12.25,-19.1Z",
+      "shape": "rect",
+      "span": {
+        "column": 5,
+        "length": 36,
+        "line": 4,
+        "offset": 98,
+      },
+      "width": 36.51,
+      "x": 82.46,
+      "y": 178.1,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "C",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "C",
+        ],
+        "width": 9.5,
+      },
+      "name": "C",
+      "outline": "M-12.75,-19.1L12.75,-19.1A6,6 0 0 1 18.75,-13.1L18.75,13.1A6,6 0 0 1 12.75,19.1L-12.75,19.1A6,6 0 0 1 -18.75,13.1L-18.75,-13.1A6,6 0 0 1 -12.75,-19.1Z",
+      "shape": "rect",
+      "span": {
+        "column": 5,
+        "length": 24,
+        "line": 5,
+        "offset": 139,
+      },
+      "width": 37.5,
+      "x": 82.46,
+      "y": 329.1,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "D",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "D",
+        ],
+        "width": 9.38,
+      },
+      "name": "D",
+      "outline": "M-12.69,-19.1L12.69,-19.1A6,6 0 0 1 18.69,-13.1L18.69,13.1A6,6 0 0 1 12.69,19.1L-12.69,19.1A6,6 0 0 1 -18.69,13.1L-18.69,-13.1A6,6 0 0 1 -12.69,-19.1Z",
+      "shape": "rect",
+      "span": {
+        "column": 5,
+        "length": 25,
+        "line": 6,
+        "offset": 168,
+      },
+      "width": 37.38,
+      "x": 82.46,
+      "y": 480.1,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "E",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "E",
+        ],
+        "width": 7.82,
+      },
+      "name": "E",
+      "outline": "M-12,-19.1L12,-19.1A6,6 0 0 1 18,-13.1L18,13.1A6,6 0 0 1 12,19.1L-12,19.1A6,6 0 0 1 -18,13.1L-18,-13.1A6,6 0 0 1 -12,-19.1Z",
+      "shape": "rect",
+      "span": {
+        "column": 5,
+        "length": 24,
+        "line": 7,
+        "offset": 198,
+      },
+      "width": 36,
+      "x": 82.46,
+      "y": 631.1,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "F",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "F",
+        ],
+        "width": 7.68,
+      },
+      "name": "F",
+      "outline": "M-12,-19.1L12,-19.1A6,6 0 0 1 18,-13.1L18,13.1A6,6 0 0 1 12,19.1L-12,19.1A6,6 0 0 1 -18,13.1L-18,-13.1A6,6 0 0 1 -12,-19.1Z",
+      "shape": "rect",
+      "span": {
+        "column": 5,
+        "length": 38,
+        "line": 8,
+        "offset": 227,
+      },
+      "width": 36,
+      "x": 82.46,
+      "y": 782.1,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "G",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "G",
+        ],
+        "width": 9.7,
+      },
+      "name": "G",
+      "outline": "M-12.85,-19.1L12.85,-19.1A6,6 0 0 1 18.85,-13.1L18.85,13.1A6,6 0 0 1 12.85,19.1L-12.85,19.1A6,6 0 0 1 -18.85,13.1L-18.85,-13.1A6,6 0 0 1 -12.85,-19.1Z",
+      "shape": "rect",
+      "span": {
+        "column": 5,
+        "length": 15,
+        "line": 9,
+        "offset": 270,
+      },
+      "width": 37.7,
+      "x": 82.46,
+      "y": 868.3,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "p",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "Person",
+        ],
+        "width": 43.14,
+      },
+      "name": "p",
+      "outline": "M-29.57,-19.1L29.57,-19.1A6,6 0 0 1 35.57,-13.1L35.57,13.1A6,6 0 0 1 29.57,19.1L-29.57,19.1A6,6 0 0 1 -35.57,13.1L-35.57,-13.1A6,6 0 0 1 -29.57,-19.1Z",
+      "shape": "rect",
+      "span": {
+        "column": 5,
+        "length": 42,
+        "line": 10,
+        "offset": 290,
+      },
+      "width": 71.14,
+      "x": 275.38,
+      "y": 27.1,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "Customer Account",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "Customer Account",
+        ],
+        "width": 114.9,
+      },
+      "name": "Customer Account",
+      "outline": "M-65.45,-19.1L65.45,-19.1A6,6 0 0 1 71.45,-13.1L71.45,13.1A6,6 0 0 1 65.45,19.1L-65.45,19.1A6,6 0 0 1 -71.45,13.1L-71.45,-13.1A6,6 0 0 1 -65.45,-19.1Z",
+      "shape": "rect",
+      "span": {
+        "column": 5,
+        "length": 42,
+        "line": 10,
+        "offset": 290,
+      },
+      "width": 142.9,
+      "x": 275.38,
+      "y": 178.1,
+    },
+  ],
+  "size": {
+    "height": 895.4,
+    "width": 354.83,
+  },
+  "title": "Every crow's foot",
+}
+`;
+
+exports[`er layout > 'er-degenerate' matches its golden scene 1`] = `
+{
+  "clusters": [],
+  "edges": [
+    {
+      "arrow": "none",
+      "classes": [
+        "er-source-exactly-one",
+        "er-target-zero-or-more",
+      ],
+      "d": "M186.07,48.81L216.07,48.81Q222.07,48.81 222.07,54.81L222.07,72.19Q222.07,78.19 216.07,78.19L186.07,78.19",
+      "id": "SELF--SELF#0",
+      "label": {
+        "box": {
+          "baseline": 12.72,
+          "height": 16.8,
+          "lineHeight": 16.8,
+          "lines": [
+            "supervises",
+          ],
+          "width": 61.64,
+        },
+        "x": 256.89,
+        "y": 63.5,
+      },
+      "line": "solid",
+      "points": [
+        {
+          "x": 186.07,
+          "y": 48.81,
+        },
+        {
+          "x": 222.07,
+          "y": 48.81,
+        },
+        {
+          "x": 222.07,
+          "y": 78.19,
+        },
+        {
+          "x": 186.07,
+          "y": 78.19,
+        },
+      ],
+      "reversed": false,
+      "source": "SELF",
+      "span": {
+        "column": 5,
+        "length": 29,
+        "line": 3,
+        "offset": 25,
+      },
+      "startArrow": "none",
+      "target": "SELF",
+    },
+  ],
+  "family": "er",
+  "kind": "graph",
+  "nodes": [
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "LONELY",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "LONELY",
+        ],
+        "width": 51.09,
+      },
+      "name": "LONELY",
+      "outline": "M-33.55,-19.1L33.55,-19.1A6,6 0 0 1 39.55,-13.1L39.55,13.1A6,6 0 0 1 33.55,19.1L-33.55,19.1A6,6 0 0 1 -39.55,13.1L-39.55,-13.1A6,6 0 0 1 -33.55,-19.1Z",
+      "shape": "rect",
+      "span": {
+        "column": 5,
+        "length": 6,
+        "line": 2,
+        "offset": 14,
+      },
+      "width": 79.09,
+      "x": 47.55,
+      "y": 63.5,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "SELF",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "SELF",
+        ],
+        "width": 31.19,
+      },
+      "name": "SELF",
+      "outline": "M-23.6,-19.1L23.6,-19.1A6,6 0 0 1 29.6,-13.1L29.6,13.1A6,6 0 0 1 23.6,19.1L-23.6,19.1A6,6 0 0 1 -29.6,13.1L-29.6,-13.1A6,6 0 0 1 -23.6,-19.1Z",
+      "shape": "rect",
+      "span": {
+        "column": 5,
+        "length": 29,
+        "line": 3,
+        "offset": 25,
+      },
+      "width": 59.19,
+      "x": 156.69,
+      "y": 63.5,
+    },
+    {
+      "classes": [],
+      "height": 38.2,
+      "id": "EMPTY",
+      "label": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "EMPTY",
+        ],
+        "width": 45.1,
+      },
+      "name": "EMPTY",
+      "outline": "M-30.55,-19.1L30.55,-19.1A6,6 0 0 1 36.55,-13.1L36.55,13.1A6,6 0 0 1 30.55,19.1L-30.55,19.1A6,6 0 0 1 -36.55,13.1L-36.55,-13.1A6,6 0 0 1 -30.55,-19.1Z",
+      "shape": "rect",
+      "span": {
+        "column": 5,
+        "length": 7,
+        "line": 4,
+        "offset": 59,
+      },
+      "width": 73.1,
+      "x": 364.48,
+      "y": 63.5,
+    },
+    {
+      "classes": [],
+      "height": 111,
+      "id": "ONLY_ATTRIBUTES",
+      "label": {
+        "baseline": 13.78,
+        "height": 91,
+        "lineHeight": 18.2,
+        "lines": [
+          "ONLY_ATTRIBUTES",
+          "string",
+          "aVeryLongAttributeNameThatHasToWrapSomewhere",
+          "PK "and a comment that is",
+          "longer still"",
+        ],
+        "width": 330.17,
+      },
+      "name": "ONLY_ATTRIBUTES",
+      "outline": "M-173.08,-55.5L173.08,-55.5A6,6 0 0 1 179.08,-49.5L179.08,49.5A6,6 0 0 1 173.08,55.5L-173.08,55.5A6,6 0 0 1 -179.08,49.5L-179.08,-49.5A6,6 0 0 1 -173.08,-55.5Z",
+      "shape": "rect",
+      "span": {
+        "column": 5,
+        "length": 17,
+        "line": 6,
+        "offset": 77,
+      },
+      "width": 358.17,
+      "x": 620.11,
+      "y": 63.5,
+    },
+  ],
+  "size": {
+    "height": 127,
+    "width": 807.2,
+  },
+}
+`;

@@ -1,0 +1,26 @@
+classDiagram
+  class Repository~T~ {
+    <<interface>>
+    +find(id) T
+    +save(entity) void
+  }
+  class BaseEntity {
+    <<abstract>>
+    #String id
+    #createdAt
+    +equals(other) bool
+  }
+  namespace billing {
+    class Invoice {
+      +String number
+      -List~Line~ lines
+      +total() Money
+    }
+    class Money {
+      +int amount
+      +String currency
+    }
+  }
+  Repository <|.. InvoiceRepository
+  BaseEntity <|-- Invoice
+  Invoice *-- Money

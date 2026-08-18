@@ -1,0 +1,609 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`parseSequence > 'a later declaration refines an implic…' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "autonumber": null,
+  "events": [
+    "A solid/arrow B: hi",
+  ],
+  "participants": [
+    "participant A "Alice"",
+    "participant B "B" (implicit)",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parseSequence > 'accessibility statements' 1`] = `
+{
+  "accDescr": "Two participants",
+  "accTitle": "Publish flow",
+  "autonumber": null,
+  "events": [
+    "A solid/arrow B: x",
+  ],
+  "participants": [
+    "participant A "A" (implicit)",
+    "participant B "B" (implicit)",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parseSequence > 'activation shorthand' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "autonumber": null,
+  "events": [
+    "A solid/arrow + B: work",
+    "B dotted/arrow - A: done",
+  ],
+  "participants": [
+    "participant A "A" (implicit)",
+    "participant B "B" (implicit)",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parseSequence > 'actor declaration' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "autonumber": null,
+  "events": [],
+  "participants": [
+    "actor Owner "The owner"",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parseSequence > 'alt with else' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "autonumber": null,
+  "events": [
+    "alt valid",
+    "A solid/arrow B: ok",
+    "section expired",
+    "A solid/arrow B: no",
+    "end",
+  ],
+  "participants": [
+    "participant A "A" (implicit)",
+    "participant B "B" (implicit)",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parseSequence > 'autonumber off' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "autonumber": null,
+  "events": [
+    "A solid/arrow B: one",
+  ],
+  "participants": [
+    "participant A "A" (implicit)",
+    "participant B "B" (implicit)",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parseSequence > 'autonumber with start and step' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "autonumber": {
+    "start": 10,
+    "step": 5,
+  },
+  "events": [
+    "A solid/arrow B: one",
+  ],
+  "participants": [
+    "participant A "A" (implicit)",
+    "participant B "B" (implicit)",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parseSequence > 'autonumber' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "autonumber": {
+    "start": 1,
+    "step": 1,
+  },
+  "events": [
+    "A solid/arrow B: one",
+  ],
+  "participants": [
+    "participant A "A" (implicit)",
+    "participant B "B" (implicit)",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parseSequence > 'break block' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "autonumber": null,
+  "events": [
+    "break failed",
+    "A solid/arrow B: stop",
+    "end",
+  ],
+  "participants": [
+    "participant A "A" (implicit)",
+    "participant B "B" (implicit)",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parseSequence > 'comments are stripped' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "autonumber": null,
+  "events": [
+    "A solid/arrow B: x",
+  ],
+  "participants": [
+    "participant A "A" (implicit)",
+    "participant B "B" (implicit)",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parseSequence > 'critical with option' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "autonumber": null,
+  "events": [
+    "critical connect",
+    "A solid/arrow B: x",
+    "section timeout",
+    "A solid/arrow B: y",
+    "end",
+  ],
+  "participants": [
+    "participant A "A" (implicit)",
+    "participant B "B" (implicit)",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parseSequence > 'declaration order wins over use order' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "autonumber": null,
+  "events": [
+    "A solid/arrow B: hi",
+  ],
+  "participants": [
+    "participant B "B"",
+    "participant A "A"",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parseSequence > 'dotted arrow' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "autonumber": null,
+  "events": [
+    "A dotted/arrow B: dotted arrow",
+  ],
+  "participants": [
+    "participant A "A" (implicit)",
+    "participant B "B" (implicit)",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parseSequence > 'dotted async' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "autonumber": null,
+  "events": [
+    "A dotted/async B: fire and forget, dotted",
+  ],
+  "participants": [
+    "participant A "A" (implicit)",
+    "participant B "B" (implicit)",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parseSequence > 'dotted cross' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "autonumber": null,
+  "events": [
+    "A dotted/cross B: lost, dotted",
+  ],
+  "participants": [
+    "participant A "A" (implicit)",
+    "participant B "B" (implicit)",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parseSequence > 'dotted open' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "autonumber": null,
+  "events": [
+    "A dotted/none B: no head, dotted",
+  ],
+  "participants": [
+    "participant A "A" (implicit)",
+    "participant B "B" (implicit)",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parseSequence > 'empty message text' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "autonumber": null,
+  "events": [
+    "A solid/arrow B: ",
+  ],
+  "participants": [
+    "participant A "A" (implicit)",
+    "participant B "B" (implicit)",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parseSequence > 'explicit activate and deactivate' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "autonumber": null,
+  "events": [
+    "activate B",
+    "A solid/arrow B: work",
+    "deactivate B",
+  ],
+  "participants": [
+    "participant B "B" (implicit)",
+    "participant A "A" (implicit)",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parseSequence > 'header only' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "autonumber": null,
+  "events": [],
+  "participants": [],
+  "title": undefined,
+}
+`;
+
+exports[`parseSequence > 'implicit participants from first use' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "autonumber": null,
+  "events": [
+    "A solid/arrow B: hi",
+  ],
+  "participants": [
+    "participant A "A" (implicit)",
+    "participant B "B" (implicit)",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parseSequence > 'label breaks and entities' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "autonumber": null,
+  "events": [
+    "A solid/arrow B: first | second "q"",
+  ],
+  "participants": [
+    "participant A "A" (implicit)",
+    "participant B "B" (implicit)",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parseSequence > 'loop block' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "autonumber": null,
+  "events": [
+    "loop every hour",
+    "A solid/arrow B: poll",
+    "end",
+  ],
+  "participants": [
+    "participant A "A" (implicit)",
+    "participant B "B" (implicit)",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parseSequence > 'nested blocks' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "autonumber": null,
+  "events": [
+    "loop retry",
+    "alt ok",
+    "A solid/arrow B: x",
+    "end",
+    "end",
+  ],
+  "participants": [
+    "participant A "A" (implicit)",
+    "participant B "B" (implicit)",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parseSequence > 'note left of' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "autonumber": null,
+  "events": [
+    "note left A: waiting",
+  ],
+  "participants": [
+    "participant A "A" (implicit)",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parseSequence > 'note over one participant' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "autonumber": null,
+  "events": [
+    "note over A: alone",
+  ],
+  "participants": [
+    "participant A "A" (implicit)",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parseSequence > 'note over two participants' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "autonumber": null,
+  "events": [
+    "note over A,B: the exchange",
+  ],
+  "participants": [
+    "participant A "A" (implicit)",
+    "participant B "B" (implicit)",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parseSequence > 'note right of' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "autonumber": null,
+  "events": [
+    "note right A: waiting",
+  ],
+  "participants": [
+    "participant A "A" (implicit)",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parseSequence > 'opt block' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "autonumber": null,
+  "events": [
+    "opt tags",
+    "A solid/arrow B: tag",
+    "end",
+  ],
+  "participants": [
+    "participant A "A" (implicit)",
+    "participant B "B" (implicit)",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parseSequence > 'par with and' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "autonumber": null,
+  "events": [
+    "par one",
+    "A solid/arrow B: x",
+    "section two",
+    "A solid/arrow B: y",
+    "end",
+  ],
+  "participants": [
+    "participant A "A" (implicit)",
+    "participant B "B" (implicit)",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parseSequence > 'participant alias' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "autonumber": null,
+  "events": [],
+  "participants": [
+    "participant C "Claude"",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parseSequence > 'participant name with spaces' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "autonumber": null,
+  "events": [
+    "MCP endpoint solid/arrow Better Auth: verify",
+  ],
+  "participants": [
+    "participant MCP endpoint "MCP endpoint" (implicit)",
+    "participant Better Auth "Better Auth" (implicit)",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parseSequence > 'self message' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "autonumber": null,
+  "events": [
+    "A solid/arrow A: think",
+  ],
+  "participants": [
+    "participant A "A" (implicit)",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parseSequence > 'solid arrow' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "autonumber": null,
+  "events": [
+    "A solid/arrow B: solid arrow",
+  ],
+  "participants": [
+    "participant A "A" (implicit)",
+    "participant B "B" (implicit)",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parseSequence > 'solid async' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "autonumber": null,
+  "events": [
+    "A solid/async B: fire and forget",
+  ],
+  "participants": [
+    "participant A "A" (implicit)",
+    "participant B "B" (implicit)",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parseSequence > 'solid cross' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "autonumber": null,
+  "events": [
+    "A solid/cross B: lost",
+  ],
+  "participants": [
+    "participant A "A" (implicit)",
+    "participant B "B" (implicit)",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parseSequence > 'solid open' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "autonumber": null,
+  "events": [
+    "A solid/none B: no head",
+  ],
+  "participants": [
+    "participant A "A" (implicit)",
+    "participant B "B" (implicit)",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parseSequence > 'title' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "autonumber": null,
+  "events": [
+    "A solid/arrow B: x",
+  ],
+  "participants": [
+    "participant A "A" (implicit)",
+    "participant B "B" (implicit)",
+  ],
+  "title": "Publishing",
+}
+`;

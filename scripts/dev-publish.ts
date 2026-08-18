@@ -16,6 +16,7 @@ import { explainerFixture } from '../src/catalog/fixtures/explainer.ts';
 import { flowFixture } from '../src/catalog/fixtures/flow.ts';
 import { itineraryFixture } from '../src/catalog/fixtures/itinerary.ts';
 import { kitchenSinkFixture } from '../src/catalog/fixtures/kitchen-sink.ts';
+import { publishPathReviewFixture } from '../src/catalog/fixtures/publish-path-review.ts';
 import { getAccessToken } from '../testing/oauth-client.ts';
 import { decisionMemoExample } from './examples/decision-memo.ts';
 import { markdownNotesExample } from './examples/markdown-notes.ts';
@@ -164,6 +165,13 @@ async function main() {
     spec: kitchenSinkFixture,
   });
 
+  const publishPathReview = await callTool(accessToken, 'publish_spec', {
+    title: 'Publish Path Review',
+    description: 'A design review carried by diagrams — four drawn in-repo, one deferred gantt.',
+    tags: ['demo', 'diagram'],
+    spec: publishPathReviewFixture,
+  });
+
   const researchSummary = await callTool(accessToken, 'publish_spec', {
     title: researchSummaryExample.title,
     description: researchSummaryExample.description,
@@ -220,6 +228,7 @@ async function main() {
         explainer: { id: explainer.id, title: 'OAuth Device Flow Explainer' },
         comparison: { id: comparison.id, title: 'Plan Comparison' },
         kitchenSink: { id: kitchenSink.id, title: 'Kitchen Sink Replacement' },
+        publishPathReview: { id: publishPathReview.id, title: 'Publish Path Review' },
         researchSummary: { id: researchSummary.id, title: researchSummaryExample.title },
         decisionMemo: { id: decisionMemo.id, title: decisionMemoExample.title },
         statusReport: { id: statusReport.id, title: statusReportExample.title },

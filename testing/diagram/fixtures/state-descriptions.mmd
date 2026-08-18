@@ -1,0 +1,8 @@
+stateDiagram-v2
+  state "Waiting for input" as Idle
+  Idle : nothing scheduled
+  [*] --> Idle
+  Idle --> Busy
+  Busy : running a job
+  Busy --> Idle
+  Busy --> Busy : retry

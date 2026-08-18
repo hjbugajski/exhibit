@@ -1,0 +1,15 @@
+gantt
+  title Quarter plan
+  dateFormat YYYY-MM-DD
+  axisFormat %b %d
+  excludes weekends
+  todayMarker off
+  section Discovery
+    Interviews        :done, int, 2024-01-01, 5d
+    Synthesis         :done, syn, 2024-01-08, 3d
+  section Build
+    Catalog blocks    :active, cat, 2024-01-15, 2w
+    Diagram engine    :crit, active, eng, 2024-01-15, 3w
+  section Launch
+    Beta              :beta, 2024-02-12, 1w
+    Public launch     :milestone, launch, 2024-02-19, 0d

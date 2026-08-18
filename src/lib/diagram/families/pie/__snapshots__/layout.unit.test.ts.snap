@@ -1,0 +1,267 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`pie end to end > 'pie-basic' matches its golden scene 1`] = `
+{
+  "caption": "Artifact types",
+  "center": {
+    "x": 138,
+    "y": 138,
+  },
+  "family": "pie",
+  "kind": "pie",
+  "legend": [
+    {
+      "fraction": 0.42,
+      "id": "slice-0",
+      "label": "Markdown",
+      "swatchIndex": 0,
+      "value": 42,
+    },
+    {
+      "fraction": 0.31,
+      "id": "slice-1",
+      "label": "HTML",
+      "swatchIndex": 1,
+      "value": 31,
+    },
+    {
+      "fraction": 0.27,
+      "id": "slice-2",
+      "label": "Spec",
+      "swatchIndex": 2,
+      "value": 27,
+    },
+  ],
+  "radius": 130,
+  "showData": false,
+  "size": {
+    "height": 276,
+    "width": 276,
+  },
+  "slices": [
+    {
+      "d": "M138,138L138,8A130,130 0 0 1 200.63,251.92Z",
+      "endAngle": 1.07,
+      "fraction": 0.42,
+      "id": "slice-0",
+      "label": "Markdown",
+      "labelBox": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "Markdown",
+        ],
+        "width": 65.18,
+      },
+      "labelPoint": {
+        "x": 223.62,
+        "y": 116.02,
+      },
+      "startAngle": -1.57,
+      "swatchIndex": 0,
+      "value": 42,
+    },
+    {
+      "d": "M138,138L200.63,251.92A130,130 0 0 1 9.03,154.29Z",
+      "endAngle": 3.02,
+      "fraction": 0.31,
+      "id": "slice-1",
+      "label": "HTML",
+      "labelBox": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "HTML",
+        ],
+        "width": 37.16,
+      },
+      "labelPoint": {
+        "x": 97.87,
+        "y": 216.76,
+      },
+      "startAngle": 1.07,
+      "swatchIndex": 1,
+      "value": 31,
+    },
+    {
+      "d": "M138,138L9.03,154.29A130,130 0 0 1 138,8Z",
+      "endAngle": 4.71,
+      "fraction": 0.27,
+      "id": "slice-2",
+      "label": "Spec",
+      "labelBox": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "Spec",
+        ],
+        "width": 31.32,
+      },
+      "labelPoint": {
+        "x": 71.69,
+        "y": 79.54,
+      },
+      "startAngle": 3.02,
+      "swatchIndex": 2,
+      "value": 27,
+    },
+  ],
+  "title": "Artifact types",
+}
+`;
+
+exports[`pie end to end > 'pie-degenerate' matches its golden scene 1`] = `
+{
+  "caption": "Nothing yet",
+  "center": {
+    "x": 8,
+    "y": 8,
+  },
+  "family": "pie",
+  "kind": "pie",
+  "legend": [
+    {
+      "fraction": 0,
+      "id": "slice-0",
+      "label": "Markdown",
+      "swatchIndex": 0,
+      "value": 0,
+    },
+    {
+      "fraction": 0,
+      "id": "slice-1",
+      "label": "HTML",
+      "swatchIndex": 1,
+      "value": 0,
+    },
+  ],
+  "radius": 0,
+  "showData": false,
+  "size": {
+    "height": 16,
+    "width": 16,
+  },
+  "slices": [],
+  "title": "Nothing yet",
+}
+`;
+
+exports[`pie end to end > 'pie-showdata' matches its golden scene 1`] = `
+{
+  "caption": "Publishes by kind",
+  "center": {
+    "x": 138,
+    "y": 138,
+  },
+  "family": "pie",
+  "kind": "pie",
+  "legend": [
+    {
+      "fraction": 0.6368,
+      "id": "slice-0",
+      "label": "Markdown",
+      "swatchIndex": 0,
+      "value": 128,
+    },
+    {
+      "fraction": 0.3184,
+      "id": "slice-1",
+      "label": "HTML",
+      "swatchIndex": 1,
+      "value": 64,
+    },
+    {
+      "fraction": 0.0398,
+      "id": "slice-2",
+      "label": "Spec",
+      "swatchIndex": 2,
+      "value": 8,
+    },
+    {
+      "fraction": 0.005,
+      "id": "slice-3",
+      "label": "Other",
+      "swatchIndex": 3,
+      "value": 1,
+    },
+  ],
+  "radius": 130,
+  "showData": true,
+  "size": {
+    "height": 276,
+    "width": 276,
+  },
+  "slices": [
+    {
+      "d": "M138,138L138,8A130,130 0 1 1 39.51,222.85Z",
+      "endAngle": 2.43,
+      "fraction": 0.6368,
+      "id": "slice-0",
+      "label": "Markdown",
+      "labelBox": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "Markdown",
+        ],
+        "width": 65.18,
+      },
+      "labelPoint": {
+        "x": 218.36,
+        "y": 174.84,
+      },
+      "startAngle": -1.57,
+      "swatchIndex": 0,
+      "value": 128,
+    },
+    {
+      "d": "M138,138L39.51,222.85A130,130 0 0 1 101.91,13.11Z",
+      "endAngle": 4.43,
+      "fraction": 0.3184,
+      "id": "slice-1",
+      "label": "HTML",
+      "labelBox": {
+        "baseline": 13.78,
+        "height": 18.2,
+        "lineHeight": 18.2,
+        "lines": [
+          "HTML",
+        ],
+        "width": 37.16,
+      },
+      "labelPoint": {
+        "x": 53.27,
+        "y": 112.79,
+      },
+      "startAngle": 2.43,
+      "swatchIndex": 1,
+      "value": 64,
+    },
+    {
+      "d": "M138,138L101.91,13.11A130,130 0 0 1 133.94,8.06Z",
+      "endAngle": 4.68,
+      "fraction": 0.0398,
+      "id": "slice-2",
+      "label": "Spec",
+      "startAngle": 4.43,
+      "swatchIndex": 2,
+      "value": 8,
+    },
+    {
+      "d": "M138,138L133.94,8.06A130,130 0 0 1 138,8Z",
+      "endAngle": 4.71,
+      "fraction": 0.005,
+      "id": "slice-3",
+      "label": "Other",
+      "startAngle": 4.68,
+      "swatchIndex": 3,
+      "value": 1,
+    },
+  ],
+  "title": "Publishes by kind",
+}
+`;

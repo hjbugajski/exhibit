@@ -1,0 +1,388 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`parseGantt > 'after one task' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "axisFormat": "%Y-%m-%d",
+  "dateFormat": "YYYY-MM-DD",
+  "excludeWeekends": false,
+  "sections": [
+    "(implicit) """,
+  ],
+  "tasks": [
+    "a [0] "A": 2024-03-04 00:00 -> 86400000ms/1d",
+    "task-1 [0] "B": after a -> 172800000ms/2d",
+  ],
+  "title": undefined,
+  "todayMarker": false,
+}
+`;
+
+exports[`parseGantt > 'after several tasks' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "axisFormat": "%Y-%m-%d",
+  "dateFormat": "YYYY-MM-DD",
+  "excludeWeekends": false,
+  "sections": [
+    "(implicit) """,
+  ],
+  "tasks": [
+    "a [0] "A": 2024-03-04 00:00 -> 86400000ms/1d",
+    "b [0] "B": 2024-03-04 00:00 -> 259200000ms/3d",
+    "c [0] "C": after a b -> 172800000ms/2d",
+  ],
+  "title": undefined,
+  "todayMarker": false,
+}
+`;
+
+exports[`parseGantt > 'american date format' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "axisFormat": "%Y-%m-%d",
+  "dateFormat": "MM-DD-YYYY",
+  "excludeWeekends": false,
+  "sections": [
+    "(implicit) """,
+  ],
+  "tasks": [
+    "task-0 [0] "A": 2024-03-04 00:00 -> 86400000ms/1d",
+  ],
+  "title": undefined,
+  "todayMarker": false,
+}
+`;
+
+exports[`parseGantt > 'axis format' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "axisFormat": "%b %d",
+  "dateFormat": "YYYY-MM-DD",
+  "excludeWeekends": false,
+  "sections": [
+    "(implicit) """,
+  ],
+  "tasks": [
+    "task-0 [0] "A": 2024-03-04 00:00 -> 86400000ms/1d",
+  ],
+  "title": undefined,
+  "todayMarker": false,
+}
+`;
+
+exports[`parseGantt > 'comments are stripped' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "axisFormat": "%Y-%m-%d",
+  "dateFormat": "YYYY-MM-DD",
+  "excludeWeekends": false,
+  "sections": [
+    "(implicit) """,
+  ],
+  "tasks": [
+    "task-0 [0] "A": 2024-03-04 00:00 -> 86400000ms/1d",
+  ],
+  "title": undefined,
+  "todayMarker": false,
+}
+`;
+
+exports[`parseGantt > 'date format with a time' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "axisFormat": "%Y-%m-%d",
+  "dateFormat": "YYYY-MM-DD HH:mm",
+  "excludeWeekends": false,
+  "sections": [
+    "(implicit) """,
+  ],
+  "tasks": [
+    "task-0 [0] "A": 2024-03-04 09:30 -> 43200000ms/-d",
+  ],
+  "title": undefined,
+  "todayMarker": false,
+}
+`;
+
+exports[`parseGantt > 'declared date format' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "axisFormat": "%Y-%m-%d",
+  "dateFormat": "DD-MM-YYYY",
+  "excludeWeekends": false,
+  "sections": [
+    "(implicit) """,
+  ],
+  "tasks": [
+    "task-0 [0] "A": 2024-03-04 00:00 -> 86400000ms/1d",
+  ],
+  "title": undefined,
+  "todayMarker": false,
+}
+`;
+
+exports[`parseGantt > 'duration only' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "axisFormat": "%Y-%m-%d",
+  "dateFormat": "YYYY-MM-DD",
+  "excludeWeekends": false,
+  "sections": [
+    "(implicit) """,
+  ],
+  "tasks": [
+    "task-0 [0] "Draft": auto -> 259200000ms/3d",
+  ],
+  "title": undefined,
+  "todayMarker": false,
+}
+`;
+
+exports[`parseGantt > 'every duration unit' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "axisFormat": "%Y-%m-%d",
+  "dateFormat": "YYYY-MM-DD",
+  "excludeWeekends": false,
+  "sections": [
+    "(implicit) """,
+  ],
+  "tasks": [
+    "task-0 [0] "A": 2024-03-04 00:00 -> 259200000ms/3d",
+    "task-1 [0] "B": auto -> 1209600000ms/14d",
+    "task-2 [0] "C": auto -> 43200000ms/-d",
+    "task-3 [0] "D": auto -> 1800000ms/-d",
+    "task-4 [0] "E": auto -> 90000ms/-d",
+  ],
+  "title": undefined,
+  "todayMarker": false,
+}
+`;
+
+exports[`parseGantt > 'every tag' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "axisFormat": "%Y-%m-%d",
+  "dateFormat": "YYYY-MM-DD",
+  "excludeWeekends": false,
+  "sections": [
+    "(implicit) """,
+  ],
+  "tasks": [
+    "a [0] "A" {done}: 2024-03-04 00:00 -> 86400000ms/1d",
+    "b [0] "B" {active,crit}: 2024-03-05 00:00 -> 86400000ms/1d",
+    "c [0] "C" {milestone}: 2024-03-06 00:00 -> 0ms/0d",
+  ],
+  "title": undefined,
+  "todayMarker": false,
+}
+`;
+
+exports[`parseGantt > 'excludes weekends' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "axisFormat": "%Y-%m-%d",
+  "dateFormat": "YYYY-MM-DD",
+  "excludeWeekends": true,
+  "sections": [
+    "(implicit) """,
+  ],
+  "tasks": [
+    "task-0 [0] "A": 2024-03-08 00:00 -> 259200000ms/3d",
+  ],
+  "title": undefined,
+  "todayMarker": false,
+}
+`;
+
+exports[`parseGantt > 'header only' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "axisFormat": "%Y-%m-%d",
+  "dateFormat": "YYYY-MM-DD",
+  "excludeWeekends": false,
+  "sections": [],
+  "tasks": [],
+  "title": undefined,
+  "todayMarker": false,
+}
+`;
+
+exports[`parseGantt > 'id, start and end' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "axisFormat": "%Y-%m-%d",
+  "dateFormat": "YYYY-MM-DD",
+  "excludeWeekends": false,
+  "sections": [
+    "(implicit) """,
+  ],
+  "tasks": [
+    "draft [0] "Draft": 2024-03-04 00:00 -> 2024-03-08 00:00",
+  ],
+  "title": undefined,
+  "todayMarker": false,
+}
+`;
+
+exports[`parseGantt > 'label breaks and entities' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "axisFormat": "%Y-%m-%d",
+  "dateFormat": "YYYY-MM-DD",
+  "excludeWeekends": false,
+  "sections": [
+    "(implicit) """,
+  ],
+  "tasks": [
+    "task-0 [0] "First | second "q"": 2024-03-04 00:00 -> 86400000ms/1d",
+  ],
+  "title": undefined,
+  "todayMarker": false,
+}
+`;
+
+exports[`parseGantt > 'one task with a start and a duration' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "axisFormat": "%Y-%m-%d",
+  "dateFormat": "YYYY-MM-DD",
+  "excludeWeekends": false,
+  "sections": [
+    "(implicit) """,
+  ],
+  "tasks": [
+    "task-0 [0] "Draft": 2024-03-04 00:00 -> 259200000ms/3d",
+  ],
+  "title": undefined,
+  "todayMarker": false,
+}
+`;
+
+exports[`parseGantt > 'sections' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "axisFormat": "%Y-%m-%d",
+  "dateFormat": "YYYY-MM-DD",
+  "excludeWeekends": false,
+  "sections": [
+    "One "One"",
+    "Two "Two"",
+  ],
+  "tasks": [
+    "task-0 [0] "A": 2024-03-04 00:00 -> 86400000ms/1d",
+    "task-1 [1] "B": auto -> 86400000ms/1d",
+  ],
+  "title": undefined,
+  "todayMarker": false,
+}
+`;
+
+exports[`parseGantt > 'slashed date format' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "axisFormat": "%Y-%m-%d",
+  "dateFormat": "YYYY/MM/DD",
+  "excludeWeekends": false,
+  "sections": [
+    "(implicit) """,
+  ],
+  "tasks": [
+    "task-0 [0] "A": 2024-03-04 00:00 -> 86400000ms/1d",
+  ],
+  "title": undefined,
+  "todayMarker": false,
+}
+`;
+
+exports[`parseGantt > 'start only' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "axisFormat": "%Y-%m-%d",
+  "dateFormat": "YYYY-MM-DD",
+  "excludeWeekends": false,
+  "sections": [
+    "(implicit) """,
+  ],
+  "tasks": [
+    "task-0 [0] "Draft": 2024-03-04 00:00 -> auto",
+  ],
+  "title": undefined,
+  "todayMarker": false,
+}
+`;
+
+exports[`parseGantt > 'tasks before any section' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "axisFormat": "%Y-%m-%d",
+  "dateFormat": "YYYY-MM-DD",
+  "excludeWeekends": false,
+  "sections": [
+    "(implicit) """,
+    "One "One"",
+  ],
+  "tasks": [
+    "task-0 [0] "A": 2024-03-04 00:00 -> 86400000ms/1d",
+    "task-1 [1] "B": auto -> 86400000ms/1d",
+  ],
+  "title": undefined,
+  "todayMarker": false,
+}
+`;
+
+exports[`parseGantt > 'title and accessibility statements' 1`] = `
+{
+  "accDescr": "Two tasks",
+  "accTitle": "The plan",
+  "axisFormat": "%Y-%m-%d",
+  "dateFormat": "YYYY-MM-DD",
+  "excludeWeekends": false,
+  "sections": [
+    "(implicit) """,
+  ],
+  "tasks": [
+    "task-0 [0] "A": 2024-03-04 00:00 -> 86400000ms/1d",
+  ],
+  "title": "Plan",
+  "todayMarker": false,
+}
+`;
+
+exports[`parseGantt > 'today marker off' 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "axisFormat": "%Y-%m-%d",
+  "dateFormat": "YYYY-MM-DD",
+  "excludeWeekends": false,
+  "sections": [
+    "(implicit) """,
+  ],
+  "tasks": [
+    "task-0 [0] "A": 2024-03-04 00:00 -> 86400000ms/1d",
+  ],
+  "title": undefined,
+  "todayMarker": false,
+}
+`;
