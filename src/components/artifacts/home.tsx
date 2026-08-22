@@ -31,12 +31,22 @@ export function Home() {
   const updating = useRouterState({ select: (state) => state.isLoading });
 
   const [queryInput, setQueryInput] = useState(search.query ?? '');
-  const [prevSearchQuery, setPrevSearchQuery] = useState(search.query);
   // The last query this component pushed into the URL. Our own writes land a loader round-trip
   // later, by which time the owner may have typed more — reseeding the input from them would
   // revert those characters, so only genuinely external changes (back/forward, a shared link)
   // resync it.
   const pushedQuery = useRef(search.query);
+
+  // Resyncs from an external change and adopts it as our own last write, or the navigate effect
+  // below would push a redundant no-op write (rerunning both gallery loaders) once the debounce
+  // catches up.
+  useEffect(() => {
+    if (search.query !== pushedQuery.current) {
+      setQueryInput(search.query ?? '');
+      pushedQuery.current = search.query;
+    }
+  }, [search.query]);
+
   // Starts at 'grid' for a deterministic SSR render, then syncs from localStorage after mount to
   // avoid a hydration mismatch.
   const [view, setView] = useLocalStorageState<GalleryView>(
@@ -46,17 +56,6 @@ export function Home() {
   );
 
   const { items, hasMore, loadingMore, loadMore } = usePaginatedList(loaderData.page);
-
-  if (search.query !== prevSearchQuery) {
-    setPrevSearchQuery(search.query);
-
-    if (search.query !== pushedQuery.current) {
-      setQueryInput(search.query ?? '');
-      // Adopt the external value as our own last write, or the navigate effect would push a
-      // redundant no-op write (rerunning both gallery loaders) once the debounce catches up.
-      pushedQuery.current = search.query;
-    }
-  }
 
   // Debounced, server-side title search: waits 300ms after the last keystroke before pushing the
   // value into the URL, which reruns the loader (listArtifactsFn).

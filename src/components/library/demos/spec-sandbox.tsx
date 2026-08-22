@@ -43,7 +43,11 @@ function evaluate(text: string): SandboxResult {
 
 function SpecSandbox() {
   // Persisted so the pasted spec survives reloads while iterating on it.
-  const [text, setText] = useLocalStorageState(STORAGE_KEY, '', (_): _ is string => true);
+  const [text, setText] = useLocalStorageState(
+    STORAGE_KEY,
+    '',
+    (value): value is string => typeof value === 'string',
+  );
 
   const result = useMemo(() => evaluate(text), [text]);
   const validSpec = result.kind === 'valid' ? result.spec : null;

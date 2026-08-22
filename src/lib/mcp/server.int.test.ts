@@ -832,9 +832,10 @@ describe('set_artifact_archived', () => {
     expect(restored.structuredContent).toEqual({ id, archived: false });
 
     const visible = await callTool(client, 'list_artifacts', {});
-    expect((visible.structuredContent?.items as { id: string }[]).map((item) => item.id)).toEqual([
-      id,
-    ]);
+    // No `?? []` fallback: a missing structuredContent should fail as `undefined`, not as an
+    // empty-list mismatch that hides the actual defect.
+    const visibleItems = visible.structuredContent?.items as { id: string }[] | undefined;
+    expect(visibleItems?.map((item) => item.id)).toEqual([id]);
   });
 
   it('is idempotent: archiving an already archived artifact still succeeds', async () => {

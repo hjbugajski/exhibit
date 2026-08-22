@@ -9,7 +9,7 @@
  * `measurer`) are keyed on identity, and their defaults are module constants.
  */
 
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { layoutDiagram, parseDiagram, resolveLayoutOptions } from '@/lib/diagram/build';
 import { metricsMeasurer } from '@/lib/diagram/core/text/measurers';
@@ -63,13 +63,17 @@ export interface UseDiagramResult {
  */
 export function useStableValue<T>(value: T): T {
   const key = JSON.stringify(value ?? null);
-  const held = useRef<{ key: string; value: T }>({ key, value });
+  const [held, setHeld] = useState<{ key: string; value: T }>({ key, value });
 
-  if (held.current.key !== key) {
-    held.current = { key, value };
+  // Store during render (React's "adjusting state when a prop changes"): the fresh value is
+  // returned now, and the re-render this setState schedules settles on that same object.
+  if (held.key !== key) {
+    setHeld({ key, value });
+
+    return value;
   }
 
-  return held.current.value;
+  return held.value;
 }
 
 export function useDiagram(source: string, options: UseDiagramOptions = {}): UseDiagramResult {

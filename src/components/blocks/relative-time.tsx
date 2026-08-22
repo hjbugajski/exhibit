@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react';
-
 import { formatRelativeTime } from '@/lib/format-time';
+import { useHydrated } from '@/lib/use-hydrated';
 
 export interface RelativeTimeProps {
   /** Epoch milliseconds. */
@@ -17,12 +16,7 @@ export interface RelativeTimeProps {
  * (UTC in the container) during SSR, which would hydrate as a mismatched title on every row.
  */
 export function RelativeTime({ value, className }: RelativeTimeProps) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
+  const mounted = useHydrated();
   const date = new Date(value);
 
   return (

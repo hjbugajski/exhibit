@@ -20,7 +20,7 @@
  * crash below it degrades to the same error-plus-null-scene shape a parser failure produces.
  */
 
-import { useEffect, useId, useMemo, useRef } from 'react';
+import { createElement, useEffect, useId, useMemo, useRef } from 'react';
 import type { CSSProperties, ComponentProps, RefObject } from 'react';
 
 import { useRender } from '@base-ui/react/use-render';
@@ -323,7 +323,6 @@ function Svg({ views, className, children, ...props }: DiagramSvgProps) {
     return null;
   }
 
-  const View = resolveFamilyView(scene, views);
   const width = round2(scene.size.width);
   const height = round2(scene.size.height);
   const natural = canvas !== null || fit === 'scroll';
@@ -342,7 +341,9 @@ function Svg({ views, className, children, ...props }: DiagramSvgProps) {
       className={cn(classNames.svg, className)}
       {...props}
     >
-      {children ?? <View scene={scene} />}
+      {/* The resolved view is a stable registry entry per family, not a component created during
+          render, so this never remounts the subtree. */}
+      {children ?? createElement(resolveFamilyView(scene, views), { scene })}
     </svg>
   );
 }

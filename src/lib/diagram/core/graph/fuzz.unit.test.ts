@@ -8,6 +8,9 @@
  * cluster border crossing that doubles back into a corner drawing nothing, a rank-gap leg slid into
  * a node — so a single run of 150 trials was as likely to miss all three as to find one, and did.
  * `SEEDS` x `TRIALS` is a thousand models, which hits every one of them, in a couple of seconds.
+ * That thousand runs on CI (and under `DIAGRAM_FUZZ=wide`), where every merge needs it; a local
+ * `pnpm test` runs one seed's 250 so the edit loop stays fast — deep enough to catch gross breakage,
+ * with CI still holding the line it was sized for.
  *
  * `TRIALS` is capped by the invariant classes still open against this engine rather than by time: a
  * port that leaves along its own outline, an L leg inside a node's clearance, a lane under a cluster
@@ -82,7 +85,9 @@ function randomModel(random: () => number): GraphModel {
   return { family: 'flowchart', direction: pick(DIRECTIONS), nodes, edges, clusters };
 }
 
-const SEEDS = [20_260_808, 3_538_535, 3_942_939, 5_560_555];
+const ALL_SEEDS = [20_260_808, 3_538_535, 3_942_939, 5_560_555];
+const SEEDS =
+  process.env.CI || process.env.DIAGRAM_FUZZ === 'wide' ? ALL_SEEDS : ALL_SEEDS.slice(0, 1);
 const TRIALS = 250;
 
 describe('layoutGraph over random models', () => {
@@ -108,9 +113,10 @@ describe('layoutGraph over random models', () => {
       }
     }
 
-    // A thousand layouts run in about four seconds alone and past the 5s default under a loaded
-    // suite, so the budget is stated rather than left to whatever else the runner is doing.
-  }, 30_000);
+    // A thousand layouts run in about four seconds alone, and far longer under a loaded suite on a
+    // cold cache with every worker transforming at once, so the budget is stated generously rather
+    // than left to whatever else the runner is doing.
+  }, 120_000);
 
   it('is reproducible for a seed', () => {
     const options = layoutOptions();

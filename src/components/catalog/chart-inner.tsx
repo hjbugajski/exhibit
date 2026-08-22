@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 
 import { areaY, barY, defineChart, dot, lineY } from '@tanstack/charts';
-import type { ChartPoint, DomChartDefinition } from '@tanstack/charts';
+import type { ChartPoint } from '@tanstack/charts';
 import { scaleBand } from '@tanstack/charts-scales/band';
 import { scaleLinear } from '@tanstack/charts-scales/linear';
 import { scalePoint } from '@tanstack/charts-scales/point';
@@ -16,6 +16,7 @@ import type { CatalogComponentProps } from '@/catalog/catalog';
 
 type Props = CatalogComponentProps<'Chart'>;
 type Point = Props['data'][number];
+type CartesianKind = Exclude<Props['kind'], 'donut'>;
 
 /**
  * Slice colors for the polar kinds. The library's default palette only defines six entries
@@ -24,22 +25,24 @@ type Point = Props['data'][number];
  */
 const SLICE_PALETTE = Array.from({ length: 8 }, (_, index) => `var(--color-chart-${index + 1})`);
 
-/**
- * Default export (the only one in the catalog) because chart.tsx lazy-loads this module via
- * React.lazy, which requires a default export.
- *
- * Paint comes from CSS: the library's default theme is `currentColor` plus `--ts-chart-*` custom
- * properties, both mapped to house tokens by the `.catalog-chart` rule in styles.css, so a scheme
- * switch recolors the chart without rebuilding the definition.
- */
-export default function CatalogChartInner({ props }: { props: Props }) {
-  const { data, kind } = props;
-  const seriesName = props.valueLabel ?? 'value';
-  const chartLabel = `${seriesName} ${kind} chart, ${data.length} data points`;
+const CHART_PROPS = { className: 'catalog-chart', height: 256, initialWidth: 640 } as const;
 
-  /* One definition type across kinds: the phantom datum generic differs per branch (polar marks
-     carry d3 pie slices), and the Chart prop takes a single definition. */
-  const definition = useMemo<DomChartDefinition<any>>(() => {
+interface KindChartProps {
+  data: Props['data'];
+  label: string;
+  seriesName: string;
+}
+
+/* Split by datum generic: polar marks carry d3 pie slices while the cartesian kinds plot Points,
+   so each component holds one fully-typed definition. */
+
+function CartesianChart({
+  data,
+  kind,
+  label,
+  seriesName,
+}: KindChartProps & { kind: CartesianKind }) {
+  const definition = useMemo(() => {
     /* `content` outranks the automatic item layout, so the category heads the tooltip as a bold
        title and the value gets a labelled row of its own. */
     const tooltipSpec = {
@@ -98,53 +101,6 @@ export default function CatalogChartInner({ props }: { props: Props }) {
           y,
           tooltip: tooltipSpec,
         });
-      case 'donut': {
-        /* d3's pie layout emits the exact angle channels radialArc reads; the donut hole is just a
-           nonzero inner radius. Source order is meaningful, hence sort(null). */
-        const slices = pie<Point>()
-          .sort(null)
-          .padAngle(0.012)
-          .value((point) => point.value)(data);
-        const sliceOf = (focused: ChartPoint<unknown>) =>
-          (focused.datum as PieArcDatum<Point>).data;
-
-        return defineChart({
-          marks: [
-            polar({
-              inset: 8,
-              marks: [
-                radialArc(slices, {
-                  innerRadius: ({ radius }) => radius * 0.58,
-                  cornerRadius: 2,
-                  color: (slice) => slice.data.label,
-                  key: (slice) => slice.data.label,
-                }),
-              ],
-            }),
-          ],
-          guides: false,
-          theme: { palette: SLICE_PALETTE },
-          tooltip: {
-            use: tooltip,
-            className: 'catalog-chart-tooltip',
-            content: (points: readonly ChartPoint<unknown>[]) => {
-              const focused = points[0];
-
-              if (!focused) {
-                return { rows: [] };
-              }
-
-              const slice = sliceOf(focused);
-
-              return {
-                title: slice.label,
-                color: focused.color,
-                rows: [{ label: seriesName, value: slice.value.toLocaleString() }],
-              };
-            },
-          },
-        });
-      }
       default:
         return defineChart({
           marks: [lineY(data, { x: 'label', y: 'value', curve, strokeWidth: 2 })],
@@ -155,15 +111,80 @@ export default function CatalogChartInner({ props }: { props: Props }) {
     }
   }, [data, kind, seriesName]);
 
+  return <Chart {...CHART_PROPS} ariaLabel={label} definition={definition} />;
+}
+
+function DonutChart({ data, label, seriesName }: KindChartProps) {
+  const definition = useMemo(() => {
+    /* d3's pie layout emits the exact angle channels radialArc reads; the donut hole is just a
+       nonzero inner radius. Source order is meaningful, hence sort(null). */
+    const slices = pie<Point>()
+      .sort(null)
+      .padAngle(0.012)
+      .value((point) => point.value)(data);
+    const sliceOf = (focused: ChartPoint<unknown>) => (focused.datum as PieArcDatum<Point>).data;
+
+    return defineChart({
+      marks: [
+        polar({
+          inset: 8,
+          marks: [
+            radialArc(slices, {
+              innerRadius: ({ radius }) => radius * 0.58,
+              cornerRadius: 2,
+              color: (slice) => slice.data.label,
+              key: (slice) => slice.data.label,
+            }),
+          ],
+        }),
+      ],
+      guides: false,
+      theme: { palette: SLICE_PALETTE },
+      tooltip: {
+        use: tooltip,
+        className: 'catalog-chart-tooltip',
+        content: (points: readonly ChartPoint<unknown>[]) => {
+          const focused = points[0];
+
+          if (!focused) {
+            return { rows: [] };
+          }
+
+          const slice = sliceOf(focused);
+
+          return {
+            title: slice.label,
+            color: focused.color,
+            rows: [{ label: seriesName, value: slice.value.toLocaleString() }],
+          };
+        },
+      },
+    });
+  }, [data, seriesName]);
+
+  return <Chart {...CHART_PROPS} ariaLabel={label} definition={definition} />;
+}
+
+/**
+ * Default export (the only one in the catalog) because chart.tsx lazy-loads this module via
+ * React.lazy, which requires a default export.
+ *
+ * Paint comes from CSS: the library's default theme is `currentColor` plus `--ts-chart-*` custom
+ * properties, both mapped to house tokens by the `.catalog-chart` rule in styles.css, so a scheme
+ * switch recolors the chart without rebuilding the definition.
+ */
+export default function CatalogChartInner({ props }: { props: Props }) {
+  const { data, kind } = props;
+  const seriesName = props.valueLabel ?? 'value';
+  const chartLabel = `${seriesName} ${kind} chart, ${data.length} data points`;
+
   return (
     <>
-      <Chart
-        ariaLabel={chartLabel}
-        className="catalog-chart"
-        definition={definition}
-        height={256}
-        initialWidth={640}
-      />
+      {kind === 'donut' ? (
+        <DonutChart data={data} label={chartLabel} seriesName={seriesName} />
+      ) : (
+        <CartesianChart data={data} kind={kind} label={chartLabel} seriesName={seriesName} />
+      )}
       {/* The plotted values are only reachable by hover/keyboard tooltip, so the same series is
           repeated as a table for assistive tech. */}
       <table className="sr-only">

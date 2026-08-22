@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useSyncExternalStore } from 'react';
 
 import { Link, useRouter } from '@tanstack/react-router';
 import { BookOpen, LogOut, Settings, SunMoon } from 'lucide-react';
@@ -7,7 +7,14 @@ import { Identicon } from '@/components/account/identicon';
 import { DropdownMenu } from '@/components/ui/dropdown-menu';
 import { authClient } from '@/lib/auth-client';
 import type { ThemePreference } from '@/lib/theme';
-import { getStoredThemePreference, setThemePreference } from '@/lib/theme';
+import {
+  getStoredThemePreference,
+  setThemePreference,
+  subscribeThemePreference,
+} from '@/lib/theme';
+
+/** SSR/hydration snapshot: matches a fresh browser, so server and first client render agree. */
+const getServerThemePreference = (): ThemePreference => 'system';
 
 const themeOptions: { value: ThemePreference; label: string }[] = [
   { value: 'system', label: 'System' },
@@ -21,18 +28,11 @@ const themeOptions: { value: ThemePreference; label: string }[] = [
  */
 export function AvatarMenu({ email, seed }: { email: string; seed: string }) {
   const router = useRouter();
-  // Starts at the default and syncs from localStorage after mount, so the SSR and first client
-  // render agree.
-  const [theme, setTheme] = useState<ThemePreference>('system');
-
-  useEffect(() => {
-    setTheme(getStoredThemePreference());
-  }, []);
-
-  function handleThemeChange(value: ThemePreference) {
-    setTheme(value);
-    setThemePreference(value);
-  }
+  const theme = useSyncExternalStore(
+    subscribeThemePreference,
+    getStoredThemePreference,
+    getServerThemePreference,
+  );
 
   async function handleSignOut() {
     try {
@@ -82,7 +82,7 @@ export function AvatarMenu({ email, seed }: { email: string; seed: string }) {
                 <DropdownMenu.Positioner>
                   <DropdownMenu.Popup className="w-32">
                     <DropdownMenu.RadioGroup
-                      onValueChange={(value) => handleThemeChange(value as ThemePreference)}
+                      onValueChange={(value) => setThemePreference(value as ThemePreference)}
                       value={theme}
                     >
                       {themeOptions.map((option) => (

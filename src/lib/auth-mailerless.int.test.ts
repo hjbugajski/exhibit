@@ -60,10 +60,11 @@ beforeAll(async () => {
   process.env.TRUSTED_PROXIES = TRUSTED_PROXY;
 
   server = await bootTestServer(new URL('../../vite.config.ts', import.meta.url));
-}, 30000);
+  // Cold-cache boots of the in-process dev server can far exceed the 10s default hook budget.
+}, 120_000);
 
 afterAll(async () => {
-  await server.vite.close();
+  await server?.vite.close();
   rmSync(dbDir, { recursive: true, force: true });
 
   delete process.env.TRUSTED_PROXIES;
