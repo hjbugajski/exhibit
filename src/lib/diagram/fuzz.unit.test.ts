@@ -7,9 +7,10 @@
  * not re-explore an identical set forever, and asserts the property that actually matters: either
  * an error diagnostic explains why nothing was drawn, or what was drawn is well formed.
  *
- * Sized for CI at roughly four thousand cases. `DIAGRAM_FUZZ=wide` quadruples the seed rotation for
- * a deliberate local run; that is where a new failure is most likely to be found, and where the
- * repro seed comes from once it is.
+ * Depth is tiered by where the run happens. A local `pnpm test` keeps the edit loop fast on one
+ * seed (~4k cases across the corpus); CI runs three, so every merge still gets the depth this file
+ * was sized for; `DIAGRAM_FUZZ=wide` runs twelve for a deliberate deep pass — that is where a new
+ * failure is most likely to be found, and where the repro seed comes from once it is.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -24,7 +25,9 @@ import { defaultMetrics } from './metrics.ts';
 const SEEDS =
   process.env.DIAGRAM_FUZZ === 'wide'
     ? [3, 11, 29, 47, 71, 97, 131, 173, 211, 257, 307, 367]
-    : [3, 11, 29];
+    : process.env.CI
+      ? [3, 11, 29]
+      : [3];
 const PER_SEED = 60;
 
 const options = {
