@@ -12,7 +12,9 @@ export function useLocalStorageState<T extends string>(
 ): [T, (value: T) => void] {
   const [value, setStateValue] = useState<T>(initialValue);
   const isValidValueRef = useRef(isValidValue);
-  isValidValueRef.current = isValidValue;
+  useEffect(() => {
+    isValidValueRef.current = isValidValue;
+  });
 
   useEffect(() => {
     // Storage access throws outright when it is disabled (Safari private mode, blocked cookies);

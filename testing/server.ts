@@ -60,7 +60,7 @@ export async function bootTestServer(configFileUrl: URL): Promise<TestServer> {
  * (non-Nitro-runner-503) response comes back from a side-effect-free route, before handing the
  * server back to the caller.
  */
-async function waitUntilNitroReady(devServer: DevServerHandle, timeoutMs = 20_000): Promise<void> {
+async function waitUntilNitroReady(devServer: DevServerHandle, timeoutMs = 90_000): Promise<void> {
   const deadline = Date.now() + timeoutMs;
   let attempt = 0;
   let lastError: unknown;

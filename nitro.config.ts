@@ -14,6 +14,9 @@ export default defineConfig({
   modules: [
     evlog({
       env: { service: 'exhibit' },
+      // Int tests boot this server in process; keep per-request log lines out of vitest output
+      // (`enabled`, not `silent` — silent without a drain warns at boot).
+      enabled: process.env.NODE_ENV !== 'test',
     }),
   ],
 });

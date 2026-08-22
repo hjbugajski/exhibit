@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { Link, useRouter } from '@tanstack/react-router';
 import { BookOpen, LogOut, Settings, SunMoon } from 'lucide-react';
@@ -8,6 +8,7 @@ import { DropdownMenu } from '@/components/ui/dropdown-menu';
 import { authClient } from '@/lib/auth-client';
 import type { ThemePreference } from '@/lib/theme';
 import { getStoredThemePreference, setThemePreference } from '@/lib/theme';
+import { useHydrated } from '@/lib/use-hydrated';
 
 const themeOptions: { value: ThemePreference; label: string }[] = [
   { value: 'system', label: 'System' },
@@ -21,16 +22,14 @@ const themeOptions: { value: ThemePreference; label: string }[] = [
  */
 export function AvatarMenu({ email, seed }: { email: string; seed: string }) {
   const router = useRouter();
-  // Starts at the default and syncs from localStorage after mount, so the SSR and first client
-  // render agree.
-  const [theme, setTheme] = useState<ThemePreference>('system');
-
-  useEffect(() => {
-    setTheme(getStoredThemePreference());
-  }, []);
+  // Shows the default until hydration completes, so the SSR and first client render agree; after
+  // that the stored preference wins until the owner picks one here.
+  const hydrated = useHydrated();
+  const [override, setOverride] = useState<ThemePreference | null>(null);
+  const theme = override ?? (hydrated ? getStoredThemePreference() : 'system');
 
   function handleThemeChange(value: ThemePreference) {
-    setTheme(value);
+    setOverride(value);
     setThemePreference(value);
   }
 

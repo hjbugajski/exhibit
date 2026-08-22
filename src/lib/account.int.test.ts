@@ -175,10 +175,10 @@ describe('/settings server fns (through the real server-fn RPC route)', () => {
       'POST',
       ORIGIN,
     );
-  }, 30000);
+  });
 
   afterAll(async () => {
-    await server.vite.close();
+    await server?.vite.close();
   });
 
   it('has foreign keys on, without which every cascade below silently no-ops', async () => {

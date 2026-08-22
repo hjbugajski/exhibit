@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useFormAction } from '@/lib/use-form-action';
 
@@ -21,7 +21,9 @@ export function usePaginatedList<Item>(firstPage: CursorPage<Item>) {
   const loadMoreAction = useFormAction();
 
   const firstPageRef = useRef(firstPage);
-  firstPageRef.current = firstPage;
+  useEffect(() => {
+    firstPageRef.current = firstPage;
+  });
 
   if (firstPage !== prevFirstPage) {
     setPrevFirstPage(firstPage);

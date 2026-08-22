@@ -62,13 +62,19 @@ describe('the pipeline holds its contract on mutated sources', () => {
     expect(new Set(corpus.map((fixture) => fixture.family)).size).toBe(7);
   });
 
-  it.each(corpus)('$name', ({ source }) => {
-    for (const seed of SEEDS) {
-      for (const mutated of mutations(source, PER_SEED, seed)) {
-        assertContractHolds(mutated, options);
+  // The heaviest fixtures run close to the 5s default on their own; on a cold cache with the whole
+  // suite transforming concurrently they blow past it, so the budget is stated.
+  it.each(corpus)(
+    '$name',
+    ({ source }) => {
+      for (const seed of SEEDS) {
+        for (const mutated of mutations(source, PER_SEED, seed)) {
+          assertContractHolds(mutated, options);
+        }
       }
-    }
-  });
+    },
+    30_000,
+  );
 
   // The undamaged fixtures must hold it too, or the mutation runs above are measuring the wrong
   // baseline — and this is the case that fails first when a family changes.

@@ -78,39 +78,52 @@ function Root({
     // renders inside it. Claiming the attribute here keeps the wrapper out of the tab order.
     element.setAttribute('tabindex', '-1');
 
-    const markerInstance = new MapLibreGL.Marker({
+    return new MapLibreGL.Marker({
       ...markerOptions,
       element,
       draggable,
     }).setLngLat([longitude, latitude]);
+  });
+
+  // Wired post-mount, not in the construction above, so nothing reads the callbacks ref during
+  // render; every handler resolves the latest callback at event time.
+  useEffect(() => {
+    const element = marker.getElement();
 
     const handleClick = (e: MouseEvent) => callbacksRef.current.onClick?.(e);
     const handleMouseEnter = (e: MouseEvent) => callbacksRef.current.onMouseEnter?.(e);
     const handleMouseLeave = (e: MouseEvent) => callbacksRef.current.onMouseLeave?.(e);
 
-    markerInstance.getElement()?.addEventListener('click', handleClick);
-    markerInstance.getElement()?.addEventListener('mouseenter', handleMouseEnter);
-    markerInstance.getElement()?.addEventListener('mouseleave', handleMouseLeave);
+    element?.addEventListener('click', handleClick);
+    element?.addEventListener('mouseenter', handleMouseEnter);
+    element?.addEventListener('mouseleave', handleMouseLeave);
 
     const handleDragStart = () => {
-      const lngLat = markerInstance.getLngLat();
+      const lngLat = marker.getLngLat();
       callbacksRef.current.onDragStart?.({ lng: lngLat.lng, lat: lngLat.lat });
     };
     const handleDrag = () => {
-      const lngLat = markerInstance.getLngLat();
+      const lngLat = marker.getLngLat();
       callbacksRef.current.onDrag?.({ lng: lngLat.lng, lat: lngLat.lat });
     };
     const handleDragEnd = () => {
-      const lngLat = markerInstance.getLngLat();
+      const lngLat = marker.getLngLat();
       callbacksRef.current.onDragEnd?.({ lng: lngLat.lng, lat: lngLat.lat });
     };
 
-    markerInstance.on('dragstart', handleDragStart);
-    markerInstance.on('drag', handleDrag);
-    markerInstance.on('dragend', handleDragEnd);
+    marker.on('dragstart', handleDragStart);
+    marker.on('drag', handleDrag);
+    marker.on('dragend', handleDragEnd);
 
-    return markerInstance;
-  });
+    return () => {
+      element?.removeEventListener('click', handleClick);
+      element?.removeEventListener('mouseenter', handleMouseEnter);
+      element?.removeEventListener('mouseleave', handleMouseLeave);
+      marker.off('dragstart', handleDragStart);
+      marker.off('drag', handleDrag);
+      marker.off('dragend', handleDragEnd);
+    };
+  }, [marker, callbacksRef]);
 
   useEffect(() => {
     if (!map) {

@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 
 import { areaY, barY, defineChart, dot, lineY } from '@tanstack/charts';
-import type { ChartPoint, DomChartDefinition } from '@tanstack/charts';
+import type { ChartPoint } from '@tanstack/charts';
 import { scaleBand } from '@tanstack/charts-scales/band';
 import { scaleLinear } from '@tanstack/charts-scales/linear';
 import { scalePoint } from '@tanstack/charts-scales/point';
@@ -37,9 +37,16 @@ export default function CatalogChartInner({ props }: { props: Props }) {
   const seriesName = props.valueLabel ?? 'value';
   const chartLabel = `${seriesName} ${kind} chart, ${data.length} data points`;
 
-  /* One definition type across kinds: the phantom datum generic differs per branch (polar marks
-     carry d3 pie slices), and the Chart prop takes a single definition. */
-  const definition = useMemo<DomChartDefinition<any>>(() => {
+  /* Each branch renders its own <Chart>: the phantom datum generic differs per kind (polar marks
+     carry d3 pie slices), so the memo holds the fully-typed element per branch instead of a
+     definition erased to one shared generic. */
+  const chart = useMemo(() => {
+    const chartProps = {
+      ariaLabel: chartLabel,
+      className: 'catalog-chart',
+      height: 256,
+      initialWidth: 640,
+    };
     /* `content` outranks the automatic item layout, so the category heads the tooltip as a bold
        title and the value gets a labelled row of its own. */
     const tooltipSpec = {
@@ -71,33 +78,48 @@ export default function CatalogChartInner({ props }: { props: Props }) {
 
     switch (kind) {
       case 'bar':
-        return defineChart({
-          marks: [
-            // Uniform radius: per-corner rounding is not expressible yet (TanStack/charts#28).
-            barY(data, { x: 'label', y: 'value', radius: 2 }),
-          ],
-          x: { scale: () => scaleBand<string>().padding(0.18) },
-          y,
-          tooltip: tooltipSpec,
-        });
+        return (
+          <Chart
+            {...chartProps}
+            definition={defineChart({
+              marks: [
+                // Uniform radius: per-corner rounding is not expressible yet (TanStack/charts#28).
+                barY(data, { x: 'label', y: 'value', radius: 2 }),
+              ],
+              x: { scale: () => scaleBand<string>().padding(0.18) },
+              y,
+              tooltip: tooltipSpec,
+            })}
+          />
+        );
       case 'area':
-        return defineChart({
-          // areaY fills at 0.2 opacity and draws no edge, so the line rides on top of it.
-          marks: [
-            areaY(data, { x: 'label', y: 'value', curve }),
-            lineY(data, { x: 'label', y: 'value', curve, strokeWidth: 2 }),
-          ],
-          x,
-          y,
-          tooltip: tooltipSpec,
-        });
+        return (
+          <Chart
+            {...chartProps}
+            definition={defineChart({
+              // areaY fills at 0.2 opacity and draws no edge, so the line rides on top of it.
+              marks: [
+                areaY(data, { x: 'label', y: 'value', curve }),
+                lineY(data, { x: 'label', y: 'value', curve, strokeWidth: 2 }),
+              ],
+              x,
+              y,
+              tooltip: tooltipSpec,
+            })}
+          />
+        );
       case 'scatter':
-        return defineChart({
-          marks: [dot(data, { x: 'label', y: 'value', r: 3.5 })],
-          x,
-          y,
-          tooltip: tooltipSpec,
-        });
+        return (
+          <Chart
+            {...chartProps}
+            definition={defineChart({
+              marks: [dot(data, { x: 'label', y: 'value', r: 3.5 })],
+              x,
+              y,
+              tooltip: tooltipSpec,
+            })}
+          />
+        );
       case 'donut': {
         /* d3's pie layout emits the exact angle channels radialArc reads; the donut hole is just a
            nonzero inner radius. Source order is meaningful, hence sort(null). */
@@ -108,62 +130,66 @@ export default function CatalogChartInner({ props }: { props: Props }) {
         const sliceOf = (focused: ChartPoint<unknown>) =>
           (focused.datum as PieArcDatum<Point>).data;
 
-        return defineChart({
-          marks: [
-            polar({
-              inset: 8,
+        return (
+          <Chart
+            {...chartProps}
+            definition={defineChart({
               marks: [
-                radialArc(slices, {
-                  innerRadius: ({ radius }) => radius * 0.58,
-                  cornerRadius: 2,
-                  color: (slice) => slice.data.label,
-                  key: (slice) => slice.data.label,
+                polar({
+                  inset: 8,
+                  marks: [
+                    radialArc(slices, {
+                      innerRadius: ({ radius }) => radius * 0.58,
+                      cornerRadius: 2,
+                      color: (slice) => slice.data.label,
+                      key: (slice) => slice.data.label,
+                    }),
+                  ],
                 }),
               ],
-            }),
-          ],
-          guides: false,
-          theme: { palette: SLICE_PALETTE },
-          tooltip: {
-            use: tooltip,
-            className: 'catalog-chart-tooltip',
-            content: (points: readonly ChartPoint<unknown>[]) => {
-              const focused = points[0];
+              guides: false,
+              theme: { palette: SLICE_PALETTE },
+              tooltip: {
+                use: tooltip,
+                className: 'catalog-chart-tooltip',
+                content: (points: readonly ChartPoint<unknown>[]) => {
+                  const focused = points[0];
 
-              if (!focused) {
-                return { rows: [] };
-              }
+                  if (!focused) {
+                    return { rows: [] };
+                  }
 
-              const slice = sliceOf(focused);
+                  const slice = sliceOf(focused);
 
-              return {
-                title: slice.label,
-                color: focused.color,
-                rows: [{ label: seriesName, value: slice.value.toLocaleString() }],
-              };
-            },
-          },
-        });
+                  return {
+                    title: slice.label,
+                    color: focused.color,
+                    rows: [{ label: seriesName, value: slice.value.toLocaleString() }],
+                  };
+                },
+              },
+            })}
+          />
+        );
       }
       default:
-        return defineChart({
-          marks: [lineY(data, { x: 'label', y: 'value', curve, strokeWidth: 2 })],
-          x,
-          y,
-          tooltip: tooltipSpec,
-        });
+        return (
+          <Chart
+            {...chartProps}
+            definition={defineChart({
+              marks: [lineY(data, { x: 'label', y: 'value', curve, strokeWidth: 2 })],
+              x,
+              y,
+              tooltip: tooltipSpec,
+            })}
+          />
+        );
     }
-  }, [data, kind, seriesName]);
+  }, [data, kind, seriesName, chartLabel]);
 
   return (
     <>
-      <Chart
-        ariaLabel={chartLabel}
-        className="catalog-chart"
-        definition={definition}
-        height={256}
-        initialWidth={640}
-      />
+      {chart}
       {/* The plotted values are only reachable by hover/keyboard tooltip, so the same series is
           repeated as a table for assistive tech. */}
       <table className="sr-only">

@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -194,7 +194,12 @@ describe('ArtifactDetailView', () => {
   });
 
   it('pretty-prints the spec body in the Source view', async () => {
-    const spec = { root: 'a', elements: { a: { type: 'Prose', props: {}, children: [] } } };
+    // A valid spec: Prose requires `markdown`, and the inline SpecView renders it before the Source
+    // tab is clicked — an invalid element would crash into the error boundary and log.
+    const spec = {
+      root: 'a',
+      elements: { a: { type: 'Prose', props: { markdown: 'Body copy.' }, children: [] } },
+    };
     const detail: ArtifactDetail = {
       artifact: makeArtifact(),
       version: makeVersion({ body: JSON.stringify(spec) }),
@@ -384,7 +389,9 @@ describe('ArtifactDetailView interaction state', () => {
     function Harness({ initial }: { initial: ArtifactDetail }) {
       const [detail, setDetail] = useState(initial);
 
-      showVersion = setDetail;
+      useEffect(() => {
+        showVersion = setDetail;
+      }, []);
 
       return <ArtifactDetailView detail={detail} id="fixture-id" />;
     }

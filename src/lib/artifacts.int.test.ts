@@ -64,7 +64,7 @@ beforeAll(async () => {
     type: 'spec',
     body: JSON.stringify({
       root: 'a',
-      elements: { a: { type: 'Prose', props: {}, children: [] } },
+      elements: { a: { type: 'Prose', props: { markdown: 'Body copy.' }, children: [] } },
     }),
   });
 
@@ -142,10 +142,10 @@ beforeAll(async () => {
     'POST',
     ORIGIN,
   );
-}, 30000);
+});
 
 afterAll(async () => {
-  await server.vite.close();
+  await server?.vite.close();
   rmSync(dbDir, { recursive: true, force: true });
 });
 

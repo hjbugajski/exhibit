@@ -185,10 +185,13 @@ export function useRefinedMeasurer(
   enabled: boolean,
   onRefine: (measurer: TextMeasurer) => void,
 ): void {
-  // Whatever is drawn when the fonts settle is a fine sample; the effect must not re-run for it.
+  // Whatever is drawn when the fonts settle is a fine sample; the audit effect must not re-run for
+  // it, so the scene rides along in a ref (synced in its own effect, which runs first).
   const latest = useRef(scene);
 
-  latest.current = scene;
+  useEffect(() => {
+    latest.current = scene;
+  });
 
   const drawn = scene !== null;
 

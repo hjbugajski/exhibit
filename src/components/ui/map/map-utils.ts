@@ -1,14 +1,18 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 import type * as MapLibreGL from 'maplibre-gl';
 
 /**
  * Keeps a ref in sync with the latest value so callbacks/effects can read it without depending on
- * it (avoiding stale closures without re-subscribing).
+ * it (avoiding stale closures without re-subscribing). Synced in an effect, not during render, so
+ * readers see the value from the last commit — fine for event handlers and effects, which is all
+ * this is for.
  */
 export function useLatest<T>(value: T) {
   const ref = useRef(value);
-  ref.current = value;
+  useEffect(() => {
+    ref.current = value;
+  });
   return ref;
 }
 

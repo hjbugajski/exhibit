@@ -34,6 +34,9 @@ export function createAuth(options: { disableSignUp?: boolean } = {}) {
   return betterAuth({
     baseURL: env.BASE_URL,
     secret: env.BETTER_AUTH_SECRET,
+    // Int tests exercise failure paths (wrong password, etc.) on purpose; keep Better Auth's
+    // console warnings out of test output.
+    logger: { disabled: env.NODE_ENV === 'test' },
     database: drizzleAdapter(db, { provider: 'sqlite', schema: authSchema }),
     disabledPaths: ['/token'],
     emailAndPassword: {

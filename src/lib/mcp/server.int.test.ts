@@ -832,9 +832,8 @@ describe('set_artifact_archived', () => {
     expect(restored.structuredContent).toEqual({ id, archived: false });
 
     const visible = await callTool(client, 'list_artifacts', {});
-    expect((visible.structuredContent?.items as { id: string }[]).map((item) => item.id)).toEqual([
-      id,
-    ]);
+    const visibleItems = (visible.structuredContent?.items ?? []) as { id: string }[];
+    expect(visibleItems.map((item) => item.id)).toEqual([id]);
   });
 
   it('is idempotent: archiving an already archived artifact still succeeds', async () => {
