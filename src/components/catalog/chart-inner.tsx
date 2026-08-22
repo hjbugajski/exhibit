@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 
 import { areaY, barY, defineChart, dot, lineY } from '@tanstack/charts';
-import type { ChartDefinition, ChartPoint } from '@tanstack/charts';
+import type { ChartPoint, DomChartDefinition } from '@tanstack/charts';
 import { scaleBand } from '@tanstack/charts-scales/band';
 import { scaleLinear } from '@tanstack/charts-scales/linear';
 import { scalePoint } from '@tanstack/charts-scales/point';
@@ -39,7 +39,7 @@ export default function CatalogChartInner({ props }: { props: Props }) {
 
   /* One definition type across kinds: the phantom datum generic differs per branch (polar marks
      carry d3 pie slices), and the Chart prop takes a single definition. */
-  const definition = useMemo<ChartDefinition>(() => {
+  const definition = useMemo<DomChartDefinition<any>>(() => {
     /* `content` outranks the automatic item layout, so the category heads the tooltip as a bold
        title and the value gets a labelled row of its own. */
     const tooltipSpec = {
@@ -127,7 +127,7 @@ export default function CatalogChartInner({ props }: { props: Props }) {
           tooltip: {
             use: tooltip,
             className: 'catalog-chart-tooltip',
-            content: (points) => {
+            content: (points: readonly ChartPoint<unknown>[]) => {
               const focused = points[0];
 
               if (!focused) {

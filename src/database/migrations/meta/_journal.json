@@ -15,6 +15,20 @@
       "when": 1785701942900,
       "tag": "0001_loud_human_torch",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1787426287625,
+      "tag": "0002_silly_firebrand",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1787426323703,
+      "tag": "0003_pale_nehzno",
+      "breakpoints": true
     }
   ]
 }

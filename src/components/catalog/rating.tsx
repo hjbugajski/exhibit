@@ -53,20 +53,18 @@ export function Rating({ props }: { props: Props }) {
             className="has-focus-visible:ring-focus flex cursor-pointer items-center rounded-sm p-0.5 has-focus-visible:ring-3"
             key={star}
             /*
-             * Clearing lives on the label, not on the item: the item is a 1px invisible radio whose
-             * visible star is a sibling, so a pointer click never lands on it. Native radios emit no
-             * change event when the checked value is unchanged, so onValueChange alone can't see a
-             * re-activation of the current star.
-             *
-             * Exactly one transition per activation:
-             * - Pointer click on the star bubbles here undefaulted; preventDefault cancels the
-             *   label's forwarding to the hidden input, so no change event re-selects the star.
-             * - Keyboard Space fires a click on the radio, which preventDefaults it and re-dispatches
-             *   an undefaulted click on the hidden input — that one clears here, and the original
-             *   click is skipped by the defaultPrevented guard.
+             * Native radios emit no change event when the checked value is unchanged, so
+             * onValueChange alone can't see a re-activation of the current star. Since Base UI 1.7
+             * the hidden input's clicks no longer bubble to ancestors (base-ui #5176), so clearing
+             * needs a handler on each element a click can land on — exactly one fires per
+             * activation:
+             * - A pointer click on the visible star bubbles to this label; preventDefault cancels
+             *   the label's forwarding to the hidden input, so the item handler below never sees it
+             *   and no change event re-selects the star.
+             * - Keyboard Space (and a direct click on the input) lands on the item handler only.
              */
             onClick={(event) => {
-              if (event.defaultPrevented || star !== value) {
+              if (star !== value) {
                 return;
               }
 
@@ -80,6 +78,14 @@ export function Rating({ props }: { props: Props }) {
                  leaving an invisible in-flow 16px box that spread the stars apart. These utilities
                  replace them. */
               className="absolute size-px opacity-0"
+              onClick={(event) => {
+                if (star !== value) {
+                  return;
+                }
+
+                event.preventDefault();
+                set(props.statePath, 0);
+              }}
               value={String(star)}
             />
             <Star

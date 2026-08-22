@@ -269,7 +269,8 @@ describe('MCP OAuth flow (DCR -> PKCE authorize -> consent -> token -> /mcp)', (
       }),
     });
 
-    expect(registerResponse.status).toBe(200);
+    // RFC 7591 §3.2.1: registration success is 201 Created (Better Auth 1.7 fixed the status).
+    expect(registerResponse.status).toBe(201);
     const client = (await registerResponse.json()) as { client_id: string };
     expect(client.client_id).toBeTruthy();
 
