@@ -341,8 +341,8 @@ function Svg({ views, className, children, ...props }: DiagramSvgProps) {
       className={cn(classNames.svg, className)}
       {...props}
     >
-      {/* createElement, not JSX with a render-scoped variable: the resolved view is a stable
-          registry entry per family, not a component defined during render. */}
+      {/* The resolved view is a stable registry entry per family, not a component created during
+          render, so this never remounts the subtree. */}
       {children ?? createElement(resolveFamilyView(scene, views), { scene })}
     </svg>
   );

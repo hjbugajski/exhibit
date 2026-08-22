@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { useFormAction } from '@/lib/use-form-action';
 
@@ -11,19 +11,14 @@ export interface CursorPage<Item> {
  * Accumulates cursor-paginated pages, resetting to `firstPage` whenever its identity changes (e.g.
  * a filter/sort/search change reran the loader).
  *
- * Guards against stale responses: `firstPage` is tracked in a ref, so a `loadMore` request already
- * in flight for a previous query can compare against the latest `firstPage` and drop its result
- * instead of appending results for the wrong query when it resolves.
+ * Guards against stale responses: `pages[0]` always holds the `firstPage` the list was built from,
+ * so a `loadMore` request still in flight when a filter change resets the list sees the mismatch
+ * inside its updater and drops its result instead of appending items for the wrong query.
  */
 export function usePaginatedList<Item>(firstPage: CursorPage<Item>) {
   const [pages, setPages] = useState<CursorPage<Item>[]>([firstPage]);
   const [prevFirstPage, setPrevFirstPage] = useState(firstPage);
   const loadMoreAction = useFormAction();
-
-  const firstPageRef = useRef(firstPage);
-  useEffect(() => {
-    firstPageRef.current = firstPage;
-  });
 
   if (firstPage !== prevFirstPage) {
     setPrevFirstPage(firstPage);
@@ -40,13 +35,9 @@ export function usePaginatedList<Item>(firstPage: CursorPage<Item>) {
     void loadMoreAction.run(async () => {
       const next = await fetchNextPage(cursor);
 
-      // A filter/sort change reran the loader while this request was in flight - its results belong
-      // to a stale query, so drop them.
-      if (firstPage !== firstPageRef.current) {
-        return;
-      }
-
-      setPages((prev) => [...prev, next]);
+      // The updater runs synchronously against current state, so the check cannot race the
+      // render-phase reset the way an external ref comparison could.
+      setPages((prev) => (prev[0] === firstPage ? [...prev, next] : prev));
     });
   }
 

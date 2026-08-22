@@ -65,9 +65,8 @@ export function useStableValue<T>(value: T): T {
   const key = JSON.stringify(value ?? null);
   const [held, setHeld] = useState<{ key: string; value: T }>({ key, value });
 
-  // The store-during-render pattern (React's sanctioned "adjusting state when a prop changes"):
-  // the fresh value is returned immediately and the re-render the setState schedules settles on
-  // the same object.
+  // Store during render (React's "adjusting state when a prop changes"): the fresh value is
+  // returned now, and the re-render this setState schedules settles on that same object.
   if (held.key !== key) {
     setHeld({ key, value });
 

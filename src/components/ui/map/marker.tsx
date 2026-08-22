@@ -85,8 +85,8 @@ function Root({
     }).setLngLat([longitude, latitude]);
   });
 
-  // Wired post-mount, not in the construction above, so nothing reads the callbacks ref during
-  // render; every handler resolves the latest callback at event time.
+  // Wired in an effect so nothing reads the callbacks ref during render; each handler resolves the
+  // latest callback at event time.
   useEffect(() => {
     const element = marker.getElement();
 
@@ -94,9 +94,9 @@ function Root({
     const handleMouseEnter = (e: MouseEvent) => callbacksRef.current.onMouseEnter?.(e);
     const handleMouseLeave = (e: MouseEvent) => callbacksRef.current.onMouseLeave?.(e);
 
-    element?.addEventListener('click', handleClick);
-    element?.addEventListener('mouseenter', handleMouseEnter);
-    element?.addEventListener('mouseleave', handleMouseLeave);
+    element.addEventListener('click', handleClick);
+    element.addEventListener('mouseenter', handleMouseEnter);
+    element.addEventListener('mouseleave', handleMouseLeave);
 
     const handleDragStart = () => {
       const lngLat = marker.getLngLat();
@@ -116,9 +116,9 @@ function Root({
     marker.on('dragend', handleDragEnd);
 
     return () => {
-      element?.removeEventListener('click', handleClick);
-      element?.removeEventListener('mouseenter', handleMouseEnter);
-      element?.removeEventListener('mouseleave', handleMouseLeave);
+      element.removeEventListener('click', handleClick);
+      element.removeEventListener('mouseenter', handleMouseEnter);
+      element.removeEventListener('mouseleave', handleMouseLeave);
       marker.off('dragstart', handleDragStart);
       marker.off('drag', handleDrag);
       marker.off('dragend', handleDragEnd);

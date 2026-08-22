@@ -142,7 +142,8 @@ beforeAll(async () => {
     'POST',
     ORIGIN,
   );
-});
+  // Cold-cache boots of the in-process dev server can far exceed the 10s default hook budget.
+}, 120_000);
 
 afterAll(async () => {
   await server?.vite.close();

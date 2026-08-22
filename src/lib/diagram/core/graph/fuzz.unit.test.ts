@@ -108,9 +108,9 @@ describe('layoutGraph over random models', () => {
       }
     }
 
-    // A thousand layouts run in about four seconds alone and past the 5s default under a loaded
-    // suite — and past 30s on a cold cache with every worker transforming at once — so the budget
-    // is stated generously rather than left to whatever else the runner is doing.
+    // A thousand layouts run in about four seconds alone, and far longer under a loaded suite on a
+    // cold cache with every worker transforming at once, so the budget is stated generously rather
+    // than left to whatever else the runner is doing.
   }, 120_000);
 
   it('is reproducible for a seed', () => {

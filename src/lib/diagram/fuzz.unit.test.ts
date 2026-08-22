@@ -62,8 +62,8 @@ describe('the pipeline holds its contract on mutated sources', () => {
     expect(new Set(corpus.map((fixture) => fixture.family)).size).toBe(7);
   });
 
-  // The heaviest fixtures run close to the 5s default on their own; on a cold cache with the whole
-  // suite transforming concurrently they blow past it, so the budget is stated.
+  // The heaviest fixtures run close to the 5s default alone, and past it on a cold cache with the
+  // whole suite transforming concurrently, so the budget is stated.
   it.each(corpus)(
     '$name',
     ({ source }) => {

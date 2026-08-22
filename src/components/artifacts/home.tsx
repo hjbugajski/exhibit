@@ -37,15 +37,16 @@ export function Home() {
   // resync it.
   const pushedQuery = useRef(search.query);
 
-  // External-change resync. Declared before the navigate effect so the adopted value is already in
-  // place when the debounce catches up — adopting is what stops that effect from pushing a
-  // redundant no-op write (rerunning both gallery loaders).
+  // Resyncs from an external change and adopts it as our own last write, or the navigate effect
+  // below would push a redundant no-op write (rerunning both gallery loaders) once the debounce
+  // catches up.
   useEffect(() => {
     if (search.query !== pushedQuery.current) {
       setQueryInput(search.query ?? '');
       pushedQuery.current = search.query;
     }
   }, [search.query]);
+
   // Starts at 'grid' for a deterministic SSR render, then syncs from localStorage after mount to
   // avoid a hydration mismatch.
   const [view, setView] = useLocalStorageState<GalleryView>(

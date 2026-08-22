@@ -11,10 +11,9 @@ export function useLocalStorageState<T extends string>(
   isValidValue: (value: string) => value is T,
 ): [T, (value: T) => void] {
   const [value, setStateValue] = useState<T>(initialValue);
+  // Captured once: the validator is only read by the mount effect below, so a changed identity
+  // could never be observed unless `key` also changed mid-life, which no caller does.
   const isValidValueRef = useRef(isValidValue);
-  useEffect(() => {
-    isValidValueRef.current = isValidValue;
-  });
 
   useEffect(() => {
     // Storage access throws outright when it is disabled (Safari private mode, blocked cookies);
