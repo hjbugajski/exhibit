@@ -59,3 +59,21 @@ describe('/sign-in beforeLoad', () => {
     expect(caught).toBeUndefined();
   });
 });
+
+describe('/sign-in validateSearch', () => {
+  const validateSearch = Route.options.validateSearch as (search: Record<string, unknown>) => {
+    redirect?: string;
+  };
+
+  it('drops a backslash redirect that resolves off-origin', () => {
+    expect(validateSearch({ redirect: '/\\evil.com' })).toEqual({});
+  });
+
+  it('keeps a same-origin redirect', () => {
+    expect(validateSearch({ redirect: '/a/xyz' })).toEqual({ redirect: '/a/xyz' });
+  });
+
+  it('returns no redirect key when the param is absent', () => {
+    expect(validateSearch({})).toEqual({});
+  });
+});

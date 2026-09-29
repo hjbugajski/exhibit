@@ -10,6 +10,7 @@ import { Form } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { authClient } from '@/lib/auth-client';
+import { sameOriginPath } from '@/lib/same-origin-path';
 import { useFormAction } from '@/lib/use-form-action';
 
 export function SignInView({
@@ -73,7 +74,7 @@ export function SignInView({
         return;
       }
 
-      await navigate({ to: redirect ?? '/' });
+      await navigate({ to: sameOriginPath(redirect) ?? '/' });
     });
   }
 
