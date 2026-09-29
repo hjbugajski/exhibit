@@ -10,7 +10,6 @@ import {
 import { ALLOWED_FAMILIES } from '@/components/catalog/mermaid-schema';
 import type { ArtifactListItem, ArtifactType, Db } from '@/database/repository';
 import {
-  appendVersion,
   artifactExists,
   createArtifact,
   getArtifact,
@@ -23,7 +22,7 @@ import {
   revertToVersion,
   setArtifactArchived,
   softDeleteArtifact,
-  updateMetadata,
+  updateArtifact,
 } from '@/database/repository';
 import { markdownStatePaths } from '@/lib/answer-count';
 import {
@@ -365,7 +364,6 @@ export function buildMcpServer(db: Db): McpServer {
         return notFoundResult(id);
       }
 
-      let versionNumber = existing.version.version;
       const update = provided[0];
 
       if (update) {
@@ -380,18 +378,20 @@ export function buildMcpServer(db: Db): McpServer {
         if (bodyError) {
           return bodyError;
         }
-
-        versionNumber = appendVersion(db, id, update.body).version;
       }
 
-      if (title !== undefined || description !== undefined || tags !== undefined) {
-        updateMetadata(db, id, {
-          title,
-          description,
-          tags: tags !== undefined ? normalizeTags(tags) : undefined,
-        });
+      const updated = updateArtifact(db, id, {
+        body: update?.body,
+        title,
+        description,
+        tags: tags !== undefined ? normalizeTags(tags) : undefined,
+      });
+
+      if (!updated) {
+        return notFoundResult(id);
       }
 
+      const versionNumber = updated.version.version;
       const url = artifactUrl(id);
 
       return {
@@ -414,25 +414,19 @@ export function buildMcpServer(db: Db): McpServer {
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
     },
     ({ id, version }) => {
-      const existing = getArtifact(db, id);
-
-      if (!existing) {
-        return notFoundResult(id);
-      }
-
       const restored = revertToVersion(db, id, version);
 
       if (!restored) {
-        return noSuchVersionResult(id, version);
+        return getArtifact(db, id) ? noSuchVersionResult(id, version) : notFoundResult(id);
       }
 
       const url = artifactUrl(id);
 
       return {
         content: text(
-          `Restored version ${version} of "${existing.artifact.title}" as version ${restored.version}: ${url}`,
+          `Restored version ${version} of "${restored.artifact.title}" as version ${restored.version.version}: ${url}`,
         ),
-        structuredContent: { id, url, version: restored.version },
+        structuredContent: { id, url, version: restored.version.version },
       };
     },
   );
@@ -653,17 +647,15 @@ export function buildMcpServer(db: Db): McpServer {
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
     },
     ({ id, archived }) => {
-      const existing = getArtifact(db, id);
+      const artifact = setArtifactArchived(db, id, archived);
 
-      if (!existing) {
+      if (!artifact) {
         return notFoundResult(id);
       }
 
-      setArtifactArchived(db, id, archived);
-
       return {
         content: text(
-          `${archived ? 'Archived' : 'Unarchived'} artifact "${existing.artifact.title}" (${id}).`,
+          `${archived ? 'Archived' : 'Unarchived'} artifact "${artifact.title}" (${id}).`,
         ),
         structuredContent: { id, archived },
       };

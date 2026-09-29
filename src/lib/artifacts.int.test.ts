@@ -237,6 +237,19 @@ describe('saveArtifactStateFn (through the real server-fn RPC route)', () => {
     ).rejects.toThrow('Artifact not found. It may have been deleted.');
   });
 
+  it('rejects a soft-deleted artifact', async () => {
+    const { createArtifact, softDeleteArtifact } = await import('@/database/repository');
+    const { db } = await import('@/database');
+
+    const { artifact } = createArtifact(db, { title: 'Trashed', type: 'spec', body: '{}' });
+
+    softDeleteArtifact(db, artifact.id);
+
+    await expect(
+      saveArtifactState({ id: artifact.id, state: { done: true } }, { cookie: ownerCookie }),
+    ).rejects.toThrow('Artifact not found. It may have been deleted.');
+  });
+
   it('rejects an unauthenticated call', async () => {
     await expect(saveArtifactState({ id: artifactId, state: {} })).rejects.toThrow('Unauthorized');
   });
@@ -262,12 +275,12 @@ describe('updateArtifactMetadataFn (through the real server-fn RPC route)', () =
 
 describe('revertArtifactVersionFn (through the real server-fn RPC route)', () => {
   it('appends an older version body as the new latest version', async () => {
-    const { appendVersion, createArtifact } = await import('@/database/repository');
+    const { createArtifact, updateArtifact } = await import('@/database/repository');
     const { db } = await import('@/database');
 
     const { artifact } = createArtifact(db, { title: 'Revised', type: 'markdown', body: '# v1' });
 
-    appendVersion(db, artifact.id, '# v2');
+    updateArtifact(db, artifact.id, { body: '# v2' });
 
     const restored = (await revertArtifactVersion(
       { id: artifact.id, version: 1 },
@@ -296,10 +309,52 @@ describe('revertArtifactVersionFn (through the real server-fn RPC route)', () =>
     ).rejects.toThrow('Artifact not found. It may have been deleted.');
   });
 
+  it('rejects a soft-deleted artifact', async () => {
+    const { createArtifact, softDeleteArtifact } = await import('@/database/repository');
+    const { db } = await import('@/database');
+
+    const { artifact } = createArtifact(db, { title: 'Trashed', type: 'markdown', body: '# v1' });
+
+    softDeleteArtifact(db, artifact.id);
+
+    await expect(
+      revertArtifactVersion({ id: artifact.id, version: 1 }, { cookie: ownerCookie }),
+    ).rejects.toThrow('Artifact not found. It may have been deleted.');
+  });
+
   it('rejects an unauthenticated call', async () => {
     await expect(revertArtifactVersion({ id: artifactId, version: 1 })).rejects.toThrow(
       'Unauthorized',
     );
+  });
+});
+
+describe('setArtifactArchivedFn (through the real server-fn RPC route)', () => {
+  it('archives a live artifact', async () => {
+    const { createArtifact } = await import('@/database/repository');
+    const { db } = await import('@/database');
+
+    const { artifact } = createArtifact(db, { title: 'Finished', type: 'spec', body: '{}' });
+
+    const archived = (await setArtifactArchived(
+      { id: artifact.id, archived: true },
+      { cookie: ownerCookie },
+    )) as { archivedAt: number | null };
+
+    expect(archived.archivedAt).not.toBeNull();
+  });
+
+  it('rejects a soft-deleted artifact', async () => {
+    const { createArtifact, softDeleteArtifact } = await import('@/database/repository');
+    const { db } = await import('@/database');
+
+    const { artifact } = createArtifact(db, { title: 'Trashed', type: 'spec', body: '{}' });
+
+    softDeleteArtifact(db, artifact.id);
+
+    await expect(
+      setArtifactArchived({ id: artifact.id, archived: true }, { cookie: ownerCookie }),
+    ).rejects.toThrow('Artifact not found. It may have been deleted.');
   });
 });
 

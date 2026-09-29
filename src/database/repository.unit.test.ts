@@ -3,7 +3,6 @@ import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
-  appendVersion,
   createArtifact,
   getArtifact,
   getArtifactState,
@@ -20,7 +19,7 @@ import {
   setArtifactArchived,
   setArtifactState,
   softDeleteArtifact,
-  updateMetadata,
+  updateArtifact,
 } from '@/database/repository';
 import type { ArtifactType, Db } from '@/database/repository';
 import { artifacts } from '@/database/schemas/artifact';
@@ -75,26 +74,75 @@ describe('createArtifact', () => {
   });
 });
 
-describe('appendVersion', () => {
-  it('increments version numbers', () => {
+describe('updateArtifact', () => {
+  it('refuses a soft-deleted artifact and writes nothing', () => {
     const { artifact } = createArtifact(db, { title: 'Widget', type: 'html', body: 'v1' });
 
-    const v2 = appendVersion(db, artifact.id, 'v2');
-    const v3 = appendVersion(db, artifact.id, 'v3');
+    softDeleteArtifact(db, artifact.id);
 
-    expect(v2.version).toBe(2);
-    expect(v3.version).toBe(3);
+    expect(updateArtifact(db, artifact.id, { body: 'v2', title: 'Renamed' })).toBeUndefined();
+    expect(getLatestVersion(db, artifact.id)?.version).toBe(1);
+    expect(listArtifacts(db, { deleted: true }).items.map((item) => item.title)).toEqual([
+      'Widget',
+    ]);
+  });
 
-    const latest = getLatestVersion(db, artifact.id);
+  it('returns undefined for an unknown artifact', () => {
+    expect(updateArtifact(db, 'missing', { body: 'v2' })).toBeUndefined();
+  });
 
-    expect(latest?.version).toBe(3);
-    expect(latest?.body).toBe('v3');
+  it("appends the next version for a body and bumps the artifact's updatedAt", () => {
+    vi.spyOn(Date, 'now').mockImplementation(() => 1000);
+    const { artifact } = createArtifact(db, { title: 'Widget', type: 'html', body: 'v1' });
+
+    vi.spyOn(Date, 'now').mockImplementation(() => 2000);
+    const v2 = updateArtifact(db, artifact.id, { body: 'v2' });
+    const v3 = updateArtifact(db, artifact.id, { body: 'v3' });
+
+    expect(v2?.version.version).toBe(2);
+    expect(v3?.version).toMatchObject({ version: 3, body: 'v3' });
+    expect(v3?.artifact.updatedAt).toBe(2000);
+    expect(v3?.artifact.title).toBe('Widget');
+    expect(getLatestVersion(db, artifact.id)).toMatchObject({ version: 3, body: 'v3' });
+  });
+
+  it('updates metadata alone without adding a version', () => {
+    const { artifact } = createArtifact(db, { title: 'Old', type: 'spec', body: 'v1' });
+
+    const updated = updateArtifact(db, artifact.id, {
+      title: 'New',
+      description: 'desc',
+      tags: ['x'],
+    });
+
+    expect(updated?.artifact).toMatchObject({ title: 'New', description: 'desc', tags: ['x'] });
+    expect(updated?.version).toMatchObject({ version: 1, body: 'v1' });
+    expect(listVersions(db, artifact.id)).toHaveLength(1);
+  });
+
+  it('applies a body and metadata together as exactly one new version', () => {
+    const { artifact } = createArtifact(db, { title: 'Old', type: 'spec', body: 'v1' });
+
+    const updated = updateArtifact(db, artifact.id, { body: 'v2', title: 'New', tags: ['x'] });
+
+    expect(updated?.artifact).toMatchObject({ title: 'New', tags: ['x'] });
+    expect(updated?.version).toMatchObject({ version: 2, body: 'v2' });
+    expect(listVersions(db, artifact.id).map((v) => v.version)).toEqual([1, 2]);
+  });
+
+  it('rolls back the appended version when the metadata write fails', () => {
+    const { artifact } = createArtifact(db, { title: 'Widget', type: 'html', body: 'v1' });
+
+    expect(() =>
+      updateArtifact(db, artifact.id, { body: 'v2', title: null as unknown as string }),
+    ).toThrow();
+    expect(listVersions(db, artifact.id).map((v) => v.version)).toEqual([1]);
   });
 
   it('enforces unique (artifact_id, version)', () => {
     const { artifact } = createArtifact(db, { title: 'Widget', type: 'html', body: 'v1' });
 
-    expect(() => appendVersion(db, artifact.id, 'dup')).not.toThrow();
+    expect(() => updateArtifact(db, artifact.id, { body: 'dup' })).not.toThrow();
 
     // Directly forcing a duplicate version insert should fail the unique constraint.
     expect(() =>
@@ -111,12 +159,12 @@ describe('revertToVersion', () => {
     const body = '{"root":"a","weird":"  <tab>\\t & \\u00e9 \\n"}';
     const { artifact } = createArtifact(db, { title: 'Widget', type: 'spec', body });
 
-    appendVersion(db, artifact.id, '{"root":"b"}');
+    updateArtifact(db, artifact.id, { body: '{"root":"b"}' });
 
     const restored = revertToVersion(db, artifact.id, 1);
 
-    expect(restored?.version).toBe(3);
-    expect(restored?.body).toBe(body);
+    expect(restored?.version.version).toBe(3);
+    expect(restored?.version.body).toBe(body);
     expect(getLatestVersion(db, artifact.id)?.body).toBe(body);
     // Append-only: the older versions are still there, unchanged.
     expect(listVersions(db, artifact.id).map((v) => v.version)).toEqual([1, 2, 3]);
@@ -127,18 +175,18 @@ describe('revertToVersion', () => {
     const { artifact } = createArtifact(db, { title: 'Widget', type: 'html', body: 'v1' });
 
     vi.spyOn(Date, 'now').mockImplementation(() => 2000);
-    appendVersion(db, artifact.id, 'v2');
+    updateArtifact(db, artifact.id, { body: 'v2' });
 
     vi.spyOn(Date, 'now').mockImplementation(() => 3000);
-    revertToVersion(db, artifact.id, 1);
 
+    expect(revertToVersion(db, artifact.id, 1)?.artifact.updatedAt).toBe(3000);
     expect(getArtifact(db, artifact.id)?.artifact.updatedAt).toBe(3000);
   });
 
   it('appends a copy when the requested version is already the latest', () => {
     const { artifact } = createArtifact(db, { title: 'Widget', type: 'html', body: 'v1' });
 
-    expect(revertToVersion(db, artifact.id, 1)).toMatchObject({ version: 2, body: 'v1' });
+    expect(revertToVersion(db, artifact.id, 1)?.version).toMatchObject({ version: 2, body: 'v1' });
   });
 
   it('returns undefined for a version the artifact does not have', () => {
@@ -151,6 +199,15 @@ describe('revertToVersion', () => {
   it('returns undefined for an unknown artifact', () => {
     expect(revertToVersion(db, 'nope', 1)).toBeUndefined();
   });
+
+  it('refuses a soft-deleted artifact and writes nothing', () => {
+    const { artifact } = createArtifact(db, { title: 'Widget', type: 'html', body: 'v1' });
+
+    softDeleteArtifact(db, artifact.id);
+
+    expect(revertToVersion(db, artifact.id, 1)).toBeUndefined();
+    expect(listVersions(db, artifact.id)).toHaveLength(1);
+  });
 });
 
 describe('listVersions', () => {
@@ -159,9 +216,9 @@ describe('listVersions', () => {
     const { artifact } = createArtifact(db, { title: 'Widget', type: 'spec', body: 'v1' });
 
     vi.spyOn(Date, 'now').mockImplementation(() => 2000);
-    appendVersion(db, artifact.id, 'v2');
+    updateArtifact(db, artifact.id, { body: 'v2' });
     vi.spyOn(Date, 'now').mockImplementation(() => 3000);
-    appendVersion(db, artifact.id, 'v3');
+    updateArtifact(db, artifact.id, { body: 'v3' });
 
     expect(listVersions(db, artifact.id)).toEqual([
       { version: 1, createdAt: 1000 },
@@ -171,27 +228,11 @@ describe('listVersions', () => {
   });
 });
 
-describe('updateMetadata', () => {
-  it('updates title, description, and tags', () => {
-    const { artifact } = createArtifact(db, { title: 'Old', type: 'spec', body: 'v1' });
-
-    const updated = updateMetadata(db, artifact.id, {
-      title: 'New',
-      description: 'desc',
-      tags: ['x'],
-    });
-
-    expect(updated?.title).toBe('New');
-    expect(updated?.description).toBe('desc');
-    expect(updated?.tags).toEqual(['x']);
-  });
-});
-
 describe('getArtifact', () => {
   it('fetches latest version by default', () => {
     const { artifact } = createArtifact(db, { title: 'Widget', type: 'spec', body: 'v1' });
 
-    appendVersion(db, artifact.id, 'v2');
+    updateArtifact(db, artifact.id, { body: 'v2' });
 
     const result = getArtifact(db, artifact.id);
 
@@ -202,7 +243,7 @@ describe('getArtifact', () => {
   it('fetches a specific version', () => {
     const { artifact } = createArtifact(db, { title: 'Widget', type: 'spec', body: 'v1' });
 
-    appendVersion(db, artifact.id, 'v2');
+    updateArtifact(db, artifact.id, { body: 'v2' });
 
     const result = getArtifact(db, artifact.id, 1);
 
@@ -613,7 +654,7 @@ describe('listArtifacts', () => {
       body: JSON.stringify({ root: 'a', elements: { a: { type: 'Section', props: {} } } }),
     });
 
-    appendVersion(db, artifact.id, answerSpecBody);
+    updateArtifact(db, artifact.id, { body: answerSpecBody });
     setArtifactState(db, artifact.id, { prep: { size: true } });
 
     expect(listArtifacts(db, { withAnswers: true }).items[0]?.answers).toEqual({
@@ -702,6 +743,18 @@ describe('setArtifactArchived', () => {
     expect(setArtifactArchived(db, 'missing', true)).toBeUndefined();
   });
 
+  it('refuses a soft-deleted artifact and writes nothing', () => {
+    const { artifact } = createArtifact(db, { title: 'Widget', type: 'spec', body: 'v1' });
+
+    softDeleteArtifact(db, artifact.id);
+
+    expect(setArtifactArchived(db, artifact.id, true)).toBeUndefined();
+
+    restoreArtifact(db, artifact.id);
+
+    expect(getArtifact(db, artifact.id)?.artifact.archivedAt).toBeNull();
+  });
+
   it('does not affect getArtifact — archived artifacts still resolve', () => {
     const { artifact } = createArtifact(db, { title: 'Widget', type: 'spec', body: 'v1' });
 
@@ -756,7 +809,7 @@ describe('purgeArtifact', () => {
     const { artifact } = createArtifact(db, { title: 'Widget', type: 'spec', body: 'v1' });
     const { artifact: survivor } = createArtifact(db, { title: 'Other', type: 'spec', body: 'v1' });
 
-    appendVersion(db, artifact.id, 'v2');
+    updateArtifact(db, artifact.id, { body: 'v2' });
     setArtifactState(db, artifact.id, { checked: true });
     setArtifactState(db, survivor.id, { checked: false });
     softDeleteArtifact(db, artifact.id);
@@ -958,6 +1011,19 @@ describe('renameTag / removeTag', () => {
 });
 
 describe('artifact state', () => {
+  it('refuses a soft-deleted artifact and writes nothing', () => {
+    const { artifact } = createArtifact(db, { title: 'A', type: 'spec', body: '{}' });
+
+    softDeleteArtifact(db, artifact.id);
+
+    expect(setArtifactState(db, artifact.id, { done: true })).toBeUndefined();
+    expect(getArtifactState(db, artifact.id)).toBeNull();
+  });
+
+  it('returns undefined for an unknown artifact', () => {
+    expect(setArtifactState(db, 'missing', { done: true })).toBeUndefined();
+  });
+
   it('returns null before any state is saved', () => {
     const { artifact } = createArtifact(db, { title: 'A', type: 'spec', body: '{}' });
 
@@ -978,7 +1044,9 @@ describe('artifact state', () => {
     });
 
     now = 2000;
-    setArtifactState(db, artifact.id, { tasks: { 'order-cabinets': false, demo: true } });
+    expect(
+      setArtifactState(db, artifact.id, { tasks: { 'order-cabinets': false, demo: true } }),
+    ).toEqual({ updatedAt: now });
     expect(getArtifactState(db, artifact.id)).toEqual({
       state: { tasks: { 'order-cabinets': false, demo: true } },
       updatedAt: now,

@@ -49,10 +49,10 @@ export function normalizeTags(tags?: string[]): string[] {
 }
 
 /**
- * Asserts a repository lookup or mutation actually hit a live artifact. Takes the fetched value
- * rather than `(db, id)` so this module stays free of the database import chain, and so it also
- * covers the post-mutation guards (`updateMetadata`/`setArtifactArchived` return undefined for an
- * id that vanished between the pre-check and the write).
+ * Turns a missed repository lookup or mutation into the user-facing not-found error. Repository
+ * mutations return undefined for unknown or soft-deleted ids, so passing their result here is the
+ * whole liveness guard. Takes the result rather than `(db, id)` so this module stays free of the
+ * database import chain.
  */
 export function requireArtifact<T>(result: T | undefined | null): T {
   if (!result) {

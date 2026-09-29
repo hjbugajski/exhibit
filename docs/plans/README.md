@@ -30,7 +30,7 @@ Produced by a deep audit at commit `ffee99b` (2026-09-26): 15 opus auditors (9 p
 | 20   | Memoize markdown parsing and syntax highlighting                                                     | S                     | —          | DONE                                                      |
 | 21   | Precompressed assets, lighter detail-route graph, parallel PR CI                                     | S                     | 28         | IN PROGRESS (normalizeTags import switch pending plan 23) |
 | 22   | Server-only import protection                                                                        | M                     | 11         | TODO                                                      |
-| 23   | Repository liveness and atomic update_artifact                                                       | M                     | 07, 08     | TODO                                                      |
+| 23   | Repository liveness and atomic update_artifact                                                       | M                     | 07, 08     | DONE                                                      |
 | 24   | Diagram engine debt (vestigial extension points, ALLOWED_FAMILIES, parser statement loop)            | M                     | —          | TODO                                                      |
 | 25   | House component API consistency                                                                      | M                     | 12         | TODO                                                      |
 | 26   | Make pnpm seed read .env; fix dev-publish run line                                                   | S                     | —          | DONE                                                      |

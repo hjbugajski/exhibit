@@ -18,7 +18,7 @@ import {
   setArtifactArchived,
   setArtifactState,
   softDeleteArtifact,
-  updateMetadata,
+  updateArtifact,
 } from '@/database/repository';
 import type { AnswerCount } from '@/lib/answer-count';
 import { countAnswers } from '@/lib/answer-count';
@@ -153,22 +153,18 @@ const updateArtifactMetadataInput = z.object({
   tags: tagsField,
 });
 
-/** Throws for unknown ids; a null description clears it. */
+/** Throws for unknown/deleted ids; a null description clears it. */
 export const updateArtifactMetadataFn = createServerFn({ method: 'POST' })
   .middleware([sessionMiddleware])
   .validator(updateArtifactMetadataInput)
   .handler(async ({ data }) => {
-    // updateMetadata doesn't filter soft-deleted rows, so the live-artifact check has to happen
-    // through getArtifact first.
-    requireArtifact(getArtifact(db, data.id));
-
     return requireArtifact(
-      updateMetadata(db, data.id, {
+      updateArtifact(db, data.id, {
         title: data.title,
         description: data.description,
         tags: normalizeTags(data.tags),
       }),
-    );
+    ).artifact;
   });
 
 const jsonValue: z.ZodType<JsonValue> = z.lazy(() =>
@@ -195,9 +191,7 @@ export const saveArtifactStateFn = createServerFn({ method: 'POST' })
       throw new Error('Interaction state exceeds the 64 KB limit.');
     }
 
-    requireArtifact(getArtifact(db, data.id));
-
-    setArtifactState(db, data.id, data.state);
+    requireArtifact(setArtifactState(db, data.id, data.state));
 
     return { saved: true };
   });
@@ -215,11 +209,7 @@ export const revertArtifactVersionFn = createServerFn({ method: 'POST' })
   .middleware([sessionMiddleware])
   .validator(revertArtifactVersionInput)
   .handler(async ({ data }) => {
-    // revertToVersion doesn't filter soft-deleted rows, so the live-artifact check has to happen
-    // through getArtifact first.
-    requireArtifact(getArtifact(db, data.id));
-
-    return requireArtifact(revertToVersion(db, data.id, data.version));
+    return requireArtifact(revertToVersion(db, data.id, data.version)).version;
   });
 
 const setArtifactArchivedInput = z.object({ id: z.string(), archived: z.boolean() });
@@ -229,17 +219,13 @@ export const setArtifactArchivedFn = createServerFn({ method: 'POST' })
   .middleware([sessionMiddleware])
   .validator(setArtifactArchivedInput)
   .handler(async ({ data }) => {
-    // setArtifactArchived doesn't filter soft-deleted rows, so the live-artifact check has to
-    // happen through getArtifact first.
-    requireArtifact(getArtifact(db, data.id));
-
     return requireArtifact(setArtifactArchived(db, data.id, data.archived));
   });
 
 const artifactIdInput = z.object({ id: z.string() });
 
 /**
- * Deliberately unguarded: soft delete is idempotent, so deleting an unknown or already-deleted id
+ * No not-found guard: soft delete is idempotent, so deleting an unknown or already-deleted id
  * succeeds as a no-op rather than throwing (same contract as the MCP `delete_artifact` tool — see
  * its `idempotentHint` note in src/lib/mcp/server.ts).
  */
@@ -263,8 +249,8 @@ export const restoreArtifactFn = createServerFn({ method: 'POST' })
   });
 
 /**
- * Irreversibly removes the artifact, its versions and its interaction state. Unguarded like
- * `deleteArtifactFn`: purging an id that's already gone reports `purged: false` rather than
+ * Irreversibly removes the artifact, its versions and its interaction state. No not-found guard,
+ * like `deleteArtifactFn`: purging an id that's already gone reports `purged: false` rather than
  * throwing, so a stale trash list can't turn a completed purge into an error.
  */
 export const purgeArtifactFn = createServerFn({ method: 'POST' })

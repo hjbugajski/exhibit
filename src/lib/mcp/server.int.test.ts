@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { comparisonFixture } from '@/catalog/fixtures/comparison';
 import { itineraryFixture } from '@/catalog/fixtures/itinerary';
 import type { Db } from '@/database/repository';
-import { setArtifactArchived, setArtifactState } from '@/database/repository';
+import { getLatestVersion, setArtifactArchived, setArtifactState } from '@/database/repository';
 import { buildMcpServer } from '@/lib/mcp/server';
 import { MCP_TOOL_NAMES } from '@/lib/mcp/tool-names';
 import { createTestDb } from '@testing/db';
@@ -427,6 +427,26 @@ describe('update_artifact', () => {
     const getResult = await callTool(client, 'get_artifact', { id });
     expect(getResult.structuredContent?.versions).toEqual([1]);
   });
+
+  it('reports not-found for a deleted artifact and writes nothing', async () => {
+    const published = await callTool(client, 'publish_markdown', {
+      title: 'Notes',
+      markdown: '# v1',
+    });
+    const id = published.structuredContent?.id as string;
+
+    await callTool(client, 'delete_artifact', { id });
+
+    const updated = await callTool(client, 'update_artifact', {
+      id,
+      markdown: '# v2',
+      title: 'Renamed',
+    });
+
+    expect(updated.isError).toBe(true);
+    expect(textOf(updated)).toContain('list_artifacts');
+    expect(getLatestVersion(db, id)?.version).toBe(1);
+  });
 });
 
 describe('restore_version', () => {
@@ -483,6 +503,19 @@ describe('restore_version', () => {
     // Neither failure may append anything.
     const latest = await callTool(client, 'get_artifact', { id });
     expect(latest.structuredContent?.versions).toEqual([1]);
+  });
+
+  it('reports not-found for a deleted artifact, not a missing version', async () => {
+    const published = await callTool(client, 'publish_markdown', { title: 'Notes', markdown: '#' });
+    const id = published.structuredContent?.id as string;
+
+    await callTool(client, 'delete_artifact', { id });
+
+    const restored = await callTool(client, 'restore_version', { id, version: 1 });
+
+    expect(restored.isError).toBe(true);
+    expect(textOf(restored)).toContain('list_artifacts');
+    expect(textOf(restored)).not.toContain('no version');
   });
 });
 
@@ -994,6 +1027,21 @@ describe('set_artifact_archived', () => {
       id: 'does-not-exist',
       archived: true,
     });
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain('list_artifacts');
+  });
+
+  it('reports not-found for a deleted artifact', async () => {
+    const published = await callTool(client, 'publish_spec', {
+      title: 'Doc',
+      spec: itineraryFixture,
+    });
+    const id = published.structuredContent?.id as string;
+
+    await callTool(client, 'delete_artifact', { id });
+
+    const result = await callTool(client, 'set_artifact_archived', { id, archived: true });
 
     expect(result.isError).toBe(true);
     expect(textOf(result)).toContain('list_artifacts');
