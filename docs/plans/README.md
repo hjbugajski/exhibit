@@ -20,7 +20,7 @@ Produced by a deep audit at commit `ffee99b` (2026-09-26): 15 opus auditors (9 p
 | 10   | Catalog value parsing fidelity (pie numbers, chart duplicate labels, gantt ids)                      | S                     | —          | TODO                                             |
 | 11   | Stop paying a session RPC on every client navigation                                                 | M                     | 06, 07     | TODO                                             |
 | 12   | Accessibility pass                                                                                   | M                     | —          | TODO                                             |
-| 13   | Re-resolve map route colours when the theme changes                                                  | S                     | —          | TODO                                             |
+| 13   | Re-resolve map route colours when the theme changes                                                  | S                     | —          | DONE                                             |
 | 14   | Shift artifact content headings one rank below the page title                                        | M                     | —          | TODO                                             |
 | 15   | Sandbox CSP on /download responses                                                                   | S                     | —          | DONE                                             |
 | 16   | Correct docs and comments that contradict the code                                                   | S                     | —          | TODO                                             |

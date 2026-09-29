@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo } from 'react';
+import { useEffect, useId } from 'react';
 
 import type * as MapLibreGL from 'maplibre-gl';
 
@@ -10,8 +10,10 @@ export interface MapRouteProps {
   id?: string;
   /** [longitude, latitude] pairs. */
   coordinates: [number, number][];
-  /** CSS color (default: the theme's `--color-info` token). */
+  /** Literal CSS color; overrides `colorToken` and does not follow the theme. */
   color?: string;
+  /** Theme token the line color follows across scheme changes (default: `--color-info`). */
+  colorToken?: `--color-${string}`;
   /** Pixels (default: 3). */
   width?: number;
   /** 0 to 1 (default: 0.8). */
@@ -35,6 +37,7 @@ export function MapRoute({
   id: propId,
   coordinates,
   color: colorProp,
+  colorToken = '--color-info',
   width = 3,
   opacity = 0.8,
   dashArray,
@@ -50,10 +53,11 @@ export function MapRoute({
   const sourceId = `route-source-${id}`;
   const layerId = `route-layer-${id}`;
 
-  const color = useMemo(
-    () => colorProp ?? resolveTokenColor('--color-info', '#3366d9'),
-    [colorProp],
-  );
+  /**
+   * Not memoized: the map context re-renders this component on every scheme change, so each render
+   * must read the token's current value.
+   */
+  const color = colorProp ?? resolveTokenColor(colorToken, '#3366d9');
 
   const colorRef = useLatest(color);
   const widthRef = useLatest(width);
