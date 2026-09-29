@@ -11,6 +11,11 @@ export default defineConfig({
     // request-scoped logger from raw route handlers.
     asyncContext: true,
   },
+  rolldownConfig: {
+    // Dependencies' `'use client'` directives mean nothing in the server bundle; rolldown drops
+    // them either way, so its one-warning-per-module output is noise.
+    checks: { moduleLevelDirective: false },
+  },
   modules: [
     evlog({
       env: { service: 'exhibit' },

@@ -164,4 +164,4 @@ BASE_URL=http://localhost:3000 OWNER_EMAIL=... OWNER_PASSWORD=... node scripts/d
 
 Scripts stick to relative imports, so Node's native type stripping runs the TypeScript as-is.
 
-`nitro` is pinned to a dated nightly build (TanStack Start requires nitro v3, which has no stable release yet). `pnpm outdated` reports it as `nitro-nightly`, but the alias spec in `package.json` has to be bumped by hand.
+Nitro v3 has no stable release yet. `nitro` is pinned exactly to a dated beta of the canonical package (`3.0.YYMMDD-beta`) and is bumped by hand.

@@ -47,13 +47,13 @@ export async function bootTestServer(configFileUrl: URL): Promise<TestServer> {
 
 /**
  * `vite.createServer()` resolves before Nitro's own dev environment (a separate `ViteEnvRunner` -
- * see nitro-nightly/dist/runtime/internal/vite/dev-worker.mjs) has necessarily finished its own
- * async module-runner initialization. That runner's `fetch()` retries internally for a *fixed*
- * budget (5 tries, 100ms * 2^attempt backoff - about 3.1s total) before giving up and throwing a
- * 503 ("Vite environment \"nitro\" is unavailable"). Under normal load the runner is ready well
- * within that budget and this is invisible; under CPU contention (e.g. several `*.int.test.ts`
- * files each booting their own dev server concurrently) initialization can take longer than nitro's
- * fixed 3.1s retry window, and every request this harness makes - including sign-in - gets that 503
+ * see nitro/dist/runtime/internal/vite/dev-worker.mjs) has necessarily finished its own async
+ * module-runner initialization. That runner's `fetch()` waits a *fixed* budget
+ * (`RELOAD_WAIT_TIMEOUT`, 30s) for the entry import before giving up and throwing a 503 ("Vite
+ * environment \"nitro\" is unavailable"). Under normal load the runner is ready well within that
+ * budget and this is invisible; under CPU contention (e.g. several `*.int.test.ts` files each
+ * booting their own dev server concurrently) initialization can take longer than nitro's fixed 30s
+ * window, and every request this harness makes - including sign-in - gets that 503
  * instead. Uncaught, that turned an empty session cookie into every subsequent authenticated call
  * reading as a plain "Unauthorized", which looked exactly like a real auth bug. Fixed at the
  * source: block here, with our own much larger and backoff-based retry budget, until a real
