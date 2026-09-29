@@ -418,7 +418,7 @@ export function buildMcpServer(db: Db): McpServer {
     {
       title: 'List artifacts',
       description:
-        'Lists published artifacts (metadata only, no bodies), sortable, with cursor pagination. Use it to find an artifact’s id before get_artifact, update_artifact, or delete_artifact, and to check what already exists before publishing something similar. Archived artifacts are excluded unless you pass `archived: true`, which returns those and only those. Each item’s `stateUpdatedAt` is when the owner’s interaction state last changed, or null if untouched — compare against your last check to see fresh owner input.',
+        'Lists published artifacts (metadata only, no bodies), sortable, with cursor pagination. Use it to find an artifact’s id before get_artifact, update_artifact, or delete_artifact, and to check what already exists before publishing something similar. Archived artifacts are excluded unless you pass `archived: true`, which returns those and only those. Each item’s `stateUpdatedAt` is when the owner’s interaction state last changed, or null if untouched. To find fresh owner input, pass `sort: "state-updated-desc"` and `hasState: true`. To limit the result to input at or after a timestamp, pass `stateSince`.',
       inputSchema: {
         query: z.string().optional().describe('Case-insensitive substring match on title.'),
         tag: z
@@ -437,11 +437,25 @@ export function buildMcpServer(db: Db): McpServer {
           .describe(
             'Omit (the default) to list only unarchived artifacts; true to list only archived ones.',
           ),
+        hasState: z
+          .boolean()
+          .optional()
+          .describe(
+            'True lists only artifacts with owner interaction state. False lists only untouched artifacts. Omit to list both.',
+          ),
+        stateSince: z
+          .number()
+          .int()
+          .nonnegative()
+          .optional()
+          .describe(
+            'Epoch milliseconds. Lists only artifacts whose state changed at or after this time. Untouched artifacts never match.',
+          ),
         sort: z
           .enum(artifactSorts)
           .optional()
           .describe(
-            'Sort order, default updated-desc: updated-desc/updated-asc (last modified), created-desc/created-asc (publish date), title-asc/title-desc (alphabetical).',
+            'Sort order, default updated-desc: updated-desc/updated-asc (last modified), created-desc/created-asc (publish date), title-asc/title-desc (alphabetical), state-updated-desc (last owner interaction; untouched artifacts last).',
           ),
         limit: z
           .number()
@@ -454,12 +468,14 @@ export function buildMcpServer(db: Db): McpServer {
       },
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
     },
-    ({ query, tag, tags, type, archived, sort, limit, cursor }) => {
+    ({ query, tag, tags, type, archived, hasState, stateSince, sort, limit, cursor }) => {
       const result = listArtifacts(db, {
         query,
         tags: tags ?? (tag ? [tag] : undefined),
         type,
         archived,
+        hasState,
+        stateSince,
         sort,
         limit,
         cursor,
@@ -551,7 +567,7 @@ export function buildMcpServer(db: Db): McpServer {
     {
       title: 'Get artifact',
       description:
-        'Fetches an artifact’s metadata and the body of a specific version (default: latest), plus the list of all available version numbers. Call it before update_artifact when revising, so your new body builds on what is actually published. `state` holds the owner’s saved interaction state (e.g. which Checklist statePath items they checked), or null if untouched. `stateUpdatedAt` is when state last changed, or null if never — compare against your last check to see fresh owner input.',
+        'Fetches an artifact’s metadata and the body of a specific version (default: latest), plus the list of all available version numbers. Call it before update_artifact when revising, so your new body builds on what is actually published. `state` holds the owner’s saved interaction state (e.g. which Checklist statePath items they checked), or null if untouched. `stateUpdatedAt` is when state last changed, or null if never. To find fresh owner input across artifacts, call list_artifacts with `sort: "state-updated-desc"`.',
       inputSchema: {
         id: z.string().describe('Artifact id.'),
         version: z

@@ -530,6 +530,82 @@ describe('listArtifacts', () => {
     expect(items.find((item) => item.title === 'Untouched')?.stateUpdatedAt).toBeNull();
   });
 
+  describe('owner-response sort and filters', () => {
+    /**
+     * Four artifacts updated a→d, so updated-desc is d, c, b, a. The owner answers a at 10000 and b
+     * at 9000, so state-updated-desc disagrees: a, b, then the untouched pair tied at 0, which falls
+     * back to id desc.
+     */
+    function seedAnswered() {
+      let now = 1000;
+
+      vi.spyOn(Date, 'now').mockImplementation(() => now);
+
+      const [a, b, c, d] = ['a', 'b', 'c', 'd'].map((title) => {
+        const { artifact } = createArtifact(db, { title, type: 'spec', body: 'v1' });
+
+        now += 1000;
+
+        return artifact.id;
+      }) as [string, string, string, string];
+
+      now = 10_000;
+      setArtifactState(db, a, { done: true });
+      now = 9000;
+      setArtifactState(db, b, { done: true });
+
+      return { touched: [a, b], untouched: [c, d].sort().reverse() };
+    }
+
+    it('orders touched artifacts by state time, newest first, then untouched artifacts', () => {
+      const { touched, untouched } = seedAnswered();
+
+      const items = listArtifacts(db, { sort: 'state-updated-desc' }).items;
+
+      expect(items.map((item) => item.id)).toEqual([...touched, ...untouched]);
+    });
+
+    it('paginates across the boundary between touched and untouched artifacts', () => {
+      const { touched, untouched } = seedAnswered();
+
+      const page1 = listArtifacts(db, { sort: 'state-updated-desc', limit: 2 });
+
+      expect(page1.items.map((item) => item.id)).toEqual(touched);
+      expect(page1.nextCursor).not.toBeNull();
+
+      const page2 = listArtifacts(db, {
+        sort: 'state-updated-desc',
+        limit: 2,
+        cursor: page1.nextCursor ?? undefined,
+      });
+
+      expect(page2.items.map((item) => item.id)).toEqual(untouched);
+      expect(page2.nextCursor).toBeNull();
+    });
+
+    it('filters by hasState in both directions', () => {
+      const { touched, untouched } = seedAnswered();
+
+      const withState = listArtifacts(db, { sort: 'state-updated-desc', hasState: true }).items;
+      const withoutState = listArtifacts(db, { sort: 'state-updated-desc', hasState: false }).items;
+
+      expect(withState.map((item) => item.id)).toEqual(touched);
+      expect(withoutState.map((item) => item.id)).toEqual(untouched);
+    });
+
+    it('treats stateSince as inclusive and never matches untouched artifacts', () => {
+      const { touched } = seedAnswered();
+
+      const atB = listArtifacts(db, { sort: 'state-updated-desc', stateSince: 9000 }).items;
+      const afterB = listArtifacts(db, { sort: 'state-updated-desc', stateSince: 9001 }).items;
+      const fromZero = listArtifacts(db, { sort: 'state-updated-desc', stateSince: 0 }).items;
+
+      expect(atB.map((item) => item.id)).toEqual(touched);
+      expect(afterB.map((item) => item.id)).toEqual([touched[0]]);
+      expect(fromZero.map((item) => item.id)).toEqual(touched);
+    });
+  });
+
   it('counts the latest version’s questions against the saved state', () => {
     const { artifact } = createArtifact(db, {
       title: 'Sign-off',

@@ -6,6 +6,7 @@ import {
   eq,
   getTableColumns,
   gt,
+  gte,
   isNotNull,
   isNull,
   lt,
@@ -75,7 +76,9 @@ export interface UpdateMetadataInput {
  * `limit` defaults to 20, `sort` to 'updated-desc'. A malformed `cursor`, or one minted under a
  * different `sort`, is ignored (first page). `archived: true` lists only archived artifacts;
  * otherwise archived artifacts are excluded. `deleted: true` lists only soft-deleted artifacts (the
- * trash); otherwise they're excluded.
+ * trash); otherwise they're excluded. `hasState: true` lists only artifacts the owner has interacted
+ * with (a state row exists); `false` lists only untouched ones. `stateSince` (epoch ms, inclusive)
+ * lists only artifacts whose state changed at or after it, so it also excludes untouched ones.
  *
  * `withAnswers` opts into the answered counts, which cost a body fetch and a full markdown/spec
  * parse per row — only the gallery renders them, so every other caller (MCP `list_artifacts`, up to
@@ -87,6 +90,8 @@ export interface ListArtifactsInput {
   type?: ArtifactType;
   archived?: boolean;
   deleted?: boolean;
+  hasState?: boolean;
+  stateSince?: number;
   sort?: ArtifactSort;
   limit?: number;
   cursor?: string;
@@ -158,12 +163,14 @@ function escapeLike(value: string): string {
   return value.replace(/[\\%_]/g, '\\$&');
 }
 
-type SortField = 'updatedAt' | 'createdAt' | 'title';
+type SortField = 'updatedAt' | 'createdAt' | 'title' | 'stateUpdatedAt';
 
 /**
  * Title sort is case-insensitive (cheap via SQLite's `lower()`, which is ASCII-only); the cursor's
  * `k` is the value SQLite itself returned for the sort expression, so the cursor and the ORDER BY
- * can't disagree about collation.
+ * can't disagree about collation. The state sort coalesces an untouched artifact's missing state
+ * time to 0, so untouched artifacts sort last and the keyset comparison never meets a NULL; it relies
+ * on the unconditional `artifact_states` left join in `listArtifacts`.
  */
 const sortSpecs: Record<ArtifactSort, { field: SortField; dir: 'asc' | 'desc' }> = {
   'updated-desc': { field: 'updatedAt', dir: 'desc' },
@@ -172,6 +179,7 @@ const sortSpecs: Record<ArtifactSort, { field: SortField; dir: 'asc' | 'desc' }>
   'created-asc': { field: 'createdAt', dir: 'asc' },
   'title-asc': { field: 'title', dir: 'asc' },
   'title-desc': { field: 'title', dir: 'desc' },
+  'state-updated-desc': { field: 'stateUpdatedAt', dir: 'desc' },
 };
 
 function sortColumnExpr(field: SortField): SQL<number | string> {
@@ -182,6 +190,8 @@ function sortColumnExpr(field: SortField): SQL<number | string> {
       return sql<number | string>`${artifacts.createdAt}`;
     case 'title':
       return sql<number | string>`lower(${artifacts.title})`;
+    case 'stateUpdatedAt':
+      return sql<number | string>`coalesce(${artifactStates.updatedAt}, 0)`;
   }
 }
 
@@ -435,6 +445,16 @@ export function listArtifacts(db: Db, input: ListArtifactsInput = {}): ListArtif
 
   if (input.type) {
     conditions.push(eq(artifacts.type, input.type));
+  }
+
+  if (input.hasState !== undefined) {
+    conditions.push(
+      input.hasState ? isNotNull(artifactStates.updatedAt) : isNull(artifactStates.updatedAt),
+    );
+  }
+
+  if (input.stateSince !== undefined) {
+    conditions.push(gte(artifactStates.updatedAt, input.stateSince));
   }
 
   if (input.tags && input.tags.length > 0) {

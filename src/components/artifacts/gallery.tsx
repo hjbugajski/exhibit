@@ -43,6 +43,7 @@ const sortLabels: Record<ArtifactSort, string> = {
   'created-asc': 'Oldest',
   'title-asc': 'Title A–Z',
   'title-desc': 'Title Z–A',
+  'state-updated-desc': 'Recently answered',
 };
 
 const sortOptions = Object.keys(sortLabels) as ArtifactSort[];

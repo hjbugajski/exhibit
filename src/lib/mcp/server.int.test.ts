@@ -625,6 +625,33 @@ describe('list_artifacts', () => {
     const afterItems = after.structuredContent?.items as { id: string; stateUpdatedAt: unknown }[];
     expect(afterItems.find((item) => item.id === id)?.stateUpdatedAt).toEqual(expect.any(Number));
   });
+
+  it('lists only answered artifacts, newest response first, with the state sort', async () => {
+    await callTool(client, 'publish_spec', { title: 'First', spec: itineraryFixture });
+    const second = await callTool(client, 'publish_spec', {
+      title: 'Second',
+      spec: comparisonFixture,
+    });
+    const id = second.structuredContent?.id as string;
+
+    setArtifactState(db, id, { done: true });
+
+    const result = await callTool(client, 'list_artifacts', {
+      sort: 'state-updated-desc',
+      hasState: true,
+    });
+    const items = result.structuredContent?.items as { id: string }[];
+
+    expect(result.isError).toBeFalsy();
+    expect(items.map((item) => item.id)).toEqual([id]);
+  });
+
+  it('rejects a negative stateSince', async () => {
+    const result = await callTool(client, 'list_artifacts', { stateSince: -1 });
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain('stateSince');
+  });
 });
 
 describe('list_tags', () => {
