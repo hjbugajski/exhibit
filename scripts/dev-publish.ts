@@ -7,7 +7,11 @@
  * HTTP against BASE_URL.
  *
  * Not part of the app itself - a throwaway dev/verification tool. Run with:
- *   BASE_URL=http://127.0.0.1:PORT OWNER_EMAIL=... OWNER_PASSWORD=... node scripts/dev-publish.ts
+ *   BASE_URL=http://localhost:PORT node --env-file=.env scripts/dev-publish.ts
+ *
+ * The env file supplies OWNER_EMAIL and OWNER_PASSWORD; any file with those keys works. Variables
+ * set on the command line take precedence over the file, so BASE_URL targets the running instance
+ * even when the file sets a different one.
  *
  * Prints a JSON summary of the published artifacts (id/title/version) to stdout.
  */

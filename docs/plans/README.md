@@ -33,7 +33,7 @@ Produced by a deep audit at commit `ffee99b` (2026-09-26): 15 opus auditors (9 p
 | 23   | Repository liveness and atomic update_artifact                                                       | M                     | 07, 08     | TODO                                                     |
 | 24   | Diagram engine debt (vestigial extension points, ALLOWED_FAMILIES, parser statement loop)            | M                     | —          | TODO                                                     |
 | 25   | House component API consistency                                                                      | M                     | 12         | TODO                                                     |
-| 26   | Make pnpm seed read .env; fix dev-publish run line                                                   | S                     | —          | TODO                                                     |
+| 26   | Make pnpm seed read .env; fix dev-publish run line                                                   | S                     | —          | DONE                                                     |
 | 27   | Replace latest-value refs with useEffectEvent                                                        | M                     | 13         | DONE                                                     |
 | 28   | Replace the nitro-nightly alias with the canonical nitro beta                                        | S                     | —          | DONE                                                     |
 | 29   | Minor UX polish (whitespace titles, RelativeTime hydration, reset confirmation)                      | S                     | 02         | DONE                                                     |
