@@ -12,7 +12,7 @@ Produced by a deep audit at commit `ffee99b` (2026-09-26): 15 opus auditors (9 p
 | 02   | Close the backslash open redirect on /sign-in                                                        | S                     | —          | DONE                                                     |
 | 03   | Bound flowchart edge fan-out and gantt duration work before layout                                   | S                     | —          | DONE                                                     |
 | 04   | Honor revoked opaque tokens and session liveness in /mcp auth                                        | S                     | 01         | DONE                                                     |
-| 05   | Keep password-reset tokens out of the evlog request log                                              | S                     | —          | TODO                                                     |
+| 05   | Keep password-reset tokens out of the evlog request log                                              | S                     | —          | DONE                                                     |
 | 06   | Interaction-state integrity (stale reseed, save-error reset, uncounted fences, statePath collisions) | M                     | 08         | TODO                                                     |
 | 07   | Structural test pinning sessionMiddleware on every server fn                                         | S                     | —          | DONE                                                     |
 | 08   | One per-type body validator table for MCP publish/update                                             | S                     | —          | DONE                                                     |
