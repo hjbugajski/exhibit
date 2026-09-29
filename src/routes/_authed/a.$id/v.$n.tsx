@@ -1,6 +1,7 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
 
 import { ArtifactDetailView } from '@/components/artifacts/artifact-detail';
+import { loadStateStoreFactory } from '@/components/artifacts/state-store-loader';
 import { getArtifactDetailFn } from '@/lib/artifacts';
 import { parseVersionParam } from '@/lib/parse-version-param';
 
@@ -16,6 +17,11 @@ export const Route = createFileRoute('/_authed/a/$id/v/$n')({
 
     if (!detail) {
       throw notFound();
+    }
+
+    // Same factory preload as the latest-version route.
+    if (detail.artifact.type !== 'html') {
+      await loadStateStoreFactory();
     }
 
     return detail;

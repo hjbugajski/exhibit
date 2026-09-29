@@ -1,7 +1,6 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, use, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { Spec } from '@json-render/core';
-import { createStateStore } from '@json-render/react';
 import { useNavigate, useRouter } from '@tanstack/react-router';
 import {
   Archive,
@@ -18,6 +17,10 @@ import {
 } from 'lucide-react';
 
 import { EditArtifactDialog } from '@/components/artifacts/edit-artifact-dialog';
+import {
+  loadStateStoreFactory,
+  peekStateStoreFactory,
+} from '@/components/artifacts/state-store-loader';
 import { TypeBadge } from '@/components/artifacts/type-badge';
 import { ConfirmDestructiveAction } from '@/components/blocks/confirm-destructive-action';
 import { FormStatus } from '@/components/blocks/form-status';
@@ -49,6 +52,7 @@ type View = 'rendered' | 'source';
  * Both rendered views pull the whole catalog — 28 components plus the zod catalog and
  * @json-render's renderer — so each is its own lazy chunk: an html artifact (which renders as its
  * own sandboxed page) downloads neither, and a markdown artifact doesn't pay for the spec renderer.
+ * The state store's factory is loaded on demand for the same reason (see state-store-loader.ts).
  */
 const SpecView = lazy(() =>
   import('@/catalog/registry').then((module) => ({ default: module.SpecView })),
@@ -102,18 +106,21 @@ export function ArtifactDetailView({ id, detail }: { id: string; detail: Artifac
   // the version identity changes — otherwise switching versions would render stale interaction
   // state (and debounce-save it) against a body it was never created for. The seed is always the
   // server's current state: the detail routes never cache a match (gcTime 0), and a version switch
-  // flushes the pending save before the next loader reads state.
+  // flushes the pending save before the next loader reads state. The factory comes from a dynamic
+  // import that the loaders await first, so the peek normally hits; `use()` covers the rest by
+  // suspending into the route match's boundary.
   const stateful = artifact.type !== 'html';
+  const createStore = stateful ? (peekStateStoreFactory() ?? use(loadStateStoreFactory())) : null;
   const versionKey = `${id}:${version.version}`;
   const [seededVersionKey, setSeededVersionKey] = useState(versionKey);
   const [stateStore, setStateStore] = useState(() =>
-    stateful ? createStateStore(detail.state ?? {}) : null,
+    createStore ? createStore(detail.state ?? {}) : null,
   );
   const flushSaveRef = useRef<() => Promise<void>>(() => Promise.resolve());
 
   if (versionKey !== seededVersionKey) {
     setSeededVersionKey(versionKey);
-    setStateStore(stateful ? createStateStore(detail.state ?? {}) : null);
+    setStateStore(createStore ? createStore(detail.state ?? {}) : null);
   }
 
   useEffect(() => {

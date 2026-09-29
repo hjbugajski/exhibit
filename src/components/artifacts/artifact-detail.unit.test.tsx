@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import type * as StateStoreLoader from '@/components/artifacts/state-store-loader';
 import type { ArtifactDetail } from '@/lib/artifacts';
 import { makeArtifact, makeVersion } from '@testing/factories';
 import { renderWithRouter } from '@testing/router';
@@ -21,7 +22,19 @@ vi.mock('@/lib/artifacts', () => ({
   updateArtifactMetadataFn: vi.fn(() => Promise.resolve()),
 }));
 
+/** Spied, not stubbed: the store must still come from json-render's real factory. */
+vi.mock('@/components/artifacts/state-store-loader', async (importOriginal) => {
+  const actual = await importOriginal<typeof StateStoreLoader>();
+
+  return {
+    loadStateStoreFactory: vi.fn(actual.loadStateStoreFactory),
+    peekStateStoreFactory: vi.fn(actual.peekStateStoreFactory),
+  };
+});
+
 const { saveArtifactStateFn } = await import('@/lib/artifacts');
+const { loadStateStoreFactory, peekStateStoreFactory } =
+  await import('@/components/artifacts/state-store-loader');
 const { ArtifactDetailView } = await import('@/components/artifacts/artifact-detail');
 
 /** Two interactive checklist items - the smallest spec that exercises a persisted statePath. */
@@ -92,6 +105,7 @@ afterEach(() => {
   vi.restoreAllMocks();
   vi.mocked(saveArtifactStateFn).mockReset();
   vi.mocked(saveArtifactStateFn).mockResolvedValue(undefined as never);
+  vi.mocked(peekStateStoreFactory).mockReset();
 });
 
 describe('ArtifactDetailView', () => {
@@ -247,6 +261,21 @@ describe('ArtifactDetailView', () => {
     expect(document.querySelector('code')?.textContent).toBe('<html><body>hi</body></html>');
   });
 
+  it('never loads the state store factory for an html artifact', async () => {
+    vi.mocked(loadStateStoreFactory).mockClear();
+    renderDetail({
+      artifact: makeArtifact({ type: 'html' }),
+      version: makeVersion({ body: '<html><body>hi</body></html>' }),
+      versions: [{ version: 1, createdAt: 1000 }],
+      state: null,
+      answers: { answered: 0, total: 0 },
+    });
+
+    await screen.findByText('Open');
+
+    expect(loadStateStoreFactory).not.toHaveBeenCalled();
+  });
+
   it('renders a markdown artifact inline, and shows its raw body in the Source view', async () => {
     const body = '# Trip notes\n\nBook the [train](https://example.com) first.\n';
     const detail: ArtifactDetail = {
@@ -289,6 +318,25 @@ describe('ArtifactDetailView', () => {
 });
 
 describe('ArtifactDetailView interaction state', () => {
+  it('loads the state store factory for a spec artifact and saves a checklist toggle', async () => {
+    // Earlier tests memoized the factory; hiding it forces the cold path, where the view suspends
+    // on the load itself.
+    vi.mocked(peekStateStoreFactory).mockReturnValue(undefined);
+    vi.mocked(loadStateStoreFactory).mockClear();
+
+    await mountChecklist(makeChecklistDetail());
+
+    toggle('Order cabinets');
+    await act(async () => {
+      vi.advanceTimersByTime(600);
+    });
+
+    expect(loadStateStoreFactory).toHaveBeenCalled();
+    expect(saveArtifactStateFn).toHaveBeenCalledWith({
+      data: { id: 'fixture-id', state: { tasks: { cabinets: true } } },
+    });
+  });
+
   it('coalesces rapid toggles into a single save of the final state', async () => {
     await mountChecklist(makeChecklistDetail());
 

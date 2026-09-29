@@ -1,6 +1,7 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
 
 import { ArtifactDetailView } from '@/components/artifacts/artifact-detail';
+import { loadStateStoreFactory } from '@/components/artifacts/state-store-loader';
 import { getArtifactDetailFn } from '@/lib/artifacts';
 
 export const Route = createFileRoute('/_authed/a/$id/')({
@@ -9,6 +10,11 @@ export const Route = createFileRoute('/_authed/a/$id/')({
 
     if (!detail) {
       throw notFound();
+    }
+
+    // Loads the state store's factory with the route instead of suspending the view on it.
+    if (detail.artifact.type !== 'html') {
+      await loadStateStoreFactory();
     }
 
     return detail;

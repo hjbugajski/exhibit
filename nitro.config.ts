@@ -13,6 +13,9 @@ export default defineConfig({
     // request-scoped logger from raw route handlers.
     asyncContext: true,
   },
+  // No zstd: the static handler prefers `.br` for any browser that accepts both, so `.zst` files
+  // would only enlarge the image.
+  compressPublicAssets: { gzip: true, brotli: true },
   rolldownConfig: {
     // Dependencies' `'use client'` directives mean nothing in the server bundle; rolldown drops
     // them either way, so its one-warning-per-module output is noise.

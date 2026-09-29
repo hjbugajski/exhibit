@@ -11,8 +11,8 @@ import { Form } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import type { Artifact } from '@/database/repository';
-import { normalizeTags } from '@/lib/artifact-metadata';
 import { updateArtifactMetadataFn } from '@/lib/artifacts';
+import { normalizeTags } from '@/lib/normalize-tags';
 import { useFormAction } from '@/lib/use-form-action';
 
 export interface EditArtifactDialogProps {
