@@ -5,13 +5,22 @@
  * green — a body published through publish_markdown is arbitrary AI-authored text, and this is the
  * only thing between it and the owner's authenticated origin.
  */
+import { createStateStore } from '@json-render/core';
+import { Markdown } from '@tanstack/markdown/react';
 import { cleanup, render } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { MarkdownView } from '@/components/markdown/markdown-view';
 
+vi.mock(import('@tanstack/markdown/react'), async (importOriginal) => {
+  const actual = await importOriginal();
+
+  return { ...actual, Markdown: vi.fn(actual.Markdown) };
+});
+
 afterEach(() => {
   cleanup();
+  vi.mocked(Markdown).mockClear();
 });
 
 describe('MarkdownView URL policy', () => {
@@ -220,5 +229,27 @@ describe('MarkdownView rendering', () => {
     const { container } = render(<MarkdownView markdown={markdown} />);
 
     expect(container.textContent?.length).toBeGreaterThan(0);
+  });
+});
+
+describe('MarkdownView memoization', () => {
+  it('does not re-parse on a re-render with identical markdown and the same store', () => {
+    const store = createStateStore({});
+    const { rerender } = render(<MarkdownView markdown="**a**" store={store} />);
+    const calls = vi.mocked(Markdown).mock.calls.length;
+
+    rerender(<MarkdownView markdown="**a**" store={store} />);
+
+    expect(vi.mocked(Markdown).mock.calls.length).toBe(calls);
+  });
+
+  it('re-parses when the markdown changes', () => {
+    const { container, rerender } = render(<MarkdownView markdown="first" />);
+    const calls = vi.mocked(Markdown).mock.calls.length;
+
+    rerender(<MarkdownView markdown="second" />);
+
+    expect(vi.mocked(Markdown).mock.calls.length).toBe(calls + 1);
+    expect(container.textContent).toBe('second');
   });
 });

@@ -27,7 +27,7 @@ Produced by a deep audit at commit `ffee99b` (2026-09-26): 15 opus auditors (9 p
 | 17   | Comment cruft sweep (banners, journal tense, misplaced docs)                                         | S                     | 24         | TODO                                             |
 | 18   | Writing sweep (MCP tool descriptions, catalog copy, errors, README)                                  | M                     | 36         | TODO                                             |
 | 19   | Test hygiene                                                                                         | M                     | —          | TODO                                             |
-| 20   | Memoize markdown parsing and syntax highlighting                                                     | S                     | —          | TODO                                             |
+| 20   | Memoize markdown parsing and syntax highlighting                                                     | S                     | —          | DONE                                             |
 | 21   | Precompressed assets, lighter detail-route graph, parallel PR CI                                     | S                     | 28         | TODO                                             |
 | 22   | Server-only import protection                                                                        | M                     | 11         | TODO                                             |
 | 23   | Repository liveness and atomic update_artifact                                                       | M                     | 07, 08     | TODO                                             |

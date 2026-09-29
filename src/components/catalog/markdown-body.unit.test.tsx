@@ -1,11 +1,19 @@
+import { Markdown } from '@tanstack/markdown/react';
 // @vitest-environment happy-dom
 import { cleanup, render } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { MarkdownBody } from '@/components/catalog/markdown-body';
 
+vi.mock(import('@tanstack/markdown/react'), async (importOriginal) => {
+  const actual = await importOriginal();
+
+  return { ...actual, Markdown: vi.fn(actual.Markdown) };
+});
+
 afterEach(() => {
   cleanup();
+  vi.mocked(Markdown).mockClear();
 });
 
 describe('MarkdownBody', () => {
@@ -86,5 +94,37 @@ describe('MarkdownBody', () => {
 
     expect(img).toBeTruthy();
     expect(img?.getAttribute('src')).toBe('https://example.com/a.png');
+  });
+
+  describe('memoization', () => {
+    it('does not re-parse on a re-render with identical markdown', () => {
+      const { rerender } = render(<MarkdownBody markdown="**a**" />);
+      const calls = vi.mocked(Markdown).mock.calls.length;
+
+      rerender(<MarkdownBody markdown="**a**" />);
+
+      expect(vi.mocked(Markdown).mock.calls.length).toBe(calls);
+    });
+
+    it('does not re-parse when className or size changes, and applies the new class', () => {
+      const { container, rerender } = render(<MarkdownBody markdown="**a**" />);
+      const calls = vi.mocked(Markdown).mock.calls.length;
+
+      rerender(<MarkdownBody className="other" markdown="**a**" size="lg" />);
+
+      expect(vi.mocked(Markdown).mock.calls.length).toBe(calls);
+      expect(container.firstElementChild?.classList.contains('other')).toBe(true);
+      expect(container.firstElementChild?.classList.contains('prose-lg')).toBe(true);
+    });
+
+    it('re-parses when the markdown changes and renders the new text', () => {
+      const { container, rerender } = render(<MarkdownBody markdown="first" />);
+      const calls = vi.mocked(Markdown).mock.calls.length;
+
+      rerender(<MarkdownBody markdown="second" />);
+
+      expect(vi.mocked(Markdown).mock.calls.length).toBe(calls + 1);
+      expect(container.textContent).toBe('second');
+    });
   });
 });

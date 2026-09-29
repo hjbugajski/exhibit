@@ -1,11 +1,19 @@
 // @vitest-environment happy-dom
 import { cleanup, render } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { HighlightedCode } from '@/components/blocks/highlighted-code';
+import { highlight } from '@/lib/highlight';
+
+vi.mock(import('@/lib/highlight'), async (importOriginal) => {
+  const actual = await importOriginal();
+
+  return { ...actual, highlight: vi.fn(actual.highlight) };
+});
 
 afterEach(() => {
   cleanup();
+  vi.mocked(highlight).mockClear();
 });
 
 function renderCode(code: string, language?: string) {
@@ -43,5 +51,34 @@ describe('HighlightedCode', () => {
 
     expect(element.querySelectorAll('.th-token')).toHaveLength(0);
     expect(element.textContent).toBe(code);
+  });
+
+  describe('memoization', () => {
+    it('does not re-highlight on a re-render with identical code and language', () => {
+      const { rerender } = render(<HighlightedCode code="const a = 1;" language="ts" />);
+      const calls = vi.mocked(highlight).mock.calls.length;
+
+      rerender(<HighlightedCode code="const a = 1;" language="ts" />);
+
+      expect(vi.mocked(highlight).mock.calls.length).toBe(calls);
+    });
+
+    it('does not re-highlight when only className changes', () => {
+      const { rerender } = render(<HighlightedCode code="const a = 1;" language="ts" />);
+      const calls = vi.mocked(highlight).mock.calls.length;
+
+      rerender(<HighlightedCode className="other" code="const a = 1;" language="ts" />);
+
+      expect(vi.mocked(highlight).mock.calls.length).toBe(calls);
+    });
+
+    it('re-highlights when the code changes', () => {
+      const { rerender } = render(<HighlightedCode code="const a = 1;" language="ts" />);
+      const calls = vi.mocked(highlight).mock.calls.length;
+
+      rerender(<HighlightedCode code="const b = 2;" language="ts" />);
+
+      expect(vi.mocked(highlight).mock.calls.length).toBe(calls + 1);
+    });
   });
 });

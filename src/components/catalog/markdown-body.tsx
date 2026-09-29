@@ -10,6 +10,8 @@
  * expresses component structure directly, so a `markdown` prop never needs to reach back into the
  * catalog.
  */
+import { useMemo } from 'react';
+
 import { Markdown } from '@tanstack/markdown/react';
 
 import { createMarkdownComponents } from '@/components/markdown/markdown-policy';
@@ -39,11 +41,15 @@ export function MarkdownBody({
   className?: string;
   size?: MarkdownBodySize;
 }) {
-  return (
-    <div className={cn('prose', sizeClass[size], className)}>
+  // Components and parse options are module constants, so markdown is the only parse input.
+  const body = useMemo(
+    () => (
       <Markdown components={components} {...markdownParseOptions}>
         {markdown}
       </Markdown>
-    </div>
+    ),
+    [markdown],
   );
+
+  return <div className={cn('prose', sizeClass[size], className)}>{body}</div>;
 }
