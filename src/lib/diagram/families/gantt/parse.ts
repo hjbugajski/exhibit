@@ -51,6 +51,9 @@ const TAGS: ReadonlySet<string> = new Set(['done', 'active', 'crit', 'milestone'
 
 const DURATION = /^(\d+(?:\.\d+)?)\s*(ms|min|s|m|h|d|w)$/i;
 
+/** At least 10,000 years in every unit; longer is hostile input, not a plan. */
+const MAX_DURATION_MS = 10_000 * 366 * MS_PER_DAY;
+
 const UNITS: Readonly<Record<string, number>> = {
   ms: 1,
   s: 1000,
@@ -223,6 +226,14 @@ function durationOf(field: string): GanttDuration | null {
   const amount = Number(found[1]);
   const unit = (found[2] as string).toLowerCase();
   const ms = amount * (UNITS[unit] as number);
+
+  if (ms > MAX_DURATION_MS) {
+    throw new StatementError(
+      'duration-too-large',
+      `Duration '${field}' is longer than 10,000 years.`,
+    );
+  }
+
   const perDay = unit === 'd' ? 1 : unit === 'w' ? 7 : 0;
   const days = perDay > 0 && Number.isInteger(amount * perDay) ? amount * perDay : null;
 

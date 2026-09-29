@@ -28,7 +28,13 @@ function membersOf(ir: FlowchartIR): Map<string, string[]> {
 
       // A node declared inside the subgraph that shares its id is that subgraph's phantom.
       if (at !== node.id) {
-        members.set(at, [...(members.get(at) ?? []), node.id]);
+        const list = members.get(at);
+
+        if (list) {
+          list.push(node.id);
+        } else {
+          members.set(at, [node.id]);
+        }
       }
     }
   }

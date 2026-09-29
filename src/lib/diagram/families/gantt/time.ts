@@ -374,10 +374,10 @@ export function skipExcluded(at: number, excludeWeekends: boolean): number {
 }
 
 /**
- * `start` plus a duration. A duration in whole days walks the calendar a day at a time so excluded
- * days can be stepped over — that is what makes `excludes weekends` extend a bar across a weekend
- * rather than eat two days of it. A sub-day duration is added flat: a two-hour task does not
- * meaningfully straddle a weekend, and walking it by the hour would be arithmetic theatre.
+ * `start` plus a duration. A duration in whole days counts only days that are not excluded, so
+ * `excludes weekends` extends a bar across a weekend rather than eating two days of it. The cost is
+ * independent of the duration's length. A sub-day duration is added flat: a two-hour task does not
+ * meaningfully straddle a weekend.
  */
 export function addDuration(
   start: number,
@@ -390,6 +390,19 @@ export function addDuration(
 
   let at = start;
   let remaining = duration.days;
+
+  /*
+   * Five counted days are exactly seven calendar days only from midnight Tuesday to Saturday. The
+   * start keeps its time of day until the first weekend snap, and a midnight Sunday or Monday start
+   * reaches Saturday early, so step singly until the walk is in that state.
+   */
+  while (remaining > 0 && !(at === startOfDay(at) && dayOfWeek(epochDayOf(at)) >= 2)) {
+    at = skipExcluded(at, excludeWeekends) + MS_PER_DAY;
+    remaining -= 1;
+  }
+
+  at += Math.floor(remaining / 5) * 7 * MS_PER_DAY;
+  remaining %= 5;
 
   while (remaining > 0) {
     at = skipExcluded(at, excludeWeekends) + MS_PER_DAY;

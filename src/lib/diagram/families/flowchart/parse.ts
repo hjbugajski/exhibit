@@ -20,6 +20,7 @@ import { readDelimited, readRestOfLine } from '../../core/lex/tokens.ts';
 import type {
   ArrowKind,
   DiagnosticSink,
+  DiagramLimits,
   LineKind,
   ParseContext,
   ParseResult,
@@ -266,6 +267,7 @@ interface Pending {
 class FlowchartParser {
   private readonly source: string;
   private readonly report: DiagnosticSink;
+  private readonly limits: DiagramLimits;
 
   private direction: FlowDirection = 'TB';
   private readonly nodes = new Map<string, FlowNode>();
@@ -279,10 +281,13 @@ class FlowchartParser {
   private ordinal = 0;
   private autoCluster = 0;
   private failures = 0;
+  /** Set when a statement exceeds a `DiagramLimits` cap; the parse stops and yields no IR. */
+  private aborted = false;
 
   constructor(source: string, ctx: ParseContext) {
     this.source = source;
     this.report = ctx.report;
+    this.limits = ctx.limits;
   }
 
   run(): FlowchartIR | null {
@@ -309,6 +314,10 @@ class FlowchartParser {
       }
 
       this.statement(line);
+
+      if (this.aborted) {
+        return null;
+      }
     }
 
     for (const open of this.stack) {
@@ -612,6 +621,20 @@ class FlowchartParser {
       }
 
       const next = this.readGroup(scanner, pending, line.span);
+
+      if (
+        this.edges.length + pending.edges.length + group.length * next.length >
+        this.limits.edges
+      ) {
+        this.report.error(
+          'too-many-edges',
+          `Flowchart has more than ${this.limits.edges} edges.`,
+          line.span,
+        );
+        this.aborted = true;
+
+        return;
+      }
 
       for (const from of group) {
         for (const to of next) {

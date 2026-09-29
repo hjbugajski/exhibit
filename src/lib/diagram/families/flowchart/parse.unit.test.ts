@@ -382,3 +382,50 @@ describe('parseFlowchart', () => {
     }
   });
 });
+
+describe('parseFlowchart edge limit', () => {
+  function parseWith(
+    source: string,
+    edges: number,
+  ): { ir: FlowchartIR | null; errors: Diagnostic[] } {
+    const report = new Reporter();
+    const result = parseFlowchart(source, { report, limits: { ...defaultLimits, edges } });
+
+    return {
+      ir: result.ir,
+      errors: result.diagnostics.filter((entry) => entry.severity === 'error'),
+    };
+  }
+
+  it('rejects a fan-out group past the limit on its line', () => {
+    const { ir, errors } = parseWith('flowchart TD\na & b & c --> d & e', 5);
+
+    expect(ir).toBeNull();
+    expect(errors.map((entry) => entry.code)).toEqual(['too-many-edges']);
+    expect(errors[0]?.span?.line).toBe(2);
+    expect(errors[0]?.message).toBe('Flowchart has more than 5 edges.');
+  });
+
+  it('counts edges accumulated across lines', () => {
+    const { ir, errors } = parseWith('flowchart TD\na --> b --> c --> d\ne --> f --> g --> h', 5);
+
+    expect(ir).toBeNull();
+    expect(errors.map((entry) => entry.code)).toEqual(['too-many-edges']);
+    expect(errors[0]?.span?.line).toBe(3);
+  });
+
+  it('accepts exactly the limit', () => {
+    const { ir, errors } = parseWith('flowchart TD\na --> b --> c --> d --> e --> f', 5);
+
+    expect(errors).toEqual([]);
+    expect(ir?.edges).toHaveLength(5);
+  });
+
+  it('stops a large fan-out at the default limit', () => {
+    const side = (prefix: string) =>
+      Array.from({ length: 100 }, (_, index) => `${prefix}${index}`).join(' & ');
+    const { codes } = parse(`flowchart TD\n${side('a')} --> ${side('b')}`);
+
+    expect(codes).toEqual(['error:too-many-edges']);
+  });
+});

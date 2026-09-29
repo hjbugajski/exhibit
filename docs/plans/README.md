@@ -10,7 +10,7 @@ Produced by a deep audit at commit `ffee99b` (2026-09-26): 15 opus auditors (9 p
 | ---- | ---------------------------------------------------------------------------------------------------- | --------------------- | ---------- | ------------------------------------------------ |
 | 01   | Drop account.issuer and upgrade Better Auth to 1.7.6                                                 | S                     | —          | DONE (phase 2 folded into the dependency update) |
 | 02   | Close the backslash open redirect on /sign-in                                                        | S                     | —          | DONE                                             |
-| 03   | Bound flowchart edge fan-out and gantt duration work before layout                                   | S                     | —          | TODO                                             |
+| 03   | Bound flowchart edge fan-out and gantt duration work before layout                                   | S                     | —          | DONE                                             |
 | 04   | Honor revoked opaque tokens and session liveness in /mcp auth                                        | S                     | 01         | TODO                                             |
 | 05   | Keep password-reset tokens out of the evlog request log                                              | S                     | —          | TODO                                             |
 | 06   | Interaction-state integrity (stale reseed, save-error reset, uncounted fences, statePath collisions) | M                     | 08         | TODO                                             |
