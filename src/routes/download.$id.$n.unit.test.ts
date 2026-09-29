@@ -13,6 +13,9 @@ const { Route } = await import('./download.$id.$n');
 
 const fakeSession = { user: { id: '1', email: 'owner@example.com' }, session: { id: 's1' } };
 
+/** Spelled out rather than imported, for the reason EXPECTED_RENDER_CSP gives in the render test. */
+const EXPECTED_DOWNLOAD_CSP = "sandbox; default-src 'none'; frame-ancestors 'none'";
+
 async function callHandler(args: {
   request: Request;
   params: { id: string; n: string };
@@ -68,6 +71,7 @@ describe('/download/$id/$n', () => {
     expect(response.headers.get('Content-Disposition')).toBe(
       'attachment; filename="download-me-v1.json"',
     );
+    expect(response.headers.get('Content-Security-Policy')).toBe(EXPECTED_DOWNLOAD_CSP);
     expect(await response.text()).toBe('{\n  "root": "a",\n  "elements": {}\n}');
   });
 
@@ -87,8 +91,12 @@ describe('/download/$id/$n', () => {
     expect(response.headers.get('Content-Disposition')).toBe(
       'attachment; filename="html-download-v1.html"',
     );
-    // A downloaded artifact opened from disk must not leak the gallery URL to the remote hosts its
-    // own markup references.
+    // Should a client render the response inline instead of saving it, the document runs no script,
+    // loads nothing, and does not leak the gallery URL to the remote hosts its markup references.
+    const csp = response.headers.get('Content-Security-Policy');
+    expect(csp).toBe(EXPECTED_DOWNLOAD_CSP);
+    expect(csp).not.toContain('allow-scripts');
+    expect(csp).not.toContain('allow-same-origin');
     expect(response.headers.get('Referrer-Policy')).toBe('no-referrer');
     expect(await response.text()).toBe(html);
   });
@@ -113,6 +121,7 @@ describe('/download/$id/$n', () => {
     expect(response.headers.get('Content-Disposition')).toBe(
       'attachment; filename="markdown-download-v1.md"',
     );
+    expect(response.headers.get('Content-Security-Policy')).toBe(EXPECTED_DOWNLOAD_CSP);
     expect(await response.text()).toBe(markdown);
   });
 
