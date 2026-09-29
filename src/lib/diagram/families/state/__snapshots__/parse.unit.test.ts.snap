@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`parseState > 'accessibility statements' 1`] = `
+exports[`parseState > accessibility statements 1`] = `
 {
   "accDescr": "Two states",
   "accTitle": "Publish flow",
@@ -16,7 +16,7 @@ exports[`parseState > 'accessibility statements' 1`] = `
 }
 `;
 
-exports[`parseState > 'blank label is dropped' 1`] = `
+exports[`parseState > blank label is dropped 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -32,7 +32,7 @@ exports[`parseState > 'blank label is dropped' 1`] = `
 }
 `;
 
-exports[`parseState > 'choice stereotype' 1`] = `
+exports[`parseState > choice stereotype 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -48,7 +48,7 @@ exports[`parseState > 'choice stereotype' 1`] = `
 }
 `;
 
-exports[`parseState > 'comments are stripped' 1`] = `
+exports[`parseState > comments are stripped 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -64,7 +64,7 @@ exports[`parseState > 'comments are stripped' 1`] = `
 }
 `;
 
-exports[`parseState > 'composite declared before it is opened' 1`] = `
+exports[`parseState > composite declared before it is opened 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -83,7 +83,7 @@ exports[`parseState > 'composite declared before it is opened' 1`] = `
 }
 `;
 
-exports[`parseState > 'composite state' 1`] = `
+exports[`parseState > composite state 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -106,7 +106,7 @@ exports[`parseState > 'composite state' 1`] = `
 }
 `;
 
-exports[`parseState > 'description statement' 1`] = `
+exports[`parseState > description statement 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -119,7 +119,7 @@ exports[`parseState > 'description statement' 1`] = `
 }
 `;
 
-exports[`parseState > 'direction LR' 1`] = `
+exports[`parseState > direction LR 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -135,7 +135,7 @@ exports[`parseState > 'direction LR' 1`] = `
 }
 `;
 
-exports[`parseState > 'direction TD maps to TB' 1`] = `
+exports[`parseState > direction TD maps to TB 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -151,7 +151,7 @@ exports[`parseState > 'direction TD maps to TB' 1`] = `
 }
 `;
 
-exports[`parseState > 'entities outside quotes' 1`] = `
+exports[`parseState > entities outside quotes 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -167,7 +167,7 @@ exports[`parseState > 'entities outside quotes' 1`] = `
 }
 `;
 
-exports[`parseState > 'fork and join' 1`] = `
+exports[`parseState > fork and join 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -181,7 +181,7 @@ exports[`parseState > 'fork and join' 1`] = `
 }
 `;
 
-exports[`parseState > 'header only' 1`] = `
+exports[`parseState > header only 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -192,7 +192,7 @@ exports[`parseState > 'header only' 1`] = `
 }
 `;
 
-exports[`parseState > 'label breaks and entities' 1`] = `
+exports[`parseState > label breaks and entities 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -208,7 +208,7 @@ exports[`parseState > 'label breaks and entities' 1`] = `
 }
 `;
 
-exports[`parseState > 'long arrow' 1`] = `
+exports[`parseState > long arrow 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -224,7 +224,7 @@ exports[`parseState > 'long arrow' 1`] = `
 }
 `;
 
-exports[`parseState > 'nested composite states' 1`] = `
+exports[`parseState > nested composite states 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -244,7 +244,7 @@ exports[`parseState > 'nested composite states' 1`] = `
 }
 `;
 
-exports[`parseState > 'note block' 1`] = `
+exports[`parseState > note block 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -262,7 +262,7 @@ exports[`parseState > 'note block' 1`] = `
 }
 `;
 
-exports[`parseState > 'note on one line' 1`] = `
+exports[`parseState > note on one line 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -280,7 +280,7 @@ exports[`parseState > 'note on one line' 1`] = `
 }
 `;
 
-exports[`parseState > 'quoted composite state' 1`] = `
+exports[`parseState > quoted composite state 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -297,7 +297,7 @@ exports[`parseState > 'quoted composite state' 1`] = `
 }
 `;
 
-exports[`parseState > 'quoted state declaration' 1`] = `
+exports[`parseState > quoted state declaration 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -310,7 +310,7 @@ exports[`parseState > 'quoted state declaration' 1`] = `
 }
 `;
 
-exports[`parseState > 'self transition' 1`] = `
+exports[`parseState > self transition 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -325,7 +325,7 @@ exports[`parseState > 'self transition' 1`] = `
 }
 `;
 
-exports[`parseState > 'semicolon separated statements' 1`] = `
+exports[`parseState > semicolon separated statements 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -343,7 +343,7 @@ exports[`parseState > 'semicolon separated statements' 1`] = `
 }
 `;
 
-exports[`parseState > 'start and end markers' 1`] = `
+exports[`parseState > start and end markers 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -361,7 +361,7 @@ exports[`parseState > 'start and end markers' 1`] = `
 }
 `;
 
-exports[`parseState > 'state keyword declaration' 1`] = `
+exports[`parseState > state keyword declaration 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -374,7 +374,7 @@ exports[`parseState > 'state keyword declaration' 1`] = `
 }
 `;
 
-exports[`parseState > 'state keyword with description' 1`] = `
+exports[`parseState > state keyword with description 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -387,7 +387,7 @@ exports[`parseState > 'state keyword with description' 1`] = `
 }
 `;
 
-exports[`parseState > 'transition label' 1`] = `
+exports[`parseState > transition label 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -403,7 +403,7 @@ exports[`parseState > 'transition label' 1`] = `
 }
 `;
 
-exports[`parseState > 'transition without spaces' 1`] = `
+exports[`parseState > transition without spaces 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -419,7 +419,7 @@ exports[`parseState > 'transition without spaces' 1`] = `
 }
 `;
 
-exports[`parseState > 'two descriptions append' 1`] = `
+exports[`parseState > two descriptions append 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -432,7 +432,7 @@ exports[`parseState > 'two descriptions append' 1`] = `
 }
 `;
 
-exports[`parseState > 'two start markers stay separate' 1`] = `
+exports[`parseState > two start markers stay separate 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -451,7 +451,7 @@ exports[`parseState > 'two start markers stay separate' 1`] = `
 }
 `;
 
-exports[`parseState > 'v1 header' 1`] = `
+exports[`parseState > v1 header 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,

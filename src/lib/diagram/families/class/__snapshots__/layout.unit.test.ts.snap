@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`class layout > 'class-basic' matches its golden scene 1`] = `
+exports[`class layout > class-basic matches its golden scene 1`] = `
 {
   "clusters": [],
   "edges": [
@@ -176,7 +176,7 @@ exports[`class layout > 'class-basic' matches its golden scene 1`] = `
 }
 `;
 
-exports[`class layout > 'class-degenerate' matches its golden scene 1`] = `
+exports[`class layout > class-degenerate matches its golden scene 1`] = `
 {
   "clusters": [],
   "edges": [
@@ -455,7 +455,7 @@ exports[`class layout > 'class-degenerate' matches its golden scene 1`] = `
 }
 `;
 
-exports[`class layout > 'class-members' matches its golden scene 1`] = `
+exports[`class layout > class-members matches its golden scene 1`] = `
 {
   "clusters": [
     {
@@ -739,7 +739,7 @@ exports[`class layout > 'class-members' matches its golden scene 1`] = `
 }
 `;
 
-exports[`class layout > 'class-relations' matches its golden scene 1`] = `
+exports[`class layout > class-relations matches its golden scene 1`] = `
 {
   "clusters": [],
   "edges": [

@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`flowchartFamily > 'accessible titles' lays out to a golden scene 1`] = `
+exports[`flowchartFamily > accessible titles lays out to a golden scene 1`] = `
 {
   "clusters": [],
   "description": "How a draft ships",
@@ -96,7 +96,7 @@ exports[`flowchartFamily > 'accessible titles' lays out to a golden scene 1`] = 
 }
 `;
 
-exports[`flowchartFamily > 'bottom up BT' lays out to a golden scene 1`] = `
+exports[`flowchartFamily > bottom up BT lays out to a golden scene 1`] = `
 {
   "clusters": [],
   "edges": [
@@ -299,7 +299,7 @@ exports[`flowchartFamily > 'bottom up BT' lays out to a golden scene 1`] = `
 }
 `;
 
-exports[`flowchartFamily > 'cycles and self loops' lays out to a golden scene 1`] = `
+exports[`flowchartFamily > cycles and self loops lays out to a golden scene 1`] = `
 {
   "clusters": [],
   "edges": [
@@ -574,7 +574,7 @@ exports[`flowchartFamily > 'cycles and self loops' lays out to a golden scene 1`
 }
 `;
 
-exports[`flowchartFamily > 'decision TB' lays out to a golden scene 1`] = `
+exports[`flowchartFamily > decision TB lays out to a golden scene 1`] = `
 {
   "clusters": [],
   "edges": [
@@ -917,7 +917,7 @@ exports[`flowchartFamily > 'decision TB' lays out to a golden scene 1`] = `
 }
 `;
 
-exports[`flowchartFamily > 'disconnected components' lays out to a golden scene 1`] = `
+exports[`flowchartFamily > disconnected components lays out to a golden scene 1`] = `
 {
   "clusters": [],
   "edges": [
@@ -1114,7 +1114,7 @@ exports[`flowchartFamily > 'disconnected components' lays out to a golden scene 
 }
 `;
 
-exports[`flowchartFamily > 'every shape' lays out to a golden scene 1`] = `
+exports[`flowchartFamily > every shape lays out to a golden scene 1`] = `
 {
   "clusters": [],
   "edges": [
@@ -1844,7 +1844,7 @@ exports[`flowchartFamily > 'every shape' lays out to a golden scene 1`] = `
 }
 `;
 
-exports[`flowchartFamily > 'fan groups and classes' lays out to a golden scene 1`] = `
+exports[`flowchartFamily > fan groups and classes lays out to a golden scene 1`] = `
 {
   "clusters": [],
   "edges": [
@@ -2145,7 +2145,7 @@ exports[`flowchartFamily > 'fan groups and classes' lays out to a golden scene 1
 }
 `;
 
-exports[`flowchartFamily > 'long labels wrap' lays out to a golden scene 1`] = `
+exports[`flowchartFamily > long labels wrap lays out to a golden scene 1`] = `
 {
   "clusters": [],
   "edges": [
@@ -2312,7 +2312,7 @@ exports[`flowchartFamily > 'long labels wrap' lays out to a golden scene 1`] = `
 }
 `;
 
-exports[`flowchartFamily > 'nested subgraphs' lays out to a golden scene 1`] = `
+exports[`flowchartFamily > nested subgraphs lays out to a golden scene 1`] = `
 {
   "clusters": [
     {
@@ -2694,7 +2694,7 @@ exports[`flowchartFamily > 'nested subgraphs' lays out to a golden scene 1`] = `
 }
 `;
 
-exports[`flowchartFamily > 'pipeline LR' lays out to a golden scene 1`] = `
+exports[`flowchartFamily > pipeline LR lays out to a golden scene 1`] = `
 {
   "clusters": [],
   "edges": [
@@ -2944,7 +2944,7 @@ exports[`flowchartFamily > 'pipeline LR' lays out to a golden scene 1`] = `
 }
 `;
 
-exports[`flowchartFamily > 'right to left RL' lays out to a golden scene 1`] = `
+exports[`flowchartFamily > right to left RL lays out to a golden scene 1`] = `
 {
   "clusters": [],
   "edges": [
@@ -3091,7 +3091,7 @@ exports[`flowchartFamily > 'right to left RL' lays out to a golden scene 1`] = `
 }
 `;
 
-exports[`flowchartFamily > 'single node' lays out to a golden scene 1`] = `
+exports[`flowchartFamily > single node lays out to a golden scene 1`] = `
 {
   "clusters": [],
   "edges": [],

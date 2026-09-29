@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`parseGantt > 'after one task' 1`] = `
+exports[`parseGantt > after one task 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -19,7 +19,7 @@ exports[`parseGantt > 'after one task' 1`] = `
 }
 `;
 
-exports[`parseGantt > 'after several tasks' 1`] = `
+exports[`parseGantt > after several tasks 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -39,7 +39,7 @@ exports[`parseGantt > 'after several tasks' 1`] = `
 }
 `;
 
-exports[`parseGantt > 'american date format' 1`] = `
+exports[`parseGantt > american date format 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -57,7 +57,7 @@ exports[`parseGantt > 'american date format' 1`] = `
 }
 `;
 
-exports[`parseGantt > 'axis format' 1`] = `
+exports[`parseGantt > axis format 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -75,7 +75,7 @@ exports[`parseGantt > 'axis format' 1`] = `
 }
 `;
 
-exports[`parseGantt > 'comments are stripped' 1`] = `
+exports[`parseGantt > comments are stripped 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -93,7 +93,7 @@ exports[`parseGantt > 'comments are stripped' 1`] = `
 }
 `;
 
-exports[`parseGantt > 'date format with a time' 1`] = `
+exports[`parseGantt > date format with a time 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -111,7 +111,7 @@ exports[`parseGantt > 'date format with a time' 1`] = `
 }
 `;
 
-exports[`parseGantt > 'declared date format' 1`] = `
+exports[`parseGantt > declared date format 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -129,7 +129,7 @@ exports[`parseGantt > 'declared date format' 1`] = `
 }
 `;
 
-exports[`parseGantt > 'duration only' 1`] = `
+exports[`parseGantt > duration only 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -147,7 +147,7 @@ exports[`parseGantt > 'duration only' 1`] = `
 }
 `;
 
-exports[`parseGantt > 'every duration unit' 1`] = `
+exports[`parseGantt > every duration unit 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -169,7 +169,7 @@ exports[`parseGantt > 'every duration unit' 1`] = `
 }
 `;
 
-exports[`parseGantt > 'every tag' 1`] = `
+exports[`parseGantt > every tag 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -189,7 +189,7 @@ exports[`parseGantt > 'every tag' 1`] = `
 }
 `;
 
-exports[`parseGantt > 'excludes weekends' 1`] = `
+exports[`parseGantt > excludes weekends 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -207,7 +207,7 @@ exports[`parseGantt > 'excludes weekends' 1`] = `
 }
 `;
 
-exports[`parseGantt > 'header only' 1`] = `
+exports[`parseGantt > header only 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -221,7 +221,7 @@ exports[`parseGantt > 'header only' 1`] = `
 }
 `;
 
-exports[`parseGantt > 'id, start and end' 1`] = `
+exports[`parseGantt > id, start and end 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -239,7 +239,7 @@ exports[`parseGantt > 'id, start and end' 1`] = `
 }
 `;
 
-exports[`parseGantt > 'label breaks and entities' 1`] = `
+exports[`parseGantt > label breaks and entities 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -257,7 +257,7 @@ exports[`parseGantt > 'label breaks and entities' 1`] = `
 }
 `;
 
-exports[`parseGantt > 'one task with a start and a duration' 1`] = `
+exports[`parseGantt > one task with a start and a duration 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -275,7 +275,7 @@ exports[`parseGantt > 'one task with a start and a duration' 1`] = `
 }
 `;
 
-exports[`parseGantt > 'sections' 1`] = `
+exports[`parseGantt > sections 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -295,7 +295,7 @@ exports[`parseGantt > 'sections' 1`] = `
 }
 `;
 
-exports[`parseGantt > 'slashed date format' 1`] = `
+exports[`parseGantt > slashed date format 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -313,7 +313,7 @@ exports[`parseGantt > 'slashed date format' 1`] = `
 }
 `;
 
-exports[`parseGantt > 'start only' 1`] = `
+exports[`parseGantt > start only 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -331,7 +331,7 @@ exports[`parseGantt > 'start only' 1`] = `
 }
 `;
 
-exports[`parseGantt > 'tasks before any section' 1`] = `
+exports[`parseGantt > tasks before any section 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -351,7 +351,7 @@ exports[`parseGantt > 'tasks before any section' 1`] = `
 }
 `;
 
-exports[`parseGantt > 'title and accessibility statements' 1`] = `
+exports[`parseGantt > title and accessibility statements 1`] = `
 {
   "accDescr": "Two tasks",
   "accTitle": "The plan",
@@ -369,7 +369,7 @@ exports[`parseGantt > 'title and accessibility statements' 1`] = `
 }
 `;
 
-exports[`parseGantt > 'today marker off' 1`] = `
+exports[`parseGantt > today marker off 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,

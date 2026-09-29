@@ -2,13 +2,13 @@ import { useMemo } from 'react';
 
 import { areaY, barY, defineChart, dot, lineY } from '@tanstack/charts';
 import type { ChartPoint } from '@tanstack/charts';
-import { scaleBand } from '@tanstack/charts-scales/band';
-import { scaleLinear } from '@tanstack/charts-scales/linear';
-import { scalePoint } from '@tanstack/charts-scales/point';
 import { d3Curve } from '@tanstack/charts/d3/shape';
 import { polar, radialArc } from '@tanstack/charts/polar';
+import { Chart } from '@tanstack/charts/react';
+import { scaleBand } from '@tanstack/charts/scales/band';
+import { scaleLinear } from '@tanstack/charts/scales/linear';
+import { scalePoint } from '@tanstack/charts/scales/point';
 import { tooltip } from '@tanstack/charts/tooltip';
-import { Chart } from '@tanstack/react-charts';
 import { curveMonotoneX, pie } from 'd3-shape';
 import type { PieArcDatum } from 'd3-shape';
 
@@ -79,8 +79,7 @@ function CartesianChart({
             // Uniform radius: per-corner rounding is not expressible yet (TanStack/charts#28).
             barY(data, { x: 'label', y: 'value', radius: 2 }),
           ],
-          x: { scale: () => scaleBand<string>().padding(0.18) },
-          y,
+          scales: { x: { scale: () => scaleBand<string>().padding(0.18) }, y },
           tooltip: tooltipSpec,
         });
       case 'area':
@@ -90,22 +89,19 @@ function CartesianChart({
             areaY(data, { x: 'label', y: 'value', curve }),
             lineY(data, { x: 'label', y: 'value', curve, strokeWidth: 2 }),
           ],
-          x,
-          y,
+          scales: { x, y },
           tooltip: tooltipSpec,
         });
       case 'scatter':
         return defineChart({
           marks: [dot(data, { x: 'label', y: 'value', r: 3.5 })],
-          x,
-          y,
+          scales: { x, y },
           tooltip: tooltipSpec,
         });
       default:
         return defineChart({
           marks: [lineY(data, { x: 'label', y: 'value', curve, strokeWidth: 2 })],
-          x,
-          y,
+          scales: { x, y },
           tooltip: tooltipSpec,
         });
     }
@@ -136,9 +132,11 @@ function DonutChart({ data, label, seriesName }: KindChartProps) {
               key: (slice) => slice.data.label,
             }),
           ],
+          scales: { angle: null, radius: null },
         }),
       ],
       guides: false,
+      scales: { x: null, y: null },
       theme: { palette: SLICE_PALETTE },
       tooltip: {
         use: tooltip,

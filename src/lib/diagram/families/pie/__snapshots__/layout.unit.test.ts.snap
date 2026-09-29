@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`pie end to end > 'pie-basic' matches its golden scene 1`] = `
+exports[`pie end to end > pie-basic matches its golden scene 1`] = `
 {
   "caption": "Artifact types",
   "center": {
@@ -113,7 +113,7 @@ exports[`pie end to end > 'pie-basic' matches its golden scene 1`] = `
 }
 `;
 
-exports[`pie end to end > 'pie-degenerate' matches its golden scene 1`] = `
+exports[`pie end to end > pie-degenerate matches its golden scene 1`] = `
 {
   "caption": "Nothing yet",
   "center": {
@@ -149,7 +149,7 @@ exports[`pie end to end > 'pie-degenerate' matches its golden scene 1`] = `
 }
 `;
 
-exports[`pie end to end > 'pie-showdata' matches its golden scene 1`] = `
+exports[`pie end to end > pie-showdata matches its golden scene 1`] = `
 {
   "caption": "Publishes by kind",
   "center": {

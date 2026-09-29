@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`er layout > 'er-attributes' matches its golden scene 1`] = `
+exports[`er layout > er-attributes matches its golden scene 1`] = `
 {
   "clusters": [],
   "edges": [
@@ -122,7 +122,7 @@ exports[`er layout > 'er-attributes' matches its golden scene 1`] = `
 }
 `;
 
-exports[`er layout > 'er-basic' matches its golden scene 1`] = `
+exports[`er layout > er-basic matches its golden scene 1`] = `
 {
   "clusters": [],
   "edges": [
@@ -425,7 +425,7 @@ exports[`er layout > 'er-basic' matches its golden scene 1`] = `
 }
 `;
 
-exports[`er layout > 'er-cardinalities' matches its golden scene 1`] = `
+exports[`er layout > er-cardinalities matches its golden scene 1`] = `
 {
   "clusters": [],
   "description": "One relationship per cardinality pair",
@@ -989,7 +989,7 @@ exports[`er layout > 'er-cardinalities' matches its golden scene 1`] = `
 }
 `;
 
-exports[`er layout > 'er-degenerate' matches its golden scene 1`] = `
+exports[`er layout > er-degenerate matches its golden scene 1`] = `
 {
   "clusters": [],
   "edges": [

@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`parsePie > 'a label that looks like a keyword' 1`] = `
+exports[`parsePie > a label that looks like a keyword 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -13,7 +13,7 @@ exports[`parsePie > 'a label that looks like a keyword' 1`] = `
 }
 `;
 
-exports[`parsePie > 'accessibility statements' 1`] = `
+exports[`parsePie > accessibility statements 1`] = `
 {
   "accDescr": "A pie",
   "accTitle": "Types",
@@ -25,7 +25,7 @@ exports[`parsePie > 'accessibility statements' 1`] = `
 }
 `;
 
-exports[`parsePie > 'bare header' 1`] = `
+exports[`parsePie > bare header 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -35,7 +35,7 @@ exports[`parsePie > 'bare header' 1`] = `
 }
 `;
 
-exports[`parsePie > 'comments and semicolons' 1`] = `
+exports[`parsePie > comments and semicolons 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -48,7 +48,7 @@ exports[`parsePie > 'comments and semicolons' 1`] = `
 }
 `;
 
-exports[`parsePie > 'decimal values' 1`] = `
+exports[`parsePie > decimal values 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -61,7 +61,7 @@ exports[`parsePie > 'decimal values' 1`] = `
 }
 `;
 
-exports[`parsePie > 'declaration order is preserved' 1`] = `
+exports[`parsePie > declaration order is preserved 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -75,7 +75,7 @@ exports[`parsePie > 'declaration order is preserved' 1`] = `
 }
 `;
 
-exports[`parsePie > 'label whitespace collapses' 1`] = `
+exports[`parsePie > label whitespace collapses 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -87,7 +87,7 @@ exports[`parsePie > 'label whitespace collapses' 1`] = `
 }
 `;
 
-exports[`parsePie > 'showData and title on the header' 1`] = `
+exports[`parsePie > showData and title on the header 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -99,7 +99,7 @@ exports[`parsePie > 'showData and title on the header' 1`] = `
 }
 `;
 
-exports[`parsePie > 'showData on the header' 1`] = `
+exports[`parsePie > showData on the header 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -111,7 +111,7 @@ exports[`parsePie > 'showData on the header' 1`] = `
 }
 `;
 
-exports[`parsePie > 'title on its own line' 1`] = `
+exports[`parsePie > title on its own line 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -123,7 +123,7 @@ exports[`parsePie > 'title on its own line' 1`] = `
 }
 `;
 
-exports[`parsePie > 'title on the header' 1`] = `
+exports[`parsePie > title on the header 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -135,7 +135,7 @@ exports[`parsePie > 'title on the header' 1`] = `
 }
 `;
 
-exports[`parsePie > 'zero values' 1`] = `
+exports[`parsePie > zero values 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,

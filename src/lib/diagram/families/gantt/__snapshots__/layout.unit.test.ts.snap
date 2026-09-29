@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`gantt layout > 'gantt-basic' matches its golden scene 1`] = `
+exports[`gantt layout > gantt-basic matches its golden scene 1`] = `
 {
   "caption": "Publishing pipeline",
   "chart": {
@@ -329,7 +329,7 @@ exports[`gantt layout > 'gantt-basic' matches its golden scene 1`] = `
 }
 `;
 
-exports[`gantt layout > 'gantt-degenerate' matches its golden scene 1`] = `
+exports[`gantt layout > gantt-degenerate matches its golden scene 1`] = `
 {
   "chart": {
     "height": 160,
@@ -725,7 +725,7 @@ exports[`gantt layout > 'gantt-degenerate' matches its golden scene 1`] = `
 }
 `;
 
-exports[`gantt layout > 'gantt-dependencies' matches its golden scene 1`] = `
+exports[`gantt layout > gantt-dependencies matches its golden scene 1`] = `
 {
   "chart": {
     "height": 160,
@@ -1134,7 +1134,7 @@ exports[`gantt layout > 'gantt-dependencies' matches its golden scene 1`] = `
 }
 `;
 
-exports[`gantt layout > 'gantt-sections' matches its golden scene 1`] = `
+exports[`gantt layout > gantt-sections matches its golden scene 1`] = `
 {
   "caption": "Quarter plan",
   "chart": {

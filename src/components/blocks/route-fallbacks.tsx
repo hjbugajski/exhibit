@@ -45,7 +45,9 @@ export function RouteError({ error }: ErrorComponentProps) {
           <TriangleAlert />
         </Empty.Media>
         <Empty.Title>Something went wrong</Empty.Title>
-        <Empty.Description>{error.message || 'This page failed to load.'}</Empty.Description>
+        <Empty.Description>
+          {(error instanceof Error && error.message) || 'This page failed to load.'}
+        </Empty.Description>
       </Empty.Header>
       <Empty.Content>
         <Button nativeButton={false} render={<Link to="/">Back to artifacts</Link>} />

@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`parseSequence > 'a later declaration refines an implic…' 1`] = `
+exports[`parseSequence > a later declaration refines an implicit… 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -16,7 +16,7 @@ exports[`parseSequence > 'a later declaration refines an implic…' 1`] = `
 }
 `;
 
-exports[`parseSequence > 'accessibility statements' 1`] = `
+exports[`parseSequence > accessibility statements 1`] = `
 {
   "accDescr": "Two participants",
   "accTitle": "Publish flow",
@@ -32,7 +32,7 @@ exports[`parseSequence > 'accessibility statements' 1`] = `
 }
 `;
 
-exports[`parseSequence > 'activation shorthand' 1`] = `
+exports[`parseSequence > activation shorthand 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -49,7 +49,7 @@ exports[`parseSequence > 'activation shorthand' 1`] = `
 }
 `;
 
-exports[`parseSequence > 'actor declaration' 1`] = `
+exports[`parseSequence > actor declaration 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -62,7 +62,7 @@ exports[`parseSequence > 'actor declaration' 1`] = `
 }
 `;
 
-exports[`parseSequence > 'alt with else' 1`] = `
+exports[`parseSequence > alt with else 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -82,42 +82,7 @@ exports[`parseSequence > 'alt with else' 1`] = `
 }
 `;
 
-exports[`parseSequence > 'autonumber off' 1`] = `
-{
-  "accDescr": undefined,
-  "accTitle": undefined,
-  "autonumber": null,
-  "events": [
-    "A solid/arrow B: one",
-  ],
-  "participants": [
-    "participant A "A" (implicit)",
-    "participant B "B" (implicit)",
-  ],
-  "title": undefined,
-}
-`;
-
-exports[`parseSequence > 'autonumber with start and step' 1`] = `
-{
-  "accDescr": undefined,
-  "accTitle": undefined,
-  "autonumber": {
-    "start": 10,
-    "step": 5,
-  },
-  "events": [
-    "A solid/arrow B: one",
-  ],
-  "participants": [
-    "participant A "A" (implicit)",
-    "participant B "B" (implicit)",
-  ],
-  "title": undefined,
-}
-`;
-
-exports[`parseSequence > 'autonumber' 1`] = `
+exports[`parseSequence > autonumber 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -136,7 +101,42 @@ exports[`parseSequence > 'autonumber' 1`] = `
 }
 `;
 
-exports[`parseSequence > 'break block' 1`] = `
+exports[`parseSequence > autonumber off 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "autonumber": null,
+  "events": [
+    "A solid/arrow B: one",
+  ],
+  "participants": [
+    "participant A "A" (implicit)",
+    "participant B "B" (implicit)",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parseSequence > autonumber with start and step 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "autonumber": {
+    "start": 10,
+    "step": 5,
+  },
+  "events": [
+    "A solid/arrow B: one",
+  ],
+  "participants": [
+    "participant A "A" (implicit)",
+    "participant B "B" (implicit)",
+  ],
+  "title": undefined,
+}
+`;
+
+exports[`parseSequence > break block 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -154,7 +154,7 @@ exports[`parseSequence > 'break block' 1`] = `
 }
 `;
 
-exports[`parseSequence > 'comments are stripped' 1`] = `
+exports[`parseSequence > comments are stripped 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -170,7 +170,7 @@ exports[`parseSequence > 'comments are stripped' 1`] = `
 }
 `;
 
-exports[`parseSequence > 'critical with option' 1`] = `
+exports[`parseSequence > critical with option 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -190,7 +190,7 @@ exports[`parseSequence > 'critical with option' 1`] = `
 }
 `;
 
-exports[`parseSequence > 'declaration order wins over use order' 1`] = `
+exports[`parseSequence > declaration order wins over use order 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -206,7 +206,7 @@ exports[`parseSequence > 'declaration order wins over use order' 1`] = `
 }
 `;
 
-exports[`parseSequence > 'dotted arrow' 1`] = `
+exports[`parseSequence > dotted arrow 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -222,7 +222,7 @@ exports[`parseSequence > 'dotted arrow' 1`] = `
 }
 `;
 
-exports[`parseSequence > 'dotted async' 1`] = `
+exports[`parseSequence > dotted async 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -238,7 +238,7 @@ exports[`parseSequence > 'dotted async' 1`] = `
 }
 `;
 
-exports[`parseSequence > 'dotted cross' 1`] = `
+exports[`parseSequence > dotted cross 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -254,7 +254,7 @@ exports[`parseSequence > 'dotted cross' 1`] = `
 }
 `;
 
-exports[`parseSequence > 'dotted open' 1`] = `
+exports[`parseSequence > dotted open 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -270,7 +270,7 @@ exports[`parseSequence > 'dotted open' 1`] = `
 }
 `;
 
-exports[`parseSequence > 'empty message text' 1`] = `
+exports[`parseSequence > empty message text 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -286,7 +286,7 @@ exports[`parseSequence > 'empty message text' 1`] = `
 }
 `;
 
-exports[`parseSequence > 'explicit activate and deactivate' 1`] = `
+exports[`parseSequence > explicit activate and deactivate 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -304,7 +304,7 @@ exports[`parseSequence > 'explicit activate and deactivate' 1`] = `
 }
 `;
 
-exports[`parseSequence > 'header only' 1`] = `
+exports[`parseSequence > header only 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -315,7 +315,7 @@ exports[`parseSequence > 'header only' 1`] = `
 }
 `;
 
-exports[`parseSequence > 'implicit participants from first use' 1`] = `
+exports[`parseSequence > implicit participants from first use 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -331,7 +331,7 @@ exports[`parseSequence > 'implicit participants from first use' 1`] = `
 }
 `;
 
-exports[`parseSequence > 'label breaks and entities' 1`] = `
+exports[`parseSequence > label breaks and entities 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -347,7 +347,7 @@ exports[`parseSequence > 'label breaks and entities' 1`] = `
 }
 `;
 
-exports[`parseSequence > 'loop block' 1`] = `
+exports[`parseSequence > loop block 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -365,7 +365,7 @@ exports[`parseSequence > 'loop block' 1`] = `
 }
 `;
 
-exports[`parseSequence > 'nested blocks' 1`] = `
+exports[`parseSequence > nested blocks 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -385,7 +385,7 @@ exports[`parseSequence > 'nested blocks' 1`] = `
 }
 `;
 
-exports[`parseSequence > 'note left of' 1`] = `
+exports[`parseSequence > note left of 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -400,7 +400,7 @@ exports[`parseSequence > 'note left of' 1`] = `
 }
 `;
 
-exports[`parseSequence > 'note over one participant' 1`] = `
+exports[`parseSequence > note over one participant 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -415,7 +415,7 @@ exports[`parseSequence > 'note over one participant' 1`] = `
 }
 `;
 
-exports[`parseSequence > 'note over two participants' 1`] = `
+exports[`parseSequence > note over two participants 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -431,7 +431,7 @@ exports[`parseSequence > 'note over two participants' 1`] = `
 }
 `;
 
-exports[`parseSequence > 'note right of' 1`] = `
+exports[`parseSequence > note right of 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -446,7 +446,7 @@ exports[`parseSequence > 'note right of' 1`] = `
 }
 `;
 
-exports[`parseSequence > 'opt block' 1`] = `
+exports[`parseSequence > opt block 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -464,7 +464,7 @@ exports[`parseSequence > 'opt block' 1`] = `
 }
 `;
 
-exports[`parseSequence > 'par with and' 1`] = `
+exports[`parseSequence > par with and 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -484,7 +484,7 @@ exports[`parseSequence > 'par with and' 1`] = `
 }
 `;
 
-exports[`parseSequence > 'participant alias' 1`] = `
+exports[`parseSequence > participant alias 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -497,7 +497,7 @@ exports[`parseSequence > 'participant alias' 1`] = `
 }
 `;
 
-exports[`parseSequence > 'participant name with spaces' 1`] = `
+exports[`parseSequence > participant name with spaces 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -513,7 +513,7 @@ exports[`parseSequence > 'participant name with spaces' 1`] = `
 }
 `;
 
-exports[`parseSequence > 'self message' 1`] = `
+exports[`parseSequence > self message 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -528,7 +528,7 @@ exports[`parseSequence > 'self message' 1`] = `
 }
 `;
 
-exports[`parseSequence > 'solid arrow' 1`] = `
+exports[`parseSequence > solid arrow 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -544,7 +544,7 @@ exports[`parseSequence > 'solid arrow' 1`] = `
 }
 `;
 
-exports[`parseSequence > 'solid async' 1`] = `
+exports[`parseSequence > solid async 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -560,7 +560,7 @@ exports[`parseSequence > 'solid async' 1`] = `
 }
 `;
 
-exports[`parseSequence > 'solid cross' 1`] = `
+exports[`parseSequence > solid cross 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -576,7 +576,7 @@ exports[`parseSequence > 'solid cross' 1`] = `
 }
 `;
 
-exports[`parseSequence > 'solid open' 1`] = `
+exports[`parseSequence > solid open 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -592,7 +592,7 @@ exports[`parseSequence > 'solid open' 1`] = `
 }
 `;
 
-exports[`parseSequence > 'title' 1`] = `
+exports[`parseSequence > title 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,

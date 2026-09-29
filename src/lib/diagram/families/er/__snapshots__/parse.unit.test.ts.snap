@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`parseEr > 'accessibility statements' 1`] = `
+exports[`parseEr > accessibility statements 1`] = `
 {
   "accDescr": "Who buys what",
   "accTitle": "Orders",
@@ -14,7 +14,7 @@ exports[`parseEr > 'accessibility statements' 1`] = `
 }
 `;
 
-exports[`parseEr > 'alias kept from either mention' 1`] = `
+exports[`parseEr > alias kept from either mention 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -28,7 +28,7 @@ exports[`parseEr > 'alias kept from either mention' 1`] = `
 }
 `;
 
-exports[`parseEr > 'aliased entity' 1`] = `
+exports[`parseEr > aliased entity 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -39,7 +39,7 @@ exports[`parseEr > 'aliased entity' 1`] = `
 }
 `;
 
-exports[`parseEr > 'array and generic types' 1`] = `
+exports[`parseEr > array and generic types 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -50,7 +50,7 @@ exports[`parseEr > 'array and generic types' 1`] = `
 }
 `;
 
-exports[`parseEr > 'attribute block' 1`] = `
+exports[`parseEr > attribute block 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -61,7 +61,7 @@ exports[`parseEr > 'attribute block' 1`] = `
 }
 `;
 
-exports[`parseEr > 'attribute keys and comment' 1`] = `
+exports[`parseEr > attribute keys and comment 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -72,7 +72,7 @@ exports[`parseEr > 'attribute keys and comment' 1`] = `
 }
 `;
 
-exports[`parseEr > 'bare entity' 1`] = `
+exports[`parseEr > bare entity 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -83,7 +83,7 @@ exports[`parseEr > 'bare entity' 1`] = `
 }
 `;
 
-exports[`parseEr > 'block on an entity named by a relatio…' 1`] = `
+exports[`parseEr > block on an entity named by a relations… 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -97,7 +97,7 @@ exports[`parseEr > 'block on an entity named by a relatio…' 1`] = `
 }
 `;
 
-exports[`parseEr > 'comments are stripped' 1`] = `
+exports[`parseEr > comments are stripped 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -111,7 +111,7 @@ exports[`parseEr > 'comments are stripped' 1`] = `
 }
 `;
 
-exports[`parseEr > 'empty attribute block' 1`] = `
+exports[`parseEr > empty attribute block 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -122,7 +122,7 @@ exports[`parseEr > 'empty attribute block' 1`] = `
 }
 `;
 
-exports[`parseEr > 'empty relationship label' 1`] = `
+exports[`parseEr > empty relationship label 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -136,7 +136,7 @@ exports[`parseEr > 'empty relationship label' 1`] = `
 }
 `;
 
-exports[`parseEr > 'header only' 1`] = `
+exports[`parseEr > header only 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -145,7 +145,7 @@ exports[`parseEr > 'header only' 1`] = `
 }
 `;
 
-exports[`parseEr > 'label breaks and entities' 1`] = `
+exports[`parseEr > label breaks and entities 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -159,7 +159,7 @@ exports[`parseEr > 'label breaks and entities' 1`] = `
 }
 `;
 
-exports[`parseEr > 'non-identifying relationship' 1`] = `
+exports[`parseEr > non-identifying relationship 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -173,7 +173,7 @@ exports[`parseEr > 'non-identifying relationship' 1`] = `
 }
 `;
 
-exports[`parseEr > 'one or more both ends' 1`] = `
+exports[`parseEr > one or more both ends 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -187,7 +187,7 @@ exports[`parseEr > 'one or more both ends' 1`] = `
 }
 `;
 
-exports[`parseEr > 'one relationship' 1`] = `
+exports[`parseEr > one relationship 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -201,7 +201,7 @@ exports[`parseEr > 'one relationship' 1`] = `
 }
 `;
 
-exports[`parseEr > 'quoted entity' 1`] = `
+exports[`parseEr > quoted entity 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -212,7 +212,7 @@ exports[`parseEr > 'quoted entity' 1`] = `
 }
 `;
 
-exports[`parseEr > 'quoted relationship label' 1`] = `
+exports[`parseEr > quoted relationship label 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -226,7 +226,7 @@ exports[`parseEr > 'quoted relationship label' 1`] = `
 }
 `;
 
-exports[`parseEr > 'relationship without a label' 1`] = `
+exports[`parseEr > relationship without a label 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -240,7 +240,7 @@ exports[`parseEr > 'relationship without a label' 1`] = `
 }
 `;
 
-exports[`parseEr > 'relationship without spaces' 1`] = `
+exports[`parseEr > relationship without spaces 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -254,7 +254,7 @@ exports[`parseEr > 'relationship without spaces' 1`] = `
 }
 `;
 
-exports[`parseEr > 'self relationship' 1`] = `
+exports[`parseEr > self relationship 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -267,7 +267,7 @@ exports[`parseEr > 'self relationship' 1`] = `
 }
 `;
 
-exports[`parseEr > 'zero or more both ends' 1`] = `
+exports[`parseEr > zero or more both ends 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -281,7 +281,7 @@ exports[`parseEr > 'zero or more both ends' 1`] = `
 }
 `;
 
-exports[`parseEr > 'zero or one both ends' 1`] = `
+exports[`parseEr > zero or one both ends 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,

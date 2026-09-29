@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`sequence layout > 'sequence-activations' matches its golden scene 1`] = `
+exports[`sequence layout > sequence-activations matches its golden scene 1`] = `
 {
   "activations": [
     {
@@ -368,7 +368,7 @@ exports[`sequence layout > 'sequence-activations' matches its golden scene 1`] =
 }
 `;
 
-exports[`sequence layout > 'sequence-basic' matches its golden scene 1`] = `
+exports[`sequence layout > sequence-basic matches its golden scene 1`] = `
 {
   "activations": [],
   "family": "sequence",
@@ -741,7 +741,7 @@ exports[`sequence layout > 'sequence-basic' matches its golden scene 1`] = `
 }
 `;
 
-exports[`sequence layout > 'sequence-degenerate' matches its golden scene 1`] = `
+exports[`sequence layout > sequence-degenerate matches its golden scene 1`] = `
 {
   "activations": [
     {
@@ -923,7 +923,7 @@ exports[`sequence layout > 'sequence-degenerate' matches its golden scene 1`] = 
 }
 `;
 
-exports[`sequence layout > 'sequence-frames' matches its golden scene 1`] = `
+exports[`sequence layout > sequence-frames matches its golden scene 1`] = `
 {
   "activations": [],
   "family": "sequence",
@@ -1564,7 +1564,7 @@ exports[`sequence layout > 'sequence-frames' matches its golden scene 1`] = `
 }
 `;
 
-exports[`sequence layout > 'sequence-notes' matches its golden scene 1`] = `
+exports[`sequence layout > sequence-notes matches its golden scene 1`] = `
 {
   "activations": [],
   "family": "sequence",
