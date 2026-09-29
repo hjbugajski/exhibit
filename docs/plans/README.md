@@ -6,44 +6,44 @@ Produced by a deep audit at commit `ffee99b` (2026-09-26): 15 opus auditors (9 p
 
 ## Execution order & status
 
-| Plan | Title                                                                                                | Effort                | Depends on | Status                                               |
-| ---- | ---------------------------------------------------------------------------------------------------- | --------------------- | ---------- | ---------------------------------------------------- |
-| 01   | Drop account.issuer and upgrade Better Auth to 1.7.6                                                 | S                     | —          | DONE (phase 2 folded into the dependency update)     |
-| 02   | Close the backslash open redirect on /sign-in                                                        | S                     | —          | DONE                                                 |
-| 03   | Bound flowchart edge fan-out and gantt duration work before layout                                   | S                     | —          | DONE                                                 |
-| 04   | Honor revoked opaque tokens and session liveness in /mcp auth                                        | S                     | 01         | DONE                                                 |
-| 05   | Keep password-reset tokens out of the evlog request log                                              | S                     | —          | TODO                                                 |
-| 06   | Interaction-state integrity (stale reseed, save-error reset, uncounted fences, statePath collisions) | M                     | 08         | TODO                                                 |
-| 07   | Structural test pinning sessionMiddleware on every server fn                                         | S                     | —          | DONE                                                 |
-| 08   | One per-type body validator table for MCP publish/update                                             | S                     | —          | DONE                                                 |
-| 09   | Toolchain guardrails (deny warnings, remove db:push, check script, drift gate, process.env lint)     | S                     | —          | DONE                                                 |
-| 10   | Catalog value parsing fidelity (pie numbers, chart duplicate labels, gantt ids)                      | S                     | —          | TODO                                                 |
-| 11   | Stop paying a session RPC on every client navigation                                                 | M                     | 06, 07     | TODO                                                 |
-| 12   | Accessibility pass                                                                                   | M                     | —          | TODO                                                 |
-| 13   | Re-resolve map route colours when the theme changes                                                  | S                     | —          | DONE                                                 |
-| 14   | Shift artifact content headings one rank below the page title                                        | M                     | —          | TODO                                                 |
-| 15   | Sandbox CSP on /download responses                                                                   | S                     | —          | DONE                                                 |
-| 16   | Correct docs and comments that contradict the code                                                   | S                     | —          | TODO                                                 |
-| 17   | Comment cruft sweep (banners, journal tense, misplaced docs)                                         | S                     | 24         | TODO                                                 |
-| 18   | Writing sweep (MCP tool descriptions, catalog copy, errors, README)                                  | M                     | 36         | TODO                                                 |
-| 19   | Test hygiene                                                                                         | M                     | —          | TODO                                                 |
-| 20   | Memoize markdown parsing and syntax highlighting                                                     | S                     | —          | DONE                                                 |
-| 21   | Precompressed assets, lighter detail-route graph, parallel PR CI                                     | S                     | 28         | TODO                                                 |
-| 22   | Server-only import protection                                                                        | M                     | 11         | TODO                                                 |
-| 23   | Repository liveness and atomic update_artifact                                                       | M                     | 07, 08     | TODO                                                 |
-| 24   | Diagram engine debt (vestigial extension points, ALLOWED_FAMILIES, parser statement loop)            | M                     | —          | TODO                                                 |
-| 25   | House component API consistency                                                                      | M                     | 12         | TODO                                                 |
-| 26   | Make pnpm seed read .env; fix dev-publish run line                                                   | S                     | —          | TODO                                                 |
-| 27   | Replace latest-value refs with useEffectEvent                                                        | M                     | 13         | DONE                                                 |
-| 28   | Replace the nitro-nightly alias with the canonical nitro beta                                        | S                     | —          | DONE                                                 |
-| 29   | Minor UX polish (whitespace titles, RelativeTime hydration, reset confirmation)                      | S                     | 02         | DONE                                                 |
-| 30   | Investigate: layout golden value; sign-in navigate after OAuth resume                                | S                     | —          | TODO                                                 |
-| 31   | Direction: owner-response inbox for Claude (stateUpdatedAt sort/filter)                              | S                     | —          | DONE                                                 |
-| 32   | Direction spike: search beyond titles                                                                | M                     | —          | TODO                                                 |
-| 33   | Direction spike: opt-in revocable share links                                                        | M (spike; L if built) | —          | DONE (spike; verdict BUILD, owner decisions pending) |
-| 34   | Weather catalog component (static and live)                                                          | M                     | —          | DONE                                                 |
-| 35   | Trail catalog component for hikes                                                                    | M                     | —          | TODO                                                 |
-| 36   | Itinerary improvements                                                                               | M                     | 34, 35     | TODO                                                 |
+| Plan | Title                                                                                                | Effort                | Depends on | Status                                                   |
+| ---- | ---------------------------------------------------------------------------------------------------- | --------------------- | ---------- | -------------------------------------------------------- |
+| 01   | Drop account.issuer and upgrade Better Auth to 1.7.6                                                 | S                     | —          | DONE (phase 2 folded into the dependency update)         |
+| 02   | Close the backslash open redirect on /sign-in                                                        | S                     | —          | DONE                                                     |
+| 03   | Bound flowchart edge fan-out and gantt duration work before layout                                   | S                     | —          | DONE                                                     |
+| 04   | Honor revoked opaque tokens and session liveness in /mcp auth                                        | S                     | 01         | DONE                                                     |
+| 05   | Keep password-reset tokens out of the evlog request log                                              | S                     | —          | TODO                                                     |
+| 06   | Interaction-state integrity (stale reseed, save-error reset, uncounted fences, statePath collisions) | M                     | 08         | TODO                                                     |
+| 07   | Structural test pinning sessionMiddleware on every server fn                                         | S                     | —          | DONE                                                     |
+| 08   | One per-type body validator table for MCP publish/update                                             | S                     | —          | DONE                                                     |
+| 09   | Toolchain guardrails (deny warnings, remove db:push, check script, drift gate, process.env lint)     | S                     | —          | DONE                                                     |
+| 10   | Catalog value parsing fidelity (pie numbers, chart duplicate labels, gantt ids)                      | S                     | —          | TODO                                                     |
+| 11   | Stop paying a session RPC on every client navigation                                                 | M                     | 06, 07     | TODO                                                     |
+| 12   | Accessibility pass                                                                                   | M                     | —          | TODO                                                     |
+| 13   | Re-resolve map route colours when the theme changes                                                  | S                     | —          | DONE                                                     |
+| 14   | Shift artifact content headings one rank below the page title                                        | M                     | —          | TODO                                                     |
+| 15   | Sandbox CSP on /download responses                                                                   | S                     | —          | DONE                                                     |
+| 16   | Correct docs and comments that contradict the code                                                   | S                     | —          | TODO                                                     |
+| 17   | Comment cruft sweep (banners, journal tense, misplaced docs)                                         | S                     | 24         | TODO                                                     |
+| 18   | Writing sweep (MCP tool descriptions, catalog copy, errors, README)                                  | M                     | 36         | TODO                                                     |
+| 19   | Test hygiene                                                                                         | M                     | —          | TODO                                                     |
+| 20   | Memoize markdown parsing and syntax highlighting                                                     | S                     | —          | DONE                                                     |
+| 21   | Precompressed assets, lighter detail-route graph, parallel PR CI                                     | S                     | 28         | TODO                                                     |
+| 22   | Server-only import protection                                                                        | M                     | 11         | TODO                                                     |
+| 23   | Repository liveness and atomic update_artifact                                                       | M                     | 07, 08     | TODO                                                     |
+| 24   | Diagram engine debt (vestigial extension points, ALLOWED_FAMILIES, parser statement loop)            | M                     | —          | TODO                                                     |
+| 25   | House component API consistency                                                                      | M                     | 12         | TODO                                                     |
+| 26   | Make pnpm seed read .env; fix dev-publish run line                                                   | S                     | —          | TODO                                                     |
+| 27   | Replace latest-value refs with useEffectEvent                                                        | M                     | 13         | DONE                                                     |
+| 28   | Replace the nitro-nightly alias with the canonical nitro beta                                        | S                     | —          | DONE                                                     |
+| 29   | Minor UX polish (whitespace titles, RelativeTime hydration, reset confirmation)                      | S                     | 02         | DONE                                                     |
+| 30   | Investigate: layout golden value; sign-in navigate after OAuth resume                                | S                     | —          | IN PROGRESS (phase 1 done; phase 2 awaits browser check) |
+| 31   | Direction: owner-response inbox for Claude (stateUpdatedAt sort/filter)                              | S                     | —          | DONE                                                     |
+| 32   | Direction spike: search beyond titles                                                                | M                     | —          | TODO                                                     |
+| 33   | Direction spike: opt-in revocable share links                                                        | M (spike; L if built) | —          | DONE (spike; verdict BUILD, owner decisions pending)     |
+| 34   | Weather catalog component (static and live)                                                          | M                     | —          | DONE                                                     |
+| 35   | Trail catalog component for hikes                                                                    | M                     | —          | TODO                                                     |
+| 36   | Itinerary improvements                                                                               | M                     | 34, 35     | TODO                                                     |
 
 Status values: TODO | IN PROGRESS (phase N/M) | DONE | BLOCKED (one-line reason) | REJECTED (one-line rationale).
 

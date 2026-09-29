@@ -135,3 +135,38 @@ Adapt and keep going when the change still serves the intent and stays in scope.
 ## Open questions
 
 - Phase 2: should the port-3100 throwaway E2E agent (chrome-devtools) run the Chrome leg instead of Henry? Default: no. The finding must reflect Henry's own browser environment, and Safari and Firefox need a human anyway.
+
+## Findings (2026-09-29)
+
+### Phase 1: layout goldens
+
+Each perturbation ran in a scratch copy of the repo; churn is the summed `git diff --no-index --shortstat` of every `.snap` after `-u`.
+
+| #   | Perturbation                        | Golden failures | Other failures                       | Snapshot churn     |
+| --- | ----------------------------------- | --------------- | ------------------------------------ | ------------------ |
+| P1  | `PASSES` 8 to 1                     | 13              | 1 (`core/graph/fuzz.unit.test.ts`)   | 5 files, +327/-271 |
+| P2  | `TRANSPOSE_LIMIT` 8 to 0            | 0               | 1 (`core/graph/fuzz.unit.test.ts`)   | 0                  |
+| P3  | `LANES` 4 to 1                      | 0               | 0                                    | 0                  |
+| P4  | `CENTROID_RATIO` 0.68 to 0.85       | 2 (pie)         | 0                                    | 1 file, +10/-10    |
+| P5  | `BASELINE_FROM_CENTER` 0.36 to 0.30 | 51 (all)        | 1 (`core/text/measure.unit.test.ts`) | 8 files, +336/-336 |
+| P6  | `nodeSep` 40 to 44 (intended)       | 14              | 0                                    | 5 files, +272/-272 |
+
+Verdict: replace the full-scene layout goldens with a compact digest, in a follow-up plan.
+
+- Goldens alone catch only P4. P1 and P5 are also caught by fuzz and measure tests, P2 only by fuzz, P3 by nothing.
+- The diffs are not legible: the one real regression signal in P1 (an ER edge going from 5 to 7 points) is visible only by counting array entries across about 600 changed lines.
+- An intended change (P6) churns 544 lines.
+
+Would change if: a quality invariant for pie label placement is added (then the recommendation becomes deletion), or an intended change typically produced under about 50 readable changed lines.
+
+Follow-up sketch: add `digestScene` beside `goldenScene` in `testing/diagram/golden.ts` (one line per node with an integer box, one per edge with integer endpoints and point count, one per label or slice position for pie and gantt); switch the 8 layout snapshot call sites; keep `goldenScene` for the determinism and precision consumers; add a fixture or invariant that exercises `LANES`.
+
+### Phase 2: sign-in navigate after OAuth resume
+
+Code facts re-confirmed at better-auth 1.7.6 and @better-fetch/fetch 1.3.2:
+
+- The client `redirectPlugin` is on by default and sets `window.location.href = data.url`; better-fetch awaits every `onSuccess` hook before returning.
+- The server returns `{ redirect: true, url }` to a fetch request when it resumes an authorize flow.
+- `handleSubmit` in `src/components/account/sign-in-view.tsx` ignores `data` and always calls `navigate`, so a client navigation to `/` follows the cross-document redirect and reaches the `/_authed` `beforeLoad` and `loader`.
+
+Verdict: pending the browser observation. From code alone the efficiency branch is near certain; whether any browser loses the continuation is unknown until observed. Pre-decided fix: return early in `handleSubmit` when `data?.redirect && data.url`.
