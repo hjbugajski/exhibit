@@ -1,6 +1,7 @@
 import { createMiddleware } from '@tanstack/react-start';
 
 import { getServerSession } from '@/lib/auth-session';
+import { UNAUTHORIZED_MESSAGE } from '@/lib/unauthorized';
 
 /**
  * Split into its own module (rather than living in artifacts.ts, or being folded into
@@ -22,7 +23,7 @@ export async function requireSession(): Promise<void> {
   const session = await getServerSession();
 
   if (!session) {
-    throw new Error('Unauthorized');
+    throw new Error(UNAUTHORIZED_MESSAGE);
   }
 }
 

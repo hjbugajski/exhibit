@@ -5,8 +5,19 @@ import { listTagsFn } from '@/lib/artifacts';
 import { getServerSession } from '@/lib/auth-session';
 
 export const Route = createFileRoute('/_authed')({
-  beforeLoad: async ({ location }) => {
+  beforeLoad: async ({ context: { sessionCache }, location, matches }) => {
+    const match = matches.find((candidate) => candidate.routeId === '/_authed');
+
+    /*
+     * Reuse the session on navigations that stay inside this layout: every server fn re-checks it,
+     * and `router.invalidate()` marks the match invalid, which forces a fresh fetch here.
+     */
+    if (match?.cause === 'stay' && !match.invalid && sessionCache.session) {
+      return { session: sessionCache.session };
+    }
+
     const session = await getServerSession();
+    sessionCache.session = session ?? undefined;
 
     if (!session) {
       throw redirect({ to: '/sign-in', search: { redirect: location.href } });

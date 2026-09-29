@@ -18,7 +18,7 @@ afterEach(() => {
 });
 
 /** Mirrors src/router.tsx's wiring so the fallbacks are exercised the way the app installs them. */
-function renderRoute(loader: () => unknown) {
+function renderRoute(loader: () => unknown, initialEntry = '/') {
   const rootRoute = createRootRoute();
   const indexRoute = createRoute({
     getParentRoute: () => rootRoute,
@@ -26,15 +26,22 @@ function renderRoute(loader: () => unknown) {
     loader,
     component: () => <p>Loaded</p>,
   });
+  const signInRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/sign-in',
+    component: () => <p>Sign in</p>,
+  });
   const router = createRouter({
-    routeTree: rootRoute.addChildren([indexRoute]),
-    history: createMemoryHistory({ initialEntries: ['/'] }),
+    routeTree: rootRoute.addChildren([indexRoute, signInRoute]),
+    history: createMemoryHistory({ initialEntries: [initialEntry] }),
     defaultPendingComponent: RoutePending,
     defaultNotFoundComponent: RouteNotFound,
     defaultErrorComponent: RouteError,
   });
 
   render(<RouterProvider router={router} />);
+
+  return router;
 }
 
 describe('route fallbacks', () => {
@@ -66,6 +73,31 @@ describe('route fallbacks', () => {
       logged.some(
         (arg) =>
           (arg instanceof Error && arg.message === 'loader exploded') ||
+          String(arg).includes('Error in route match'),
+      ),
+    ).toBe(true);
+  });
+
+  it('sends an expired session to /sign-in with the current location instead of the error page', async () => {
+    // Same expected console output as the error-page case: the loader error is caught and
+    // reported before the boundary redirects.
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const router = renderRoute(() => {
+      throw new Error('Unauthorized');
+    }, '/?query=a');
+
+    expect(await screen.findByText('Sign in')).toBeTruthy();
+    expect(router.state.location.pathname).toBe('/sign-in');
+    expect(router.state.location.search).toEqual({ redirect: '/?query=a' });
+    expect(screen.queryByText('Something went wrong')).toBeNull();
+
+    const logged = [...consoleError.mock.calls, ...consoleWarn.mock.calls].flat();
+    expect(
+      logged.some(
+        (arg) =>
+          (arg instanceof Error && arg.message === 'Unauthorized') ||
           String(arg).includes('Error in route match'),
       ),
     ).toBe(true);

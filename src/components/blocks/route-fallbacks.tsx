@@ -1,10 +1,13 @@
+import { useEffect, useState } from 'react';
+
 import type { ErrorComponentProps } from '@tanstack/react-router';
-import { Link } from '@tanstack/react-router';
+import { Link, useLocation, useNavigate } from '@tanstack/react-router';
 import { FileQuestion, TriangleAlert } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Empty } from '@/components/ui/empty';
 import { Spinner } from '@/components/ui/spinner';
+import { isUnauthorizedError } from '@/lib/unauthorized';
 
 /**
  * Router-wide fallbacks (wired in src/router.tsx). Every route renders one of these while its
@@ -38,6 +41,25 @@ export function RouteNotFound() {
 }
 
 export function RouteError({ error }: ErrorComponentProps) {
+  const unauthorized = isUnauthorizedError(error);
+  const navigate = useNavigate();
+  /*
+   * Pinned at mount: the router moves `location` to /sign-in as soon as the navigation starts, and
+   * following it would re-navigate with the sign-in page as its own redirect.
+   */
+  const [href] = useState(useLocation().href);
+
+  // A server fn rejected because the session expired: send the owner to sign in and back here.
+  useEffect(() => {
+    if (unauthorized) {
+      void navigate({ to: '/sign-in', search: { redirect: href }, replace: true });
+    }
+  }, [unauthorized, navigate, href]);
+
+  if (unauthorized) {
+    return null;
+  }
+
   return (
     <Empty.Root className="min-h-96 py-16">
       <Empty.Header>

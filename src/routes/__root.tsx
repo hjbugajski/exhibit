@@ -1,15 +1,16 @@
 import { useEffect, type ReactNode } from 'react';
 
 import { TanStackDevtools } from '@tanstack/react-devtools';
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router';
+import { HeadContent, Scripts, createRootRouteWithContext } from '@tanstack/react-router';
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools';
 import { createMiddleware } from '@tanstack/react-start';
 import { evlogErrorHandler } from 'evlog/nitro/v3';
 
+import type { RouterContext } from '@/lib/router-context';
 import { applyStoredTheme, THEME_INIT_SCRIPT } from '@/lib/theme';
 import appCss from '@/styles.css?url';
 
-export const Route = createRootRoute({
+export const Route = createRootRouteWithContext<RouterContext>()({
   server: {
     // TanStack Start's error handling layer runs before Nitro's, stripping structured error fields
     // (`why`/`fix`/`link`) from a thrown EvlogError unless intercepted here first.
