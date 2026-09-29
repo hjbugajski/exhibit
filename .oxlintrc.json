@@ -5,6 +5,7 @@
     "eslint",
     "import",
     "jsx-a11y",
+    "node",
     "oxc",
     "promise",
     "react",
@@ -34,6 +35,7 @@
     "jsx-a11y/label-has-associated-control": ["warn", { "controlComponents": ["Checkbox"] }],
     "import/no-duplicates": "error",
     "import/no-self-import": "error",
+    "node/no-process-env": "error",
     "promise/no-new-statics": "error",
     "react/exhaustive-deps": "error",
     "react/no-danger": "error",
@@ -61,6 +63,18 @@
     {
       "files": ["scripts/**", "src/lib/seed-plugin.ts"],
       "rules": { "eslint/no-console": "off" }
+    },
+    {
+      "files": [
+        "src/lib/env.ts",
+        "drizzle.config.ts",
+        "nitro.config.ts",
+        "scripts/dev-publish.ts",
+        "testing/**",
+        "**/*.test.ts",
+        "**/*.test.tsx"
+      ],
+      "rules": { "node/no-process-env": "off" }
     }
   ]
 }

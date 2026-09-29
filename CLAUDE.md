@@ -10,16 +10,17 @@ TanStack Start (React 19) · SQLite via Drizzle + better-sqlite3 · Better Auth 
 
 Node/pnpm via mise (`mise.toml`).
 
-- `pnpm gate` — typecheck && lint && fmt && test; run before claiming done (CI uses `:check` variants)
+- `pnpm check` — read-only CI mirror: fmt:check && lint:check && typecheck && test at CI fuzz depth; run before claiming done
+- `pnpm gate` — the fixer: typecheck && lint --fix && fmt && test
 - `pnpm db:generate` / `db:migrate` — drizzle-kit; migrations live in `src/database/migrations`, run on boot
-- Schema changes go through `pnpm db:generate`, never `drizzle-kit push` — push writes no migration file and drifts the `meta/` snapshot. Migrations are forward-only; commit the SQL and the snapshot together.
+- Schema changes go through `pnpm db:generate`, never `drizzle-kit push` — push changes the local DB and writes no migration file, so production boot diverges. No `db:push` script exists, and CI fails on migration drift. Migrations are forward-only; commit the SQL and the snapshot together.
 - Don't start dev servers; the owner runs his own.
 
 ## Conventions
 
 - Kebab-case filenames; hooks `use-*`; no barrel files. Routes folder is pure routes — support code lives in `src/components/<domain>/` or `src/lib/`.
 - Tests colocated with source (`.unit.test.ts(x)` / `.int.test.ts`); shared helpers in root-level `testing/` (`@testing/*`).
-- Env vars only via `src/lib/env.ts` — never `process.env` in app code (exceptions: `drizzle.config.ts`, `scripts/dev-publish.ts`). The seed chain runs under plain `node`, so its modules use relative imports, never `@/*`.
+- Env vars only via `src/lib/env.ts` — never `process.env` in app code (exceptions: `drizzle.config.ts`, `nitro.config.ts`, `scripts/dev-publish.ts`, `testing/**`, `**/*.test.ts(x)`); `node/no-process-env` enforces it. The seed chain runs under plain `node`, so its modules use relative imports, never `@/*`.
 - Forms are Base UI end to end: house `Form` + `Field`, never a raw `<form>`; async handlers via `useFormAction`; server/form-level errors via `FormStatus`. Field errors are declarative state ("Email is required."), never imperatives.
 - Server fns get auth via `sessionMiddleware`; constants imported as runtime values by client code live in client-safe modules, never server-only files.
 - Every server fn is a named `const X = createServerFn(` carrying `.middleware([sessionMiddleware])`, or a reviewed `PUBLIC` entry in `src/lib/server-fn-protection.unit.test.ts`.

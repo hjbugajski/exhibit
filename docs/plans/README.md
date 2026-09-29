@@ -16,7 +16,7 @@ Produced by a deep audit at commit `ffee99b` (2026-09-26): 15 opus auditors (9 p
 | 06   | Interaction-state integrity (stale reseed, save-error reset, uncounted fences, statePath collisions) | M                     | 08         | TODO                                                 |
 | 07   | Structural test pinning sessionMiddleware on every server fn                                         | S                     | —          | DONE                                                 |
 | 08   | One per-type body validator table for MCP publish/update                                             | S                     | —          | DONE                                                 |
-| 09   | Toolchain guardrails (deny warnings, remove db:push, check script, drift gate, process.env lint)     | S                     | —          | TODO                                                 |
+| 09   | Toolchain guardrails (deny warnings, remove db:push, check script, drift gate, process.env lint)     | S                     | —          | DONE                                                 |
 | 10   | Catalog value parsing fidelity (pie numbers, chart duplicate labels, gantt ids)                      | S                     | —          | TODO                                                 |
 | 11   | Stop paying a session RPC on every client navigation                                                 | M                     | 06, 07     | TODO                                                 |
 | 12   | Accessibility pass                                                                                   | M                     | —          | TODO                                                 |

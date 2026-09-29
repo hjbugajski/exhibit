@@ -13,15 +13,15 @@
     "test:coverage": "vitest run --coverage",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "seed": "node scripts/seed.ts",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
-    "lint": "oxlint --type-aware --disable-nested-config --fix",
-    "lint:check": "oxlint --type-aware --disable-nested-config",
+    "lint": "oxlint --type-aware --disable-nested-config --deny-warnings --fix",
+    "lint:check": "oxlint --type-aware --disable-nested-config --deny-warnings",
     "typecheck": "tsc --noEmit",
     "gate": "pnpm typecheck && pnpm lint && pnpm fmt && pnpm test",
+    "check": "pnpm fmt:check && pnpm lint:check && pnpm typecheck && CI=1 pnpm test",
     "prepare": "simple-git-hooks"
   },
   "dependencies": {
@@ -90,7 +90,7 @@
   },
   "nano-staged": {
     "*.{ts,tsx,js,jsx,mjs,cjs}": [
-      "oxlint --fix",
+      "oxlint --fix --deny-warnings",
       "oxfmt"
     ],
     "*.!(ts|tsx|js|jsx|mjs|cjs)": "oxfmt --no-error-on-unmatched-pattern"

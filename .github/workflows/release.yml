@@ -26,10 +26,13 @@ jobs:
           node-version-file: .node-version
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm fmt:check
-      - run: pnpm lint:check
-      - run: pnpm typecheck
-      - run: pnpm test
+      - run: pnpm check
+      - name: Check migration drift
+        timeout-minutes: 2
+        run: |
+          pnpm db:generate
+          drift="$(git status --porcelain src/database/migrations)"
+          test -z "$drift" || { echo "$drift"; echo "Schema changed without a committed migration: run pnpm db:generate."; exit 1; }
   release:
     needs: verify
     runs-on: ubuntu-latest
