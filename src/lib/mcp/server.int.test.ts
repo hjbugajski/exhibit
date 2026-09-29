@@ -183,9 +183,7 @@ describe('publish_markdown', () => {
     expect(getResult.structuredContent?.type).toBe('markdown');
   });
 
-  // Markdown is arbitrary prose: unlike spec and html bodies there is nothing to validate beyond
-  // its size, and content that looks like an attack must still store verbatim (it is escaped at
-  // render time, not on the way in).
+  // Raw HTML in markdown must store verbatim: it is escaped at render time, not on the way in.
   it('stores markdown containing raw HTML without rejecting or rewriting it', async () => {
     const markdown = '<script>alert(1)</script>\n\n<img src=x onerror=alert(1)>\n';
     const result = await callTool(client, 'publish_markdown', { title: 'Hostile', markdown });
@@ -206,6 +204,16 @@ describe('publish_markdown', () => {
 
     expect(result.isError).toBe(true);
     expect(textOf(result)).toContain('1 MB');
+  });
+
+  it('rejects a whitespace-only markdown body', async () => {
+    const result = await callTool(client, 'publish_markdown', {
+      title: 'Blank',
+      markdown: '  \n',
+    });
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain('no content');
   });
 });
 
@@ -316,6 +324,66 @@ describe('update_artifact', () => {
     // The rejected call must not have appended anything.
     const getResult = await callTool(client, 'get_artifact', { id });
     expect(getResult.structuredContent?.versions).toEqual([1]);
+  });
+
+  it.each(['', '  \n\t'])('rejects an empty markdown body update (%j)', async (markdown) => {
+    const published = await callTool(client, 'publish_markdown', {
+      title: 'Notes',
+      markdown: '# v1',
+    });
+    const id = published.structuredContent?.id as string;
+
+    const updated = await callTool(client, 'update_artifact', { id, markdown });
+
+    expect(updated.isError).toBe(true);
+    expect(textOf(updated)).toContain('no content');
+
+    const getResult = await callTool(client, 'get_artifact', { id });
+    expect(getResult.structuredContent?.versions).toEqual([1]);
+  });
+
+  it('rejects an html body update missing an <html> tag', async () => {
+    const published = await callTool(client, 'publish_html', {
+      title: 'Page',
+      html: '<html><body>v1</body></html>',
+    });
+    const id = published.structuredContent?.id as string;
+
+    const updated = await callTool(client, 'update_artifact', { id, html: '<div>hi</div>' });
+
+    expect(updated.isError).toBe(true);
+    expect(textOf(updated)).toContain('<html>');
+  });
+
+  it('rejects an invalid spec body update with a structured error list', async () => {
+    const published = await callTool(client, 'publish_spec', {
+      title: 'Doc',
+      spec: itineraryFixture,
+    });
+    const id = published.structuredContent?.id as string;
+
+    const updated = await callTool(client, 'update_artifact', { id, spec: invalidFixture });
+
+    expect(updated.isError).toBe(true);
+    const errors = updated.structuredContent?.errors as unknown[];
+    expect(Array.isArray(errors)).toBe(true);
+    expect(errors.length).toBeGreaterThan(0);
+  });
+
+  it('rejects a markdown body update over the 1 MB cap', async () => {
+    const published = await callTool(client, 'publish_markdown', {
+      title: 'Notes',
+      markdown: '# v1',
+    });
+    const id = published.structuredContent?.id as string;
+
+    const updated = await callTool(client, 'update_artifact', {
+      id,
+      markdown: 'x'.repeat(1_100_000),
+    });
+
+    expect(updated.isError).toBe(true);
+    expect(textOf(updated)).toContain('1 MB');
   });
 });
 

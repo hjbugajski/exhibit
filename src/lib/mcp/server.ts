@@ -92,7 +92,7 @@ function looksLikeHtmlDocument(html: string): boolean {
  * Runs the catalog validator and formats an isError result on failure, or `null` when `spec` is
  * valid.
  */
-function validateSpecOrError(spec: Record<string, unknown>): CallToolResult | null {
+function validateSpecOrError(spec: unknown): CallToolResult | null {
   const result = validateArtifactSpec(spec);
 
   if (result.valid) {
@@ -124,6 +124,74 @@ function htmlDocumentOrError(html: string): CallToolResult | null {
   return errorResult(
     'html does not look like a complete standalone document (no <html> tag found). This is a lightweight sanity check, not full validation. Include a full HTML document.',
   );
+}
+
+/** Formats an isError result when `markdown` is empty or whitespace only, or `null` otherwise. */
+function markdownBodyOrError(markdown: string): CallToolResult | null {
+  if (markdown.trim() !== '') {
+    return null;
+  }
+
+  return errorResult(
+    'markdown has no content (it is empty or whitespace only). Include the markdown document body.',
+  );
+}
+
+/**
+ * Per-type body checks over the serialized body. The `Record` makes a new `ArtifactType` a compile
+ * error here; add a type's further checks inside its own entry.
+ */
+const bodyChecks: Record<ArtifactType, (body: string) => CallToolResult | null> = {
+  spec: (body) => validateSpecOrError(JSON.parse(body)),
+  html: htmlDocumentOrError,
+  markdown: markdownBodyOrError,
+};
+
+/** Returns an isError result when `body` fails the size cap or its type's check, else `null`. */
+function validateBody(type: ArtifactType, body: string): CallToolResult | null {
+  const sizeError = checkBodySize(body, type);
+
+  if (sizeError) {
+    return errorResult(sizeError);
+  }
+
+  return bodyChecks[type](body);
+}
+
+/** Artifact type names as they read in the publish confirmation. */
+const publishLabels: Record<ArtifactType, string> = {
+  spec: 'spec',
+  html: 'HTML',
+  markdown: 'markdown',
+};
+
+/** Validates `input.body`, creates the artifact, and formats the publish response. */
+function publishArtifact(
+  db: Db,
+  type: ArtifactType,
+  input: { title: string; description?: string; tags?: string[]; body: string },
+): CallToolResult {
+  const bodyError = validateBody(type, input.body);
+
+  if (bodyError) {
+    return bodyError;
+  }
+
+  const { artifact, version } = createArtifact(db, {
+    title: input.title,
+    description: input.description,
+    type,
+    tags: normalizeTags(input.tags),
+    body: input.body,
+  });
+  const url = artifactUrl(artifact.id);
+
+  return {
+    content: text(
+      `Published ${publishLabels[type]} artifact "${artifact.title}" (${artifact.id}), version ${version.version}: ${url}`,
+    ),
+    structuredContent: { id: artifact.id, url, version: version.version },
+  };
 }
 
 function artifactRow(artifact: ArtifactListItem) {
@@ -166,36 +234,8 @@ export function buildMcpServer(db: Db): McpServer {
       },
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
     },
-    ({ title, description, tags, spec }) => {
-      const serialized = JSON.stringify(spec);
-      const sizeError = checkBodySize(serialized, 'spec');
-
-      if (sizeError) {
-        return errorResult(sizeError);
-      }
-
-      const specError = validateSpecOrError(spec);
-
-      if (specError) {
-        return specError;
-      }
-
-      const { artifact, version } = createArtifact(db, {
-        title,
-        description,
-        type: 'spec',
-        tags: normalizeTags(tags),
-        body: serialized,
-      });
-      const url = artifactUrl(artifact.id);
-
-      return {
-        content: text(
-          `Published spec artifact "${artifact.title}" (${artifact.id}), version ${version.version}: ${url}`,
-        ),
-        structuredContent: { id: artifact.id, url, version: version.version },
-      };
-    },
+    ({ title, description, tags, spec }) =>
+      publishArtifact(db, 'spec', { title, description, tags, body: JSON.stringify(spec) }),
   );
 
   server.registerTool(
@@ -215,35 +255,8 @@ export function buildMcpServer(db: Db): McpServer {
       },
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
     },
-    ({ title, description, tags, html }) => {
-      const sizeError = checkBodySize(html, 'html');
-
-      if (sizeError) {
-        return errorResult(sizeError);
-      }
-
-      const htmlError = htmlDocumentOrError(html);
-
-      if (htmlError) {
-        return htmlError;
-      }
-
-      const { artifact, version } = createArtifact(db, {
-        title,
-        description,
-        type: 'html',
-        tags: normalizeTags(tags),
-        body: html,
-      });
-      const url = artifactUrl(artifact.id);
-
-      return {
-        content: text(
-          `Published HTML artifact "${artifact.title}" (${artifact.id}), version ${version.version}: ${url}`,
-        ),
-        structuredContent: { id: artifact.id, url, version: version.version },
-      };
-    },
+    ({ title, description, tags, html }) =>
+      publishArtifact(db, 'html', { title, description, tags, body: html }),
   );
 
   server.registerTool(
@@ -262,29 +275,8 @@ export function buildMcpServer(db: Db): McpServer {
       },
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
     },
-    ({ title, description, tags, markdown }) => {
-      const sizeError = checkBodySize(markdown, 'markdown');
-
-      if (sizeError) {
-        return errorResult(sizeError);
-      }
-
-      const { artifact, version } = createArtifact(db, {
-        title,
-        description,
-        type: 'markdown',
-        tags: normalizeTags(tags),
-        body: markdown,
-      });
-      const url = artifactUrl(artifact.id);
-
-      return {
-        content: text(
-          `Published markdown artifact "${artifact.title}" (${artifact.id}), version ${version.version}: ${url}`,
-        ),
-        structuredContent: { id: artifact.id, url, version: version.version },
-      };
-    },
+    ({ title, description, tags, markdown }) =>
+      publishArtifact(db, 'markdown', { title, description, tags, body: markdown }),
   );
 
   server.registerTool(
@@ -359,19 +351,7 @@ export function buildMcpServer(db: Db): McpServer {
           );
         }
 
-        const sizeError = checkBodySize(update.body, update.type);
-
-        if (sizeError) {
-          return errorResult(sizeError);
-        }
-
-        // Markdown bodies are arbitrary prose — size is the only check they get.
-        const bodyError =
-          update.type === 'spec'
-            ? validateSpecOrError(spec as Record<string, unknown>)
-            : update.type === 'html'
-              ? htmlDocumentOrError(update.body)
-              : null;
+        const bodyError = validateBody(update.type, update.body);
 
         if (bodyError) {
           return bodyError;
