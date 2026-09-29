@@ -79,6 +79,28 @@ export async function signIn(options: {
   return cookieHeader(response);
 }
 
+/** Signs out the session the Cookie header belongs to, deleting its session row. */
+export async function signOut(options: {
+  baseURL: string;
+  cookie: string;
+  fetch?: FetchLike;
+}): Promise<void> {
+  const doFetch = options.fetch ?? fetch;
+  const response = await doFetch(`${options.baseURL}/api/auth/sign-out`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      cookie: options.cookie,
+      origin: options.baseURL,
+    },
+    body: '{}',
+  });
+
+  if (!response.ok) {
+    throw new Error(`sign-out failed: ${response.status}`);
+  }
+}
+
 /** A PKCE S256 authorize URL, with an optional `scope` and `prompt`. */
 export function buildAuthorizeUrl(params: {
   baseURL: string;

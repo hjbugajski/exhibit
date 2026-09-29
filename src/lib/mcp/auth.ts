@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm';
 import { createLocalJWKSet, errors as joseErrors, jwtVerify } from 'jose';
 
 import { db } from '@/database';
-import { oauthAccessToken, oauthClient } from '@/database/schemas/auth';
+import { oauthAccessToken, oauthClient, session } from '@/database/schemas/auth';
 import { auth } from '@/lib/auth';
 import { env } from '@/lib/env';
 
@@ -35,16 +35,24 @@ function wwwAuthenticate(baseURL: string, error?: 'invalid_token'): string {
  * `oauth_access_token`). The provider's default `storeTokens: "hashed"` config hashes tokens before
  * storage (SHA-256, base64url, unpadded — see `defaultHasher` in `@better-auth/oauth-provider`), so
  * the incoming raw token must be hashed the same way before the lookup.
+ *
+ * No session check here: `session_id` is `ON DELETE SET NULL`, so it is already gone once the
+ * session is deleted. The provider stamps `revoked` on the session's tokens instead, and that stamp
+ * is what carries sign-out to this path.
  */
 function verifyOpaqueToken(token: string): McpAuthSuccess | undefined {
   const hashedToken = createHash('sha256').update(token).digest('base64url');
   const row = db
-    .select({ userId: oauthAccessToken.userId, expiresAt: oauthAccessToken.expiresAt })
+    .select({
+      userId: oauthAccessToken.userId,
+      expiresAt: oauthAccessToken.expiresAt,
+      revoked: oauthAccessToken.revoked,
+    })
     .from(oauthAccessToken)
     .where(eq(oauthAccessToken.token, hashedToken))
     .get();
 
-  if (!row || row.expiresAt.getTime() <= Date.now()) {
+  if (!row || row.expiresAt.getTime() <= Date.now() || row.revoked) {
     return undefined;
   }
 
@@ -68,6 +76,12 @@ function clientIsActive(clientId: string): boolean {
   return row !== undefined && !row.disabled;
 }
 
+function sessionExists(sessionId: string): boolean {
+  return (
+    db.select({ id: session.id }).from(session).where(eq(session.id, sessionId)).get() !== undefined
+  );
+}
+
 /**
  * Verifies the `Authorization: Bearer <token>` header on an incoming /mcp request against the app's
  * own JWKS (Better Auth's `jwt` plugin, issuer pinned to `BASE_URL` — see src/lib/auth.ts),
@@ -77,8 +91,11 @@ function clientIsActive(clientId: string): boolean {
  *
  * Signature verification is local: the JWKS is read from the database via `auth.api.getJwks()`
  * rather than fetched from `BASE_URL/api/auth/jwks` over the network — inside a container the public
- * BASE_URL usually isn't reachable from the app itself (port mapping, hairpin NAT). The one DB
- * lookup that is not optional is the token's client registration (see clientIsActive).
+ * BASE_URL usually isn't reachable from the app itself (port mapping, hairpin NAT).
+ *
+ * A JWT must also name a client registration that still exists and is enabled (see clientIsActive)
+ * and, when it carries a `sid`, a session row that still exists. An opaque token must be unexpired
+ * and not `revoked`. Any failure is a 401 `invalid_token`.
  */
 export async function verifyMcpBearer(request: Request): Promise<McpAuthResult> {
   const baseURL = env.BASE_URL;
@@ -100,6 +117,14 @@ export async function verifyMcpBearer(request: Request): Promise<McpAuthResult> 
     });
 
     if (typeof payload.azp !== 'string' || !clientIsActive(payload.azp)) {
+      return { ok: false, status: 401, wwwAuthenticate: wwwAuthenticate(baseURL, 'invalid_token') };
+    }
+
+    // Existence only, unlike upstream's introspection, which also rejects an expired session:
+    // refresh grants copy the refresh token's session id into each new JWT, and an expired row
+    // persists until its cookie returns, so an expiry check would cut off `offline_access` clients
+    // a week after the owner's last gallery visit. Every deliberate sign-out deletes the row.
+    if (typeof payload.sid === 'string' && !sessionExists(payload.sid)) {
       return { ok: false, status: 401, wwwAuthenticate: wwwAuthenticate(baseURL, 'invalid_token') };
     }
 
