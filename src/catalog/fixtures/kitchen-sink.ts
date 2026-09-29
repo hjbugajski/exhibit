@@ -410,7 +410,7 @@ export const kitchenSinkFixture: Spec = {
     'day-1': {
       type: 'Day',
       props: { label: 'Install Day', date: 'June 20, 2026', summary: 'Marcus on site 8 AM – 2 PM' },
-      children: ['install-weather', 'stop-1', 'stop-2', 'stop-3', 'stop-4', 'stop-5'],
+      children: ['install-weather', 'stop-1', 'stop-2', 'stop-3', 'stop-4', 'stop-5', 'trail'],
     },
     'install-weather': {
       type: 'Weather',
@@ -483,6 +483,27 @@ export const kitchenSinkFixture: Spec = {
         title: 'Leak test & walkthrough',
         markdown: 'Run water for 10 minutes, check every joint, and sign off.',
         kind: 'other',
+      },
+      children: [],
+    },
+    trail: {
+      type: 'Trail',
+      props: {
+        name: 'Carpenter Park river loop',
+        distance: { value: 2.4, unit: 'mi' },
+        elevationGain: { value: 120, unit: 'ft' },
+        difficulty: 'easy',
+        routeType: 'loop',
+        duration: '1 hour',
+        track: [
+          { lat: 39.8538, lng: -89.6352 },
+          { lat: 39.8581, lng: -89.6311 },
+          { lat: 39.8612, lng: -89.6378 },
+          { lat: 39.8538, lng: -89.6352 },
+        ],
+        waypoints: [{ id: 'trailhead', lat: 39.8538, lng: -89.6352, label: 'Trailhead parking' }],
+        elevationProfile: [540, 565, 590, 570, 540],
+        markdown: 'An easy walk once the water is back on; the river overlook sits at the far end.',
       },
       children: [],
     },

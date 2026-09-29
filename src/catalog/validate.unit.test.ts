@@ -34,7 +34,7 @@ describe('validateArtifactSpec', () => {
         {
           "component": "NotAComponent",
           "element": "unknown-el",
-          "message": "Invalid option: expected one of "Section"|"Grid"|"Columns"|"Tabs"|"Divider"|"Heading"|"Prose"|"Callout"|"Quote"|"CodeBlock"|"Card"|"Table"|"KeyValueList"|"Steps"|"Timeline"|"Checklist"|"Details"|"Badge"|"Figure"|"Progress"|"Chart"|"Mermaid"|"Map"|"Choice"|"NoteBox"|"Rating"|"Itinerary"|"Day"|"Stop"|"Weather"",
+          "message": "Invalid option: expected one of "Section"|"Grid"|"Columns"|"Tabs"|"Divider"|"Heading"|"Prose"|"Callout"|"Quote"|"CodeBlock"|"Card"|"Table"|"KeyValueList"|"Steps"|"Timeline"|"Checklist"|"Details"|"Badge"|"Figure"|"Progress"|"Chart"|"Mermaid"|"Map"|"Choice"|"NoteBox"|"Rating"|"Itinerary"|"Day"|"Stop"|"Trail"|"Weather"",
           "path": "elements.unknown-el.type",
         },
         {
@@ -718,6 +718,77 @@ describe('validateArtifactSpec statePath overlaps', () => {
 
     expect(result.errors).toContainEqual(
       expect.objectContaining({ element: 'list', component: 'Checklist', path: 'statePath' }),
+    );
+  });
+});
+
+describe('validateArtifactSpec Trail', () => {
+  const trail = {
+    name: 'Mount Tam loop',
+    distance: { value: 8.4, unit: 'km' },
+    elevationGain: { value: 650, unit: 'm' },
+    difficulty: 'moderate',
+    routeType: 'loop',
+    duration: '4 hours',
+    track: [
+      { lat: 37.9, lng: -122.6 },
+      { lat: 37.91, lng: -122.58 },
+    ],
+    waypoints: [{ id: 'trailhead', lat: 37.9, lng: -122.6, label: 'Trailhead' }],
+    elevationProfile: [100, 400, 750],
+    markdown: 'Bring water.',
+  };
+
+  function validate(props: Record<string, unknown>) {
+    return validateArtifactSpec({
+      root: 'trail',
+      elements: { trail: { type: 'Trail', props, children: [] } },
+    });
+  }
+
+  it('accepts a full Trail', () => {
+    const result = validate(trail);
+
+    expect(result.valid ? [] : result.errors).toEqual([]);
+  });
+
+  it.each([
+    [
+      'a distance in feet',
+      { ...trail, distance: { value: 8.4, unit: 'ft' } },
+      'elements.trail.props.distance.unit',
+    ],
+    [
+      'a track over 500 points',
+      { ...trail, track: Array.from({ length: 501 }, () => ({ lat: 37.9, lng: -122.6 })) },
+      'elements.trail.props.track',
+    ],
+  ])('rejects %s at the offending field', (_name, props, path) => {
+    const result = validate(props);
+
+    expect(result.valid).toBe(false);
+    if (result.valid) {
+      throw new Error('expected invalid result');
+    }
+
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({ element: 'trail', component: 'Trail', path }),
+    );
+  });
+
+  it('rejects duplicate waypoint ids', () => {
+    const result = validate({ ...trail, waypoints: [...trail.waypoints, ...trail.waypoints] });
+
+    expect(result.valid).toBe(false);
+    if (result.valid) {
+      throw new Error('expected invalid result');
+    }
+
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({
+        path: 'elements.trail.props.waypoints',
+        message: 'Item id "trailhead" is used more than once; ids must be unique within the list.',
+      }),
     );
   });
 });

@@ -38,8 +38,8 @@ const latLng = z.object({
 });
 
 /**
- * Marker cap for a single map. Shared by Map's own schema, the per-Day lint in validate.ts, and the
- * Day auto-map's render guard (day.tsx) so the three can't drift.
+ * Marker cap for a single map. Shared by Map's own schema, Trail's waypoints, the per-Day lint in
+ * validate.ts, and the Day auto-map's render guard (day.tsx) so they can't drift.
  */
 export const MAP_MARKERS_MAX = 500;
 const listItemId = z
@@ -47,6 +47,18 @@ const listItemId = z
   .min(1)
   .max(SHORT_MAX)
   .describe('Unique id for this item within the list; stable across versions.');
+/** A labeled map pin, shared by Map markers and Trail waypoints. */
+const mapMarker = latLng.extend({
+  id: listItemId,
+  label: z.string().max(SHORT_MAX).describe('Short label shown next to the marker.'),
+  description: z
+    .string()
+    .max(SHORT_MAX)
+    .optional()
+    .describe('Detail shown in a popup when the marker is clicked.'),
+});
+/** An ordered line of points, shared by Map paths and Trail tracks. */
+const trackPoints = z.array(latLng).min(2).max(500);
 
 /**
  * Zod check flagging string values that appear more than once in an array, keyed by `pick` — one
@@ -508,17 +520,7 @@ export const catalog = defineCatalog(schema, {
           .optional()
           .describe('Initial zoom level (1 world - 18 street); usually omit.'),
         markers: z
-          .array(
-            latLng.extend({
-              id: listItemId,
-              label: z.string().max(SHORT_MAX).describe('Short label shown next to the marker.'),
-              description: z
-                .string()
-                .max(SHORT_MAX)
-                .optional()
-                .describe('Detail shown in a popup when the marker is clicked.'),
-            }),
-          )
+          .array(mapMarker)
           .max(MAP_MARKERS_MAX)
           .check(uniqueIds)
           .optional()
@@ -527,7 +529,7 @@ export const catalog = defineCatalog(schema, {
           .array(
             z.object({
               id: listItemId,
-              points: z.array(latLng).min(2).max(500).describe('Waypoints of the path, in order.'),
+              points: trackPoints.describe('Waypoints of the path, in order.'),
               dashed: z
                 .boolean()
                 .optional()
@@ -681,6 +683,40 @@ export const catalog = defineCatalog(schema, {
           .describe(
             'Category driving the stop icon: food (fork/knife), activity (compass), lodging (bed), travel (plane), other (pin). Defaults to other.',
           ),
+      }),
+    },
+    Trail: {
+      description:
+        'One hike with its stats, an optional track map, and an optional elevation profile. Use Trail rather than Stop to detail a hike, including inside a Day. Trail draws its own map, and its points never join the Day map.',
+      props: z.object({
+        name: z.string().max(SHORT_MAX),
+        distance: z.object({ value: z.number().positive(), unit: z.enum(['km', 'mi']) }),
+        elevationGain: z.object({ value: z.number().min(0), unit: z.enum(['m', 'ft']) }),
+        difficulty: z.enum(['easy', 'moderate', 'hard', 'strenuous']),
+        routeType: z.enum(['loop', 'out-and-back', 'point-to-point']),
+        duration: z
+          .string()
+          .max(SHORT_MAX)
+          .optional()
+          .describe('How long the hike takes, e.g. "3 hours".'),
+        track: trackPoints.optional().describe('The trail line, start to finish.'),
+        waypoints: z
+          .array(mapMarker)
+          .max(MAP_MARKERS_MAX)
+          .check(uniqueIds)
+          .optional()
+          .describe('Pins along the trail; put the trailhead first.'),
+        elevationProfile: z
+          .array(z.number())
+          .min(2)
+          .max(500)
+          .optional()
+          .describe('Elevations in elevationGain.unit, sampled evenly from start to finish.'),
+        markdown: z
+          .string()
+          .max(LONG_MAX)
+          .optional()
+          .describe('Markdown notes: access, permits, water, hazards.'),
       }),
     },
     Weather: {

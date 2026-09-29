@@ -34,6 +34,7 @@ import { Stop } from '@/components/catalog/stop';
 import { Table } from '@/components/catalog/table';
 import { Tabs } from '@/components/catalog/tabs';
 import { Timeline } from '@/components/catalog/timeline';
+import { Trail } from '@/components/catalog/trail';
 import { Weather } from '@/components/catalog/weather';
 
 /**
@@ -71,6 +72,7 @@ export const catalogComponents = {
   Itinerary,
   Day,
   Stop,
+  Trail,
   Weather,
 };
 

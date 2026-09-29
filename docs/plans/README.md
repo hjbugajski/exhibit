@@ -42,7 +42,7 @@ Produced by a deep audit at commit `ffee99b` (2026-09-26): 15 opus auditors (9 p
 | 32   | Direction spike: search beyond titles                                                                | M                     | —          | TODO                                                     |
 | 33   | Direction spike: opt-in revocable share links                                                        | M (spike; L if built) | —          | DONE (spike; verdict BUILD, owner decisions pending)     |
 | 34   | Weather catalog component (static and live)                                                          | M                     | —          | DONE                                                     |
-| 35   | Trail catalog component for hikes                                                                    | M                     | —          | TODO                                                     |
+| 35   | Trail catalog component for hikes                                                                    | M                     | —          | DONE                                                     |
 | 36   | Itinerary improvements                                                                               | M                     | 34, 35     | TODO                                                     |
 
 Status values: TODO | IN PROGRESS (phase N/M) | DONE | BLOCKED (one-line reason) | REJECTED (one-line rationale).
