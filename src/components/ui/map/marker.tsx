@@ -1,11 +1,18 @@
-import { createContext, use, useEffect, useState, type KeyboardEvent, type ReactNode } from 'react';
+import {
+  createContext,
+  use,
+  useEffect,
+  useEffectEvent,
+  useState,
+  type KeyboardEvent,
+  type ReactNode,
+} from 'react';
 import { createPortal } from 'react-dom';
 
 import * as MapLibreGL from 'maplibre-gl';
 import { type MarkerOptions, type PopupOptions } from 'maplibre-gl';
 
 import { useMap } from '@/components/ui/map/map-context';
-import { useLatest } from '@/components/ui/map/map-utils';
 import { PopupCloseButton, usePopupInstance } from '@/components/ui/map/popup-utils';
 import { cn } from '@/lib/utils';
 
@@ -58,14 +65,14 @@ function Root({
 }: MarkerRootProps) {
   const { map } = useMap();
 
-  const callbacksRef = useLatest({
+  const readCallbacks = useEffectEvent(() => ({
     onClick,
     onMouseEnter,
     onMouseLeave,
     onDragStart,
     onDrag,
     onDragEnd,
-  });
+  }));
 
   // `color`, `scale`, and `anchor` (from ...markerOptions, below) are read once here at
   // construction. MapLibre's Marker has no setters for them, so they can't be resynced post-mount
@@ -85,14 +92,12 @@ function Root({
     }).setLngLat([longitude, latitude]);
   });
 
-  // Wired in an effect so nothing reads the callbacks ref during render; each handler resolves the
-  // latest callback at event time.
   useEffect(() => {
     const element = marker.getElement();
 
-    const handleClick = (e: MouseEvent) => callbacksRef.current.onClick?.(e);
-    const handleMouseEnter = (e: MouseEvent) => callbacksRef.current.onMouseEnter?.(e);
-    const handleMouseLeave = (e: MouseEvent) => callbacksRef.current.onMouseLeave?.(e);
+    const handleClick = (e: MouseEvent) => readCallbacks().onClick?.(e);
+    const handleMouseEnter = (e: MouseEvent) => readCallbacks().onMouseEnter?.(e);
+    const handleMouseLeave = (e: MouseEvent) => readCallbacks().onMouseLeave?.(e);
 
     element.addEventListener('click', handleClick);
     element.addEventListener('mouseenter', handleMouseEnter);
@@ -100,15 +105,15 @@ function Root({
 
     const handleDragStart = () => {
       const lngLat = marker.getLngLat();
-      callbacksRef.current.onDragStart?.({ lng: lngLat.lng, lat: lngLat.lat });
+      readCallbacks().onDragStart?.({ lng: lngLat.lng, lat: lngLat.lat });
     };
     const handleDrag = () => {
       const lngLat = marker.getLngLat();
-      callbacksRef.current.onDrag?.({ lng: lngLat.lng, lat: lngLat.lat });
+      readCallbacks().onDrag?.({ lng: lngLat.lng, lat: lngLat.lat });
     };
     const handleDragEnd = () => {
       const lngLat = marker.getLngLat();
-      callbacksRef.current.onDragEnd?.({ lng: lngLat.lng, lat: lngLat.lat });
+      readCallbacks().onDragEnd?.({ lng: lngLat.lng, lat: lngLat.lat });
     };
 
     marker.on('dragstart', handleDragStart);
@@ -123,7 +128,7 @@ function Root({
       marker.off('drag', handleDrag);
       marker.off('dragend', handleDragEnd);
     };
-  }, [marker, callbacksRef]);
+  }, [marker]);
 
   useEffect(() => {
     if (!map) {

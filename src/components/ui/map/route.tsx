@@ -1,9 +1,9 @@
-import { useEffect, useId } from 'react';
+import { useEffect, useEffectEvent, useId } from 'react';
 
 import type * as MapLibreGL from 'maplibre-gl';
 
 import { useMap } from '@/components/ui/map/map-context';
-import { removeMapLayers, useLatest } from '@/components/ui/map/map-utils';
+import { removeMapLayers } from '@/components/ui/map/map-utils';
 import { resolveTokenColor } from '@/components/ui/map/resolve-token-color';
 
 export interface MapRouteProps {
@@ -59,16 +59,15 @@ export function MapRoute({
    */
   const color = colorProp ?? resolveTokenColor(colorToken, '#3366d9');
 
-  const colorRef = useLatest(color);
-  const widthRef = useLatest(width);
-  const opacityRef = useLatest(opacity);
-  const dashArrayRef = useLatest(dashArray);
-  const beforeIdRef = useLatest(beforeId);
+  const readPaint = useEffectEvent(() => ({ color, width, opacity, dashArray, beforeId }));
+  const readHandlers = useEffectEvent(() => ({ onClick, onMouseEnter, onMouseLeave }));
 
   useEffect(() => {
     if (!isLoaded || !map) {
       return;
     }
+
+    const paint = readPaint();
 
     map.addSource(sourceId, {
       type: 'geojson',
@@ -86,17 +85,17 @@ export function MapRoute({
         source: sourceId,
         layout: { 'line-join': 'round', 'line-cap': 'round' },
         paint: {
-          'line-color': colorRef.current,
-          'line-width': widthRef.current,
-          'line-opacity': opacityRef.current,
-          ...(dashArrayRef.current && { 'line-dasharray': dashArrayRef.current }),
+          'line-color': paint.color,
+          'line-width': paint.width,
+          'line-opacity': paint.opacity,
+          ...(paint.dashArray && { 'line-dasharray': paint.dashArray }),
         },
       },
-      beforeIdRef.current,
+      paint.beforeId,
     );
 
     return () => removeMapLayers(map, [layerId], sourceId);
-  }, [isLoaded, map, sourceId, layerId, colorRef, widthRef, opacityRef, dashArrayRef, beforeIdRef]);
+  }, [isLoaded, map, sourceId, layerId]);
 
   // Re-order the layer when beforeId changes after mount.
   useEffect(() => {
@@ -139,15 +138,15 @@ export function MapRoute({
     }
 
     const handleClick = () => {
-      onClick?.();
+      readHandlers().onClick?.();
     };
     const handleMouseEnter = () => {
       map.getCanvas().style.cursor = 'pointer';
-      onMouseEnter?.();
+      readHandlers().onMouseEnter?.();
     };
     const handleMouseLeave = () => {
       map.getCanvas().style.cursor = '';
-      onMouseLeave?.();
+      readHandlers().onMouseLeave?.();
     };
 
     map.on('click', layerId, handleClick);
@@ -159,7 +158,7 @@ export function MapRoute({
       map.off('mouseenter', layerId, handleMouseEnter);
       map.off('mouseleave', layerId, handleMouseLeave);
     };
-  }, [isLoaded, map, layerId, onClick, onMouseEnter, onMouseLeave, interactive]);
+  }, [isLoaded, map, layerId, interactive]);
 
   return null;
 }

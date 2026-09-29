@@ -20,7 +20,7 @@
  * crash below it degrades to the same error-plus-null-scene shape a parser failure produces.
  */
 
-import { createElement, useEffect, useId, useMemo, useRef } from 'react';
+import { createElement, useEffect, useEffectEvent, useId, useMemo, useRef } from 'react';
 import type { CSSProperties, ComponentProps, RefObject } from 'react';
 
 import { useRender } from '@base-ui/react/use-render';
@@ -252,17 +252,10 @@ function Root({
 
   useTypeAssertion(figure, metrics, inUse);
 
-  // Latched: an inline arrow is a new function every render, and keying the effect on it would
-  // re-invoke the consumer with diagnostics it has already seen on every parent render.
-  const notify = useRef(onDiagnostics);
+  // The consumer hears each diagnostics value once, whatever the callback's identity.
+  const notifyDiagnostics = useEffectEvent((next: typeof diagnostics) => onDiagnostics?.(next));
 
-  useEffect(() => {
-    notify.current = onDiagnostics;
-  }, [onDiagnostics]);
-
-  useEffect(() => {
-    notify.current?.(diagnostics);
-  }, [diagnostics]);
+  useEffect(() => notifyDiagnostics(diagnostics), [diagnostics]);
 
   const config = useMemo<DiagramConfigValue>(
     () => ({ metrics, components, classNames, id, fit }),

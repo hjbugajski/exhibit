@@ -19,6 +19,7 @@ afterEach(() => {
 function createStubMap() {
   const addLayer = vi.fn();
   const setPaintProperty = vi.fn();
+  const on = vi.fn();
   const noop = () => undefined;
   const map = {
     addSource: noop,
@@ -26,15 +27,15 @@ function createStubMap() {
     setPaintProperty,
     getLayer: () => ({}),
     getSource: () => ({ setData: noop }),
-    on: noop,
+    on,
     off: noop,
     moveLayer: noop,
-    getCanvas: noop,
+    getCanvas: () => ({ style: {} }),
     removeLayer: noop,
     removeSource: noop,
   } as unknown as MapLibreGL.Map;
 
-  return { map, addLayer, setPaintProperty };
+  return { map, addLayer, setPaintProperty, on };
 }
 
 const coordinates: [number, number][] = [
@@ -87,5 +88,40 @@ describe('MapRoute', () => {
       initial: '#ff0000',
       final: '#ff0000',
     });
+  });
+
+  it('keeps one click subscription and calls the latest handler', () => {
+    const { map, on } = createStubMap();
+    const first = vi.fn();
+    const second = vi.fn();
+    const renderRoute = (onClick: () => void) => (
+      <MapContext value={{ map, isLoaded: true, resolvedTheme: 'light' }}>
+        <MapRoute coordinates={coordinates} id="trip" onClick={onClick} />
+      </MapContext>
+    );
+
+    const { rerender } = render(renderRoute(first));
+    rerender(renderRoute(second));
+
+    const clicks = on.mock.calls.filter(([event]) => event === 'click');
+    expect(clicks).toHaveLength(1);
+    expect(clicks[0]?.[1]).toBe('route-layer-trip');
+    clicks[0]?.[2]();
+    expect(second).toHaveBeenCalledOnce();
+    expect(first).not.toHaveBeenCalled();
+  });
+
+  it('keeps the layer when the width changes', () => {
+    const { map, addLayer } = createStubMap();
+    const renderRoute = (width: number) => (
+      <MapContext value={{ map, isLoaded: true, resolvedTheme: 'light' }}>
+        <MapRoute coordinates={coordinates} width={width} />
+      </MapContext>
+    );
+
+    const { rerender } = render(renderRoute(3));
+    rerender(renderRoute(6));
+
+    expect(addLayer).toHaveBeenCalledOnce();
   });
 });
