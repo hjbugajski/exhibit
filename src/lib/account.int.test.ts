@@ -144,6 +144,9 @@ describe('/settings server fns (through the real server-fn RPC route)', () => {
   let ownerCookie: string;
   let getConsentClient: ServerFnCaller;
   let revokeMcpConnection: ServerFnCaller;
+  let listMcpConnections: ServerFnCaller;
+  let getMcpConnectUrl: ServerFnCaller;
+  let getProtomapsApiKey: ServerFnCaller;
 
   beforeAll(async () => {
     const { db: appDb } = await import('@/database');
@@ -173,6 +176,27 @@ describe('/settings server fns (through the real server-fn RPC route)', () => {
       '/src/lib/account.ts',
       'revokeMcpConnectionFn',
       'POST',
+      ORIGIN,
+    );
+    listMcpConnections = await serverFnCaller(
+      server,
+      '/src/lib/account.ts',
+      'listMcpConnectionsFn',
+      'GET',
+      ORIGIN,
+    );
+    getMcpConnectUrl = await serverFnCaller(
+      server,
+      '/src/lib/mcp/origin.ts',
+      'getMcpConnectUrlFn',
+      'GET',
+      ORIGIN,
+    );
+    getProtomapsApiKey = await serverFnCaller(
+      server,
+      '/src/lib/map-config.ts',
+      'getProtomapsApiKeyFn',
+      'GET',
       ORIGIN,
     );
     // Cold-cache boots of the in-process dev server can far exceed the 10s default hook budget.
@@ -247,5 +271,17 @@ describe('/settings server fns (through the real server-fn RPC route)', () => {
 
   it('rejects an unauthenticated call', async () => {
     await expect(revokeMcpConnection({ clientId: 'rpc-client' })).rejects.toThrow('Unauthorized');
+  });
+
+  it('rejects an unauthenticated listMcpConnectionsFn call', async () => {
+    await expect(listMcpConnections(undefined)).rejects.toThrow('Unauthorized');
+  });
+
+  it('rejects an unauthenticated getMcpConnectUrlFn call', async () => {
+    await expect(getMcpConnectUrl(undefined)).rejects.toThrow('Unauthorized');
+  });
+
+  it('rejects an unauthenticated getProtomapsApiKeyFn call', async () => {
+    await expect(getProtomapsApiKey(undefined)).rejects.toThrow('Unauthorized');
   });
 });

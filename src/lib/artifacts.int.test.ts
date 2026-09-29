@@ -51,6 +51,9 @@ let purgeArtifactFn: ServerFnCaller;
 let listTagsWithCounts: ServerFnCaller;
 let renameTagFn: ServerFnCaller;
 let removeTagFn: ServerFnCaller;
+let listTags: ServerFnCaller;
+let setArtifactArchived: ServerFnCaller;
+let deleteArtifact: ServerFnCaller;
 
 beforeAll(async () => {
   const { createArtifact } = await import('@/database/repository');
@@ -139,6 +142,21 @@ beforeAll(async () => {
     server,
     '/src/lib/artifacts.ts',
     'removeTagFn',
+    'POST',
+    ORIGIN,
+  );
+  listTags = await serverFnCaller(server, '/src/lib/artifacts.ts', 'listTagsFn', 'GET', ORIGIN);
+  setArtifactArchived = await serverFnCaller(
+    server,
+    '/src/lib/artifacts.ts',
+    'setArtifactArchivedFn',
+    'POST',
+    ORIGIN,
+  );
+  deleteArtifact = await serverFnCaller(
+    server,
+    '/src/lib/artifacts.ts',
+    'deleteArtifactFn',
     'POST',
     ORIGIN,
   );
@@ -407,5 +425,37 @@ describe('restoreArtifactFn / purgeArtifactFn (through the real server-fn RPC ro
 
     await expect(restoreArtifactFn({ id })).rejects.toThrow('Unauthorized');
     await expect(purgeArtifactFn({ id })).rejects.toThrow('Unauthorized');
+  });
+});
+
+describe('unauthenticated calls (through the real server-fn RPC route)', () => {
+  it('rejects getArtifactDetailFn', async () => {
+    await expect(getArtifactDetail({ id: artifactId })).rejects.toThrow('Unauthorized');
+  });
+
+  it('rejects listArtifactsFn', async () => {
+    await expect(listArtifacts({})).rejects.toThrow('Unauthorized');
+  });
+
+  it('rejects listTagsFn', async () => {
+    await expect(listTags(undefined)).rejects.toThrow('Unauthorized');
+  });
+
+  it('rejects updateArtifactMetadataFn', async () => {
+    await expect(
+      updateArtifactMetadata({ id: artifactId, title: 'Hijacked', description: null, tags: [] }),
+    ).rejects.toThrow('Unauthorized');
+  });
+
+  it('rejects setArtifactArchivedFn', async () => {
+    await expect(setArtifactArchived({ id: artifactId, archived: true })).rejects.toThrow(
+      'Unauthorized',
+    );
+  });
+
+  it('rejects deleteArtifactFn and leaves the artifact in place', async () => {
+    await expect(deleteArtifact({ id: artifactId })).rejects.toThrow('Unauthorized');
+
+    expect(await getArtifactDetail({ id: artifactId }, { cookie: ownerCookie })).not.toBeNull();
   });
 });

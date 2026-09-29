@@ -14,7 +14,7 @@ Produced by a deep audit at commit `ffee99b` (2026-09-26): 15 opus auditors (9 p
 | 04   | Honor revoked opaque tokens and session liveness in /mcp auth                                        | S                     | 01         | TODO                                             |
 | 05   | Keep password-reset tokens out of the evlog request log                                              | S                     | —          | TODO                                             |
 | 06   | Interaction-state integrity (stale reseed, save-error reset, uncounted fences, statePath collisions) | M                     | 08         | TODO                                             |
-| 07   | Structural test pinning sessionMiddleware on every server fn                                         | S                     | —          | TODO                                             |
+| 07   | Structural test pinning sessionMiddleware on every server fn                                         | S                     | —          | DONE                                             |
 | 08   | One per-type body validator table for MCP publish/update                                             | S                     | —          | DONE                                             |
 | 09   | Toolchain guardrails (deny warnings, remove db:push, check script, drift gate, process.env lint)     | S                     | —          | TODO                                             |
 | 10   | Catalog value parsing fidelity (pie numbers, chart duplicate labels, gantt ids)                      | S                     | —          | TODO                                             |
