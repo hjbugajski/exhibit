@@ -63,6 +63,7 @@ describe('/sign-in beforeLoad', () => {
 describe('/sign-in validateSearch', () => {
   const validateSearch = Route.options.validateSearch as (search: Record<string, unknown>) => {
     redirect?: string;
+    reset?: true;
   };
 
   it('drops a backslash redirect that resolves off-origin', () => {
@@ -75,5 +76,14 @@ describe('/sign-in validateSearch', () => {
 
   it('returns no redirect key when the param is absent', () => {
     expect(validateSearch({})).toEqual({});
+  });
+
+  it('keeps a boolean reset flag', () => {
+    expect(validateSearch({ reset: true })).toEqual({ reset: true });
+  });
+
+  it('drops a reset flag that is not the boolean true', () => {
+    expect(validateSearch({ reset: 'true' })).toEqual({});
+    expect(validateSearch({ reset: 1 })).toEqual({});
   });
 });

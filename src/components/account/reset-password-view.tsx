@@ -35,7 +35,7 @@ export function ResetPasswordView({ token }: { token?: string }) {
                 return;
               }
 
-              await navigate({ to: '/sign-in' });
+              await navigate({ to: '/sign-in', search: { reset: true } });
             });
           }}
         >

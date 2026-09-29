@@ -36,7 +36,7 @@ Produced by a deep audit at commit `ffee99b` (2026-09-26): 15 opus auditors (9 p
 | 26   | Make pnpm seed read .env; fix dev-publish run line                                                   | S                     | —          | TODO                                             |
 | 27   | Replace latest-value refs with useEffectEvent                                                        | M                     | 13         | DONE                                             |
 | 28   | Replace the nitro-nightly alias with the canonical nitro beta                                        | S                     | —          | DONE                                             |
-| 29   | Minor UX polish (whitespace titles, RelativeTime hydration, reset confirmation)                      | S                     | 02         | TODO                                             |
+| 29   | Minor UX polish (whitespace titles, RelativeTime hydration, reset confirmation)                      | S                     | 02         | DONE                                             |
 | 30   | Investigate: layout golden value; sign-in navigate after OAuth resume                                | S                     | —          | TODO                                             |
 | 31   | Direction: owner-response inbox for Claude (stateUpdatedAt sort/filter)                              | S                     | —          | DONE                                             |
 | 32   | Direction spike: search beyond titles                                                                | M                     | —          | TODO                                             |

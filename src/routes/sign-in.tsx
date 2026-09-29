@@ -6,10 +6,13 @@ import { getServerSession } from '@/lib/auth-session';
 import { sameOriginPath } from '@/lib/same-origin-path';
 
 export const Route = createFileRoute('/sign-in')({
-  validateSearch: (search: Record<string, unknown>): { redirect?: string } => {
+  validateSearch: (search: Record<string, unknown>): { redirect?: string; reset?: true } => {
     const redirect = sameOriginPath(search.redirect);
 
-    return redirect ? { redirect } : {};
+    return {
+      ...(redirect ? { redirect } : {}),
+      ...(search.reset === true ? { reset: true } : {}),
+    };
   },
   beforeLoad: async ({ search }) => {
     const session = await getServerSession();
@@ -24,8 +27,8 @@ export const Route = createFileRoute('/sign-in')({
 });
 
 function SignInRoute() {
-  const { redirect } = Route.useSearch();
+  const { redirect, reset } = Route.useSearch();
   const resetAvailable = Route.useLoaderData();
 
-  return <SignInView redirect={redirect} resetAvailable={resetAvailable} />;
+  return <SignInView redirect={redirect} reset={reset} resetAvailable={resetAvailable} />;
 }

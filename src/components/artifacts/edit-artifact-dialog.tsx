@@ -111,7 +111,14 @@ export function EditArtifactDialog({ artifact, open, onOpenChange }: EditArtifac
             <Dialog.Description>Update the title, description, and tags.</Dialog.Description>
           </Dialog.Header>
           <Form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-            <Field.Root name="title">
+            <Field.Root
+              name="title"
+              validate={(value) =>
+                typeof value === 'string' && value !== '' && value.trim() === ''
+                  ? 'Title is required.'
+                  : null
+              }
+            >
               <Field.Label>Title</Field.Label>
               <Input
                 maxLength={200}
@@ -120,6 +127,7 @@ export function EditArtifactDialog({ artifact, open, onOpenChange }: EditArtifac
                 value={title}
               />
               <Field.Error match="valueMissing">Title is required.</Field.Error>
+              <Field.Error match="customError">Title is required.</Field.Error>
             </Field.Root>
             <Field.Root name="description">
               <Field.Label>Description</Field.Label>

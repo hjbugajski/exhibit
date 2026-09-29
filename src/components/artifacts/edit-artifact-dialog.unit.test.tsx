@@ -164,3 +164,14 @@ describe('EditArtifactDialog', () => {
     });
   });
 });
+
+describe('EditArtifactDialog title validation', () => {
+  it('blocks submit with an inline error when the title is only whitespace', async () => {
+    renderWithRouter(<Harness artifact={makeArtifact()} />);
+    fireEvent.change(await screen.findByLabelText('Title'), { target: { value: '   ' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    expect(await screen.findByText('Title is required.')).toBeTruthy();
+    expect(updateArtifactMetadataFn).not.toHaveBeenCalled();
+  });
+});

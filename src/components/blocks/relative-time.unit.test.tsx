@@ -1,14 +1,17 @@
 // @vitest-environment happy-dom
 
+import { act } from 'react';
+import { hydrateRoot } from 'react-dom/client';
 import { renderToStaticMarkup } from 'react-dom/server';
 
 import { cleanup, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { RelativeTime } from '@/components/blocks/relative-time';
 
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
 });
 
 describe('RelativeTime', () => {
@@ -39,5 +42,30 @@ describe('RelativeTime', () => {
         new Date(value),
       ),
     );
+  });
+
+  it('hydrates markup rendered a minute earlier without a mismatch, then shows the client value', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-09-29T12:00:00Z'));
+
+    const value = Date.now() - 30 * 1000;
+    const container = document.createElement('div');
+
+    container.innerHTML = renderToStaticMarkup(<RelativeTime value={value} />);
+    document.body.append(container);
+    expect(container.textContent).toBe('just now');
+
+    vi.setSystemTime(Date.now() + 60 * 1000);
+
+    const onRecoverableError = vi.fn();
+    const root = await act(async () =>
+      hydrateRoot(container, <RelativeTime value={value} />, { onRecoverableError }),
+    );
+
+    expect(onRecoverableError).not.toHaveBeenCalled();
+    expect(container.textContent).toBe('1m ago');
+
+    act(() => root.unmount());
+    container.remove();
   });
 });

@@ -11,13 +11,20 @@ import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { authClient } from '@/lib/auth-client';
 import { sameOriginPath } from '@/lib/same-origin-path';
-import { useFormAction } from '@/lib/use-form-action';
+import { useFormAction, type ActionStatus } from '@/lib/use-form-action';
+
+const RESET_STATUS: ActionStatus = {
+  kind: 'success',
+  message: 'Password reset. Sign in with your new password.',
+};
 
 export function SignInView({
   redirect,
+  reset,
   resetAvailable,
 }: {
   redirect?: string;
+  reset?: boolean;
   resetAvailable: boolean;
 }) {
   const navigate = useNavigate();
@@ -28,9 +35,13 @@ export function SignInView({
   // the other's status before running).
   const signIn = useFormAction();
   const forgotPassword = useFormAction();
-  const status = signIn.status ?? forgotPassword.status;
+  // A local flag rather than a seeded status: `run` clears status on every call, so a seeded
+  // message would reappear while a later attempt is pending.
+  const [resetNotice, setResetNotice] = useState(reset ?? false);
+  const status = signIn.status ?? forgotPassword.status ?? (resetNotice ? RESET_STATUS : null);
 
   function handleForgotPassword() {
+    setResetNotice(false);
     signIn.setStatus(null);
 
     void forgotPassword.run(async () => {
@@ -64,6 +75,7 @@ export function SignInView({
 
   function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
+    setResetNotice(false);
     forgotPassword.setStatus(null);
 
     void signIn.run(async () => {
