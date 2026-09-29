@@ -113,6 +113,26 @@ describe('parsePie diagnostics', () => {
     expect((ir as PieIR).slices.map((slice) => slice.label)).toEqual(['Cash']);
   });
 
+  it.each([
+    { source: '"Revenue" : 1,250', value: 1, rest: ',250' },
+    { source: '"Costs" : 1e3', value: 1, rest: 'e3' },
+    { source: '"Tax" : 45%', value: 45, rest: '%' },
+  ])('keeps the value of $source and warns about the text after it', ({ source, value, rest }) => {
+    const { ir, diagnostics } = parse(`pie\n  ${source}`);
+
+    expect((ir as PieIR).slices.map((slice) => slice.value)).toEqual([value]);
+    expect(diagnostics).toHaveLength(1);
+    expect(diagnostics[0]).toMatchObject({ severity: 'warning', code: 'trailing-text' });
+    expect(diagnostics[0]?.message).toContain(rest);
+  });
+
+  it.each(['"A" : 42   ', '"A" : 42 %% note'])('accepts %s without diagnostics', (source) => {
+    const { ir, diagnostics } = parse(`pie\n  ${source}`);
+
+    expect(codes(diagnostics)).toEqual([]);
+    expect((ir as PieIR).slices.map((slice) => slice.value)).toEqual([42]);
+  });
+
   it('keeps parsing after a bad row', () => {
     const { ir, diagnostics } = parse('pie\n  "A" : 1\n  oops\n  "B" : 2\n  "C" : 3');
 

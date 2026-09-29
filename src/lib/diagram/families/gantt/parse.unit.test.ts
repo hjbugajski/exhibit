@@ -224,6 +224,33 @@ describe('parseGantt recovery', () => {
     expect((ir as GanttIR).tasks.map((task) => task.id)).toEqual(['a', 'task-1']);
   });
 
+  it('renames a declared id that an earlier numbered task already holds', () => {
+    const { ir, diagnostics } = parse(
+      `${header}\n  First :2024-01-01, 2d\n  Second :task-0, 2024-01-05, 1d`,
+    );
+
+    expect(codes(diagnostics)).toEqual(['duplicate-task-id']);
+    expect((ir as GanttIR).tasks.map((task) => task.id)).toEqual(['task-0', 'task-1']);
+  });
+
+  it('numbers a task past an id an earlier task declared', () => {
+    const { ir, diagnostics } = parse(
+      `${header}\n  First :task-1, 2024-01-01, 2d\n  Second :2024-01-05, 1d`,
+    );
+
+    expect(codes(diagnostics)).toEqual([]);
+    expect((ir as GanttIR).tasks.map((task) => task.id)).toEqual(['task-1', 'task-2']);
+  });
+
+  it('renames a duplicate id past a number that is already declared', () => {
+    const { ir, diagnostics } = parse(
+      `${header}\n  A :task-1, 2024-01-01, 1d\n  B :task-1, 2024-01-02, 1d`,
+    );
+
+    expect(codes(diagnostics)).toEqual(['duplicate-task-id']);
+    expect((ir as GanttIR).tasks.map((task) => task.id)).toEqual(['task-1', 'task-2']);
+  });
+
   it.each([
     ['a 401-digit day count', `1${'0'.repeat(400)}d`],
     ['3660001d', '3660001d'],

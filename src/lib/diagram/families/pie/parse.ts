@@ -127,6 +127,16 @@ function slice(draft: Draft, scanner: Scanner, line: LogicalLine): void {
     ]);
   }
 
+  const rest = readRestOfLine(scanner);
+
+  if (rest) {
+    draft.report.warn(
+      'trailing-text',
+      `Ignored '${rest}' after the value of slice '${text(label)}'.`,
+      line.span,
+    );
+  }
+
   if (value < 0) {
     draft.report.warn(
       'negative-value',

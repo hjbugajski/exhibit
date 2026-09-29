@@ -286,22 +286,41 @@ function endOf(draft: Draft, field: string): GanttEnd | null {
   return at === null ? null : { kind: 'date', at };
 }
 
-/** A declared id has to be unique: the scene keys rows by it and `after` resolves against it. */
-function idFor(draft: Draft, declared: string | null, span: Span): string {
-  const fallback = `task-${draft.tasks.length}`;
+/** The first free `task-N`, counting up from the task's position so uncontested ids stay stable. */
+function numberedId(draft: Draft): string {
+  let suffix = draft.tasks.length;
 
+  while (draft.ids.has(`task-${suffix}`)) {
+    suffix += 1;
+  }
+
+  const id = `task-${suffix}`;
+
+  draft.ids.add(id);
+
+  return id;
+}
+
+/**
+ * Every returned id is unique across the chart, declared or numbered, because the scene keys rows
+ * by it and `after` resolves against it. A missing id or one already taken gets a numbered id
+ * instead.
+ */
+function idFor(draft: Draft, declared: string | null, span: Span): string {
   if (declared === null || declared === '') {
-    return fallback;
+    return numberedId(draft);
   }
 
   if (draft.ids.has(declared)) {
+    const id = numberedId(draft);
+
     draft.report.warn(
       'duplicate-task-id',
-      `Another task is already called '${declared}'; this one is '${fallback}'.`,
+      `Another task is already called '${declared}'; this one is '${id}'.`,
       span,
     );
 
-    return fallback;
+    return id;
   }
 
   draft.ids.add(declared);
