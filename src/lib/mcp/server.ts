@@ -2,7 +2,11 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 
-import { validateArtifactSpec } from '@/catalog/validate';
+import {
+  findStatePathConflicts,
+  validateArtifactSpec,
+  type ArtifactSpecError,
+} from '@/catalog/validate';
 import { ALLOWED_FAMILIES } from '@/components/catalog/mermaid-schema';
 import type { ArtifactListItem, ArtifactType, Db } from '@/database/repository';
 import {
@@ -21,6 +25,7 @@ import {
   softDeleteArtifact,
   updateMetadata,
 } from '@/database/repository';
+import { markdownStatePaths } from '@/lib/answer-count';
 import {
   descriptionField,
   normalizeTags,
@@ -95,11 +100,12 @@ function looksLikeHtmlDocument(html: string): boolean {
 function validateSpecOrError(spec: unknown): CallToolResult | null {
   const result = validateArtifactSpec(spec);
 
-  if (result.valid) {
-    return null;
-  }
+  return result.valid ? null : specErrorsResult('Spec', result.errors);
+}
 
-  const summary = result.errors
+/** Lists `errors` in the message and returns them as `structuredContent.errors`. */
+function specErrorsResult(subject: string, errors: ArtifactSpecError[]): CallToolResult {
+  const summary = errors
     .map(
       (error) =>
         `- ${error.path}${error.component ? ` (${error.component})` : ''}: ${error.message}`,
@@ -107,9 +113,27 @@ function validateSpecOrError(spec: unknown): CallToolResult | null {
     .join('\n');
 
   return errorResult(
-    `Spec is invalid (${result.errors.length} error${result.errors.length === 1 ? '' : 's'}):\n${summary}`,
-    { errors: result.errors },
+    `${subject} is invalid (${errors.length} error${errors.length === 1 ? '' : 's'}):\n${summary}`,
+    { errors },
   );
+}
+
+/**
+ * Formats an isError result when the statePaths a markdown body renders overlap (the same rule
+ * specs follow), or `null` otherwise. Errors name the component, since markdown has no element
+ * keys.
+ */
+function markdownStatePathsOrError(markdown: string): CallToolResult | null {
+  const errors = findStatePathConflicts(markdownStatePaths(markdown)).map(
+    ({ keys, message }): ArtifactSpecError => ({
+      element: null,
+      component: keys[0] ?? null,
+      path: 'statePath',
+      message,
+    }),
+  );
+
+  return errors.length === 0 ? null : specErrorsResult('Markdown', errors);
 }
 
 /**
@@ -144,7 +168,7 @@ function markdownBodyOrError(markdown: string): CallToolResult | null {
 const bodyChecks: Record<ArtifactType, (body: string) => CallToolResult | null> = {
   spec: (body) => validateSpecOrError(JSON.parse(body)),
   html: htmlDocumentOrError,
-  markdown: markdownBodyOrError,
+  markdown: (body) => markdownBodyOrError(body) ?? markdownStatePathsOrError(body),
 };
 
 /** Returns an isError result when `body` fails the size cap or its type's check, else `null`. */
@@ -266,7 +290,7 @@ export function buildMcpServer(db: Db): McpServer {
       description:
         'Creates a new artifact from a markdown document — the quickest format for prose-first content (notes, briefs, explainers, meeting summaries, research write-ups) that does not need spec-level structure. Renders in the gallery with GFM tables, task lists, strikethrough and footnotes, and syntax-highlighted code fences. Two deliberate differences from most markdown renderers: raw HTML is never interpreted (it shows as literal text — do not reach for it), and bare URLs do not autolink, so write explicit [text](https://example.com) links. Links render only for http(s) URLs and images only for https: URLs; anything else is dropped. Catalog components embed two ways. (1) Comment directive — `<!-- ::Divider -->` for a component with no content, or `<!-- ::start:Card title="Budget" -->` … markdown … `<!-- ::end:Card -->` to wrap markdown inside a container component (Section, Card, Itinerary, Day). Directive attributes are flat strings, so they only carry text and enum props — components whose props need numbers or arrays (Grid, Tabs) cannot be driven by a directive; use an exhibit fence or publish_spec for those. (2) An `exhibit` code fence whose body is JSON `{ "type": "Chart", "props": { ... } }` — one component, full prop types, for anything needing numbers, booleans, arrays or objects (Chart, Table, Callout, Checklist, KeyValueList, ...). Call get_catalog for component names and prop shapes. A `mermaid` code fence renders as a diagram (' +
         ALLOWED_FAMILIES +
-        '); any other diagram type shows the source with the reason instead. Components with a statePath (Checklist, Choice, Rating, NoteBox) persist the owner’s input exactly as they do in specs, readable back through get_artifact. Prefer publish_spec when the content is mostly structured components rather than prose. Returns the artifact id and url — the url opens for the gallery owner only, since it requires their session, so it is not a link to share. Revise later with update_artifact, not a second publish.',
+        '); any other diagram type shows the source with the reason instead. Components with a statePath (Checklist, Choice, Rating, NoteBox) persist the owner’s input exactly as they do in specs, readable back through get_artifact. As in specs, a statePath that equals or is a segment prefix of another (`/feedback` and `/feedback/note`) is rejected. Prefer publish_spec when the content is mostly structured components rather than prose. Returns the artifact id and url — the url opens for the gallery owner only, since it requires their session, so it is not a link to share. Revise later with update_artifact, not a second publish.',
       inputSchema: {
         title: titleField.describe('Artifact title.'),
         description: descriptionField.optional().describe('Optional short description.'),

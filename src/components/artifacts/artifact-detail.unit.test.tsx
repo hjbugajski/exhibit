@@ -113,13 +113,13 @@ describe('ArtifactDetailView', () => {
     /*
      * The spec body sits behind SpecView's lazy chunk, which now evaluates the whole catalog —
      * diagram engine included. Under a loaded parallel suite that import can outlast the 1s
-     * default, so the first lazy-content wait gets a real timeout.
+     * default, so the first lazy-content wait gets a real timeout, and the test a longer one.
      */
     expect(
       await screen.findByText('Kyoto in Three Days', undefined, { timeout: 10_000 }),
     ).toBeTruthy();
     expect(screen.getByText('Day 1 — Saturday')).toBeTruthy();
-  });
+  }, 15_000);
 
   it('lists all versions in the version dropdown, newest first, marking the latest and showing when each was created', async () => {
     const now = 1_000_000_000_000;
@@ -335,6 +335,48 @@ describe('ArtifactDetailView interaction state', () => {
     });
   });
 
+  it('saves a still-debounced change before switching versions', async () => {
+    let resolveSave: (() => void) | undefined;
+
+    vi.mocked(saveArtifactStateFn).mockImplementation(
+      (() =>
+        new Promise<void>((resolve) => {
+          resolveSave = resolve;
+        })) as never,
+    );
+
+    await mountChecklist(makeChecklistDetail({ version: 2 }));
+
+    toggle('Order cabinets');
+    act(() => {
+      vi.advanceTimersByTime(100);
+    });
+    fireEvent.click(screen.getByRole('combobox', { name: 'Version' }));
+
+    // Base UI commits a mouse click on an item only after a pointerdown on that item.
+    const v1 = screen.getByRole('option', { name: /^v1/ });
+
+    fireEvent.pointerDown(v1);
+    await act(async () => {
+      fireEvent.click(v1);
+    });
+
+    // The next version's loader reads state, so the edit must land before the router navigates.
+    expect(saveArtifactStateFn).toHaveBeenCalledWith({
+      data: { id: 'fixture-id', state: { tasks: { cabinets: true } } },
+    });
+    expect(screen.getByRole('checkbox', { name: 'Order cabinets' })).toBeTruthy();
+
+    vi.useRealTimers();
+    await act(async () => {
+      resolveSave?.();
+    });
+
+    await vi.waitFor(() => {
+      expect(screen.queryByRole('checkbox', { name: 'Order cabinets' })).toBeNull();
+    });
+  });
+
   it('holds a newer save until the in-flight one settles, so snapshots reach the server in order', async () => {
     const resolvers: (() => void)[] = [];
 
@@ -380,7 +422,26 @@ describe('ArtifactDetailView interaction state', () => {
       vi.advanceTimersByTime(600);
     });
 
-    expect(screen.getByText('Could not save your changes. Try again.')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe('Your latest changes are not saved.');
+  });
+
+  it('clears the save error once a later save succeeds', async () => {
+    vi.mocked(saveArtifactStateFn).mockRejectedValueOnce(new Error('offline'));
+    await mountChecklist(makeChecklistDetail());
+
+    toggle('Order cabinets');
+    await act(async () => {
+      vi.advanceTimersByTime(600);
+    });
+    expect(screen.getByRole('alert')).toBeTruthy();
+
+    toggle('Book the plumber');
+    await act(async () => {
+      vi.advanceTimersByTime(600);
+    });
+
+    expect(saveArtifactStateFn).toHaveBeenCalledTimes(2);
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 
   it('reseeds the store from the new version when the version changes', async () => {

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { Spec } from '@json-render/core';
 import { createStateStore } from '@json-render/react';
@@ -100,13 +100,16 @@ export function ArtifactDetailView({ id, detail }: { id: string; detail: Artifac
   // saveArtifactStateFn. html artifacts render outside the app entirely and have no store. The
   // routes key this component by artifact id but not by version, so the store is reseeded whenever
   // the version identity changes — otherwise switching versions would render stale interaction
-  // state (and debounce-save it) against a body it was never created for.
+  // state (and debounce-save it) against a body it was never created for. The seed is always the
+  // server's current state: the detail routes never cache a match (gcTime 0), and a version switch
+  // flushes the pending save before the next loader reads state.
   const stateful = artifact.type !== 'html';
   const versionKey = `${id}:${version.version}`;
   const [seededVersionKey, setSeededVersionKey] = useState(versionKey);
   const [stateStore, setStateStore] = useState(() =>
     stateful ? createStateStore(detail.state ?? {}) : null,
   );
+  const flushSaveRef = useRef<() => Promise<void>>(() => Promise.resolve());
 
   if (versionKey !== seededVersionKey) {
     setSeededVersionKey(versionKey);
@@ -128,11 +131,23 @@ export function ArtifactDetailView({ id, detail }: { id: string; detail: Artifac
       inFlight = inFlight.then(async () => {
         try {
           await saveArtifactStateFn({ data: { id, state } });
+          setSaveStatus(null);
         } catch {
-          setSaveStatus({ kind: 'error', message: 'Could not save your changes. Try again.' });
+          setSaveStatus({ kind: 'error', message: 'Your latest changes are not saved.' });
         }
       });
     }
+
+    flushSaveRef.current = () => {
+      clearTimeout(timer);
+
+      if (pendingSnapshot) {
+        save(pendingSnapshot);
+        pendingSnapshot = null;
+      }
+
+      return inFlight;
+    };
 
     const unsubscribe = stateStore.subscribe(() => {
       const snapshot = stateStore.getSnapshot() as JsonObject;
@@ -149,19 +164,23 @@ export function ArtifactDetailView({ id, detail }: { id: string; detail: Artifac
       clearTimeout(timer);
       unsubscribe();
 
-      // Flush a still-debounced save instead of dropping it, e.g. when switching versions or
-      // navigating away right after an edit.
+      // Flush a still-debounced save instead of dropping it, e.g. when navigating away right after
+      // an edit.
       if (pendingSnapshot) {
         save(pendingSnapshot);
       }
     };
   }, [stateStore, id]);
 
-  function handleVersionChange(next: number) {
+  // Awaits the pending save first: the next version's loader reads state, and the view stays
+  // mounted (keyed by id) across the switch, so a failed save still shows its banner.
+  async function handleVersionChange(next: number) {
+    await flushSaveRef.current();
+
     if (next === latestVersion) {
-      void navigate({ to: '/a/$id', params: { id } });
+      await navigate({ to: '/a/$id', params: { id } });
     } else {
-      void navigate({ to: '/a/$id/v/$n', params: { id, n: String(next) } });
+      await navigate({ to: '/a/$id/v/$n', params: { id, n: String(next) } });
     }
   }
 
@@ -169,6 +188,7 @@ export function ArtifactDetailView({ id, detail }: { id: string; detail: Artifac
   // lives; the old version stays browsable in the Select.
   function handleRestoreVersion() {
     void restoreAction.run(async () => {
+      await flushSaveRef.current();
       await revertArtifactVersionFn({ data: { id, version: version.version } });
       await router.invalidate();
       await navigate({ to: '/a/$id', params: { id } });
@@ -243,7 +263,9 @@ export function ArtifactDetailView({ id, detail }: { id: string; detail: Artifac
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <Select.Root
-              onValueChange={(value) => handleVersionChange(Number(value))}
+              onValueChange={(value) => {
+                void handleVersionChange(Number(value));
+              }}
               value={String(version.version)}
             >
               <Select.Trigger aria-label="Version">

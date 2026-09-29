@@ -23,6 +23,9 @@ export const Route = createFileRoute('/_authed/a/$id/v/$n')({
   head: ({ loaderData }) => ({
     meta: [{ title: loaderData ? `${loaderData.artifact.title} · Exhibit` : 'Exhibit' }],
   }),
+  // Uncached for the same reason as the latest-version route: the store must seed from the
+  // server's current state.
+  gcTime: 0,
   component: ArtifactDetailRoute,
 });
 
@@ -30,7 +33,7 @@ function ArtifactDetailRoute() {
   const { id } = Route.useParams();
   const detail = Route.useLoaderData();
 
-  // Same keying as the latest-version route: fresh mount per artifact so the spec state store
-  // re-seeds from the loader.
+  // Same keying as the latest-version route: fresh mount per artifact so the state store re-seeds
+  // from a fresh, uncached load.
   return <ArtifactDetailView detail={detail} id={id} key={id} />;
 }

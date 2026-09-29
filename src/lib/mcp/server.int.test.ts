@@ -166,6 +166,15 @@ describe('publish_html', () => {
   });
 });
 
+/** A Rating at `/feedback` and a NoteBox under it: a write to either erases the other. */
+const overlappingStatePathsMarkdown = [
+  '<!-- ::Rating label="How was it?" statePath="/feedback" -->',
+  '',
+  '```exhibit',
+  JSON.stringify({ type: 'NoteBox', props: { label: 'Notes', statePath: '/feedback/note' } }),
+  '```',
+].join('\n');
+
 describe('publish_markdown', () => {
   it('round trips a markdown body byte for byte', async () => {
     // Trailing newline, CRLF, tabs and a directive: nothing may be normalized on the way through.
@@ -214,6 +223,18 @@ describe('publish_markdown', () => {
 
     expect(result.isError).toBe(true);
     expect(textOf(result)).toContain('no content');
+  });
+
+  it('rejects a body whose statePaths overlap by prefix', async () => {
+    const result = await callTool(client, 'publish_markdown', {
+      title: 'Feedback',
+      markdown: overlappingStatePathsMarkdown,
+    });
+
+    expect(result.isError).toBe(true);
+    expect(result.structuredContent?.errors).toEqual([
+      expect.objectContaining({ path: 'statePath', element: null }),
+    ]);
   });
 });
 
@@ -384,6 +405,27 @@ describe('update_artifact', () => {
 
     expect(updated.isError).toBe(true);
     expect(textOf(updated)).toContain('1 MB');
+  });
+
+  it('rejects a markdown body update whose statePaths overlap by prefix', async () => {
+    const published = await callTool(client, 'publish_markdown', {
+      title: 'Notes',
+      markdown: '# v1',
+    });
+    const id = published.structuredContent?.id as string;
+
+    const updated = await callTool(client, 'update_artifact', {
+      id,
+      markdown: overlappingStatePathsMarkdown,
+    });
+
+    expect(updated.isError).toBe(true);
+    expect(updated.structuredContent?.errors).toEqual([
+      expect.objectContaining({ path: 'statePath' }),
+    ]);
+
+    const getResult = await callTool(client, 'get_artifact', { id });
+    expect(getResult.structuredContent?.versions).toEqual([1]);
   });
 });
 

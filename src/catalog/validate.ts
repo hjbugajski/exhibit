@@ -90,41 +90,91 @@ export function collectStatePaths(
   });
 }
 
+/** Two or more statePath occurrences that write over each other, with their owning keys. */
+export interface StatePathConflict {
+  paths: string[];
+  keys: string[];
+  message: string;
+}
+
+/** `/a/b` → `['a', 'b']`; the catalog's pointer pattern has no `~` escapes to decode. */
+function pathSegments(path: string): string[] {
+  return path.slice(1).split('/');
+}
+
+function isSegmentPrefix(shorter: string[], longer: string[]): boolean {
+  return shorter.length < longer.length && shorter.every((segment, i) => segment === longer[i]);
+}
+
 /**
- * Two interactive elements writing to the same statePath silently share state — flag every
- * statePath value used by more than one element.
+ * Finds statePaths that overlap: one record per path used more than once (listing every owner),
+ * and one per pair where one path's segments are a prefix of the other's. The state store nests
+ * pointers, so a write to `/feedback` replaces `{ note: … }` under it and a write to
+ * `/feedback/note` replaces a non-object `/feedback` with `{}` — either way one input erases the
+ * other. `/feedback/backup` and `/feedback/backup-decision` share no segment and do not conflict.
  */
-function findDuplicateStatePathErrors(elements: Record<string, unknown>): ArtifactSpecError[] {
+export function findStatePathConflicts(
+  entries: { key: string; path: string }[],
+): StatePathConflict[] {
   const usedBy = new Map<string, string[]>();
+  const firstUse = new Map<string, { key: string; path: string }>();
 
-  for (const [key, element] of Object.entries(elements)) {
-    if (!isRecord(element)) {
-      continue;
-    }
+  for (const entry of entries) {
+    usedBy.set(entry.path, [...(usedBy.get(entry.path) ?? []), entry.key]);
 
-    for (const { path } of collectStatePaths(key, element.props)) {
-      usedBy.set(path, [...(usedBy.get(path) ?? []), key]);
+    if (!firstUse.has(entry.path)) {
+      firstUse.set(entry.path, entry);
     }
   }
 
-  const errors: ArtifactSpecError[] = [];
+  const conflicts: StatePathConflict[] = [];
 
   for (const [path, keys] of usedBy) {
-    if (keys.length < 2) {
-      continue;
+    if (keys.length > 1) {
+      conflicts.push({
+        paths: [path],
+        keys,
+        message: `statePath "${path}" is used by ${keys.length} elements (${keys.join(', ')}); they will silently share state — each interactive element needs a unique statePath.`,
+      });
     }
+  }
 
+  const distinct = [...firstUse.values()];
+
+  for (const [i, a] of distinct.entries()) {
+    for (const b of distinct.slice(i + 1)) {
+      const [shorter, longer] = a.path.length <= b.path.length ? [a, b] : [b, a];
+
+      if (!isSegmentPrefix(pathSegments(shorter.path), pathSegments(longer.path))) {
+        continue;
+      }
+
+      conflicts.push({
+        paths: [shorter.path, longer.path],
+        keys: [shorter.key, longer.key],
+        message: `statePath "${shorter.path}" (${shorter.key}) contains "${longer.path}" (${longer.key}); a write to "${shorter.path}" replaces the value at "${longer.path}" — give each interactive element a statePath that is not a prefix of another.`,
+      });
+    }
+  }
+
+  return conflicts;
+}
+
+function findStatePathConflictErrors(elements: Record<string, unknown>): ArtifactSpecError[] {
+  const entries = Object.entries(elements).flatMap(([key, element]) =>
+    isRecord(element) ? collectStatePaths(key, element.props) : [],
+  );
+
+  return findStatePathConflicts(entries).map(({ keys, message }) => {
     const first = keys[0] ?? null;
 
-    errors.push({
+    return {
       element: first,
       component: first ? elementType(elements, first) : null,
       path: 'statePath',
-      message: `statePath "${path}" is used by ${keys.length} elements (${keys.join(', ')}); they will silently share state — each interactive element needs a unique statePath.`,
-    });
-  }
-
-  return errors;
+      message,
+    };
+  });
 }
 
 /**
@@ -331,7 +381,7 @@ export function validateArtifactSpec(spec: unknown): ArtifactValidationResult {
     // keys) are zod `.check()`s on the catalog prop schemas, surfaced by the per-element parse
     // above. Only lints spanning more than one prop or element live here.
     errors.push(
-      ...findDuplicateStatePathErrors(elements),
+      ...findStatePathConflictErrors(elements),
       ...findTabsChildCountMismatchErrors(elements),
       ...findDayMapMarkerCapErrors(elements),
     );

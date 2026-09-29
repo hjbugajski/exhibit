@@ -656,3 +656,68 @@ describe('validateArtifactSpec', () => {
     );
   });
 });
+
+describe('validateArtifactSpec statePath overlaps', () => {
+  /** A write to a parent path replaces the whole subtree, so overlapping paths erase each other. */
+  it('flags a statePath that is a segment prefix of another element’s', () => {
+    const result = validateArtifactSpec({
+      root: 'root',
+      elements: {
+        root: { type: 'Section', props: {}, children: ['rating', 'note'] },
+        rating: { type: 'Rating', props: { label: 'Rate', statePath: '/feedback' }, children: [] },
+        note: { type: 'NoteBox', props: { label: 'Notes', statePath: '/feedback/note' } },
+      },
+    });
+
+    expect(result.valid).toBe(false);
+    if (result.valid) {
+      throw new Error('expected invalid result');
+    }
+
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({
+        path: 'statePath',
+        message: expect.stringMatching(/"\/feedback".*"\/feedback\/note"/),
+      }),
+    );
+  });
+
+  it('accepts paths that share only a string prefix, not a segment', () => {
+    const result = validateArtifactSpec({
+      root: 'root',
+      elements: {
+        root: { type: 'Section', props: {}, children: ['a', 'b'] },
+        a: { type: 'Rating', props: { label: 'A', statePath: '/feedback/backup' } },
+        b: { type: 'NoteBox', props: { label: 'B', statePath: '/feedback/backup-decision' } },
+      },
+    });
+
+    expect(result.valid).toBe(true);
+  });
+
+  it('flags overlapping paths within one Checklist', () => {
+    const result = validateArtifactSpec({
+      root: 'list',
+      elements: {
+        list: {
+          type: 'Checklist',
+          props: {
+            items: [
+              { id: 'a', text: 'Parent', statePath: '/a' },
+              { id: 'b', text: 'Child', statePath: '/a/b' },
+            ],
+          },
+        },
+      },
+    });
+
+    expect(result.valid).toBe(false);
+    if (result.valid) {
+      throw new Error('expected invalid result');
+    }
+
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({ element: 'list', component: 'Checklist', path: 'statePath' }),
+    );
+  });
+});
