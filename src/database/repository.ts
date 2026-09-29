@@ -22,9 +22,9 @@ import { artifactStates } from '@/database/schemas/artifact-state';
 import { artifactVersions } from '@/database/schemas/artifact-version';
 import type { AnswerCount } from '@/lib/answer-count';
 import { countAnswers } from '@/lib/answer-count';
-import { normalizeTags } from '@/lib/artifact-metadata';
 import type { ArtifactSort, artifactTypes } from '@/lib/artifact-sorts';
 import { artifactSorts } from '@/lib/artifact-sorts';
+import { normalizeTags } from '@/lib/normalize-tags';
 
 export type Db = BetterSQLite3Database;
 

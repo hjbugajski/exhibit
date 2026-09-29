@@ -24,13 +24,13 @@ import type { AnswerCount } from '@/lib/answer-count';
 import { countAnswers } from '@/lib/answer-count';
 import {
   descriptionField,
-  normalizeTags,
   requireArtifact,
   tagField,
   tagsField,
   titleField,
 } from '@/lib/artifact-metadata';
 import { artifactSorts, artifactTypes } from '@/lib/artifact-sorts';
+import { normalizeTags } from '@/lib/normalize-tags';
 import { sessionMiddleware } from '@/lib/session-middleware';
 
 /**

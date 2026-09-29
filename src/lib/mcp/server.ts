@@ -25,18 +25,13 @@ import {
   updateArtifact,
 } from '@/database/repository';
 import { markdownStatePaths } from '@/lib/answer-count';
-import {
-  descriptionField,
-  normalizeTags,
-  tagField,
-  tagsField,
-  titleField,
-} from '@/lib/artifact-metadata';
+import { descriptionField, tagField, tagsField, titleField } from '@/lib/artifact-metadata';
 import { artifactSorts, artifactTypes } from '@/lib/artifact-sorts';
 import { buildCatalogSummary } from '@/lib/mcp/catalog-summary';
 import { checkBodySize } from '@/lib/mcp/limits';
 import type { McpToolName } from '@/lib/mcp/tool-names';
 import { artifactUrl } from '@/lib/mcp/url';
+import { normalizeTags } from '@/lib/normalize-tags';
 
 import packageJson from '../../../package.json' with { type: 'json' };
 

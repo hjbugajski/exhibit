@@ -25,8 +25,8 @@ import type { ArtifactType, Db } from '@/database/repository';
 import { artifacts } from '@/database/schemas/artifact';
 import { artifactStates } from '@/database/schemas/artifact-state';
 import { artifactVersions } from '@/database/schemas/artifact-version';
-import { normalizeTags } from '@/lib/artifact-metadata';
 import { artifactTypes } from '@/lib/artifact-sorts';
+import { normalizeTags } from '@/lib/normalize-tags';
 import { createTestDb } from '@testing/db';
 
 let sqlite: Database.Database;
