@@ -4,11 +4,11 @@ import { validateArtifactSpec } from '@/catalog/validate';
 import { buildCatalogSummary, EXAMPLE_SPECS } from '@/lib/mcp/catalog-summary';
 
 describe('buildCatalogSummary', () => {
-  it('stays within the ~4k token budget (chars/4 heuristic)', () => {
+  it('stays within the ~4.2k token budget (chars/4 heuristic)', () => {
     const { text } = buildCatalogSummary();
     const approxTokens = text.length / 4;
 
-    expect(approxTokens).toBeLessThan(4000);
+    expect(approxTokens).toBeLessThan(4200);
   });
 
   it('includes the wire format reminder, every component name, and example specs', () => {

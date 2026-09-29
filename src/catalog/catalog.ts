@@ -19,6 +19,7 @@ import { schema } from '@json-render/react/schema';
 import { z } from 'zod';
 
 import { ALLOWED_FAMILIES, MERMAID_MAX_CHARS } from '@/components/catalog/mermaid-schema';
+import { FORECAST_DAYS_MAX, weatherConditions } from '@/components/catalog/weather-schema';
 
 /** Generous cap for a title/label/short string field. */
 const SHORT_MAX = 500;
@@ -681,6 +682,45 @@ export const catalog = defineCatalog(schema, {
             'Category driving the stop icon: food (fork/knife), activity (compass), lodging (bed), travel (plane), other (pin). Defaults to other.',
           ),
       }),
+    },
+    Weather: {
+      // Field descriptions inside a union never reach get_catalog, so this description carries the
+      // semantics of both branches.
+      description:
+        'Daily forecast strip covering 1-7 days. With source "static", you supply the days: date as displayed, high and low in unit, precipitationChance as a percentage. With source "live", the app fetches a forecast for location each time the artifact is viewed; use it for trips within the next week.',
+      props: z.discriminatedUnion('source', [
+        z.object({
+          source: z.literal('static'),
+          unit: z.enum(['c', 'f']),
+          label: z.string().max(SHORT_MAX).optional(),
+          summary: z.string().max(SHORT_MAX).optional(),
+          days: z
+            .array(
+              z.object({
+                date: z.string().max(SHORT_MAX),
+                high: z.number(),
+                low: z.number(),
+                condition: z.enum(weatherConditions),
+                precipitationChance: z.number().int().min(0).max(100).optional(),
+              }),
+            )
+            .min(1)
+            .max(FORECAST_DAYS_MAX)
+            .check(
+              uniqueBy(
+                (day: { date?: unknown } | null | undefined) => day?.date,
+                (date) => `Date "${date}" is used more than once; each day needs its own date.`,
+              ),
+            ),
+        }),
+        z.object({
+          source: z.literal('live'),
+          location: latLng,
+          label: z.string().max(SHORT_MAX).optional(),
+          unit: z.enum(['c', 'f']).optional(),
+          dayCount: z.number().int().min(1).max(FORECAST_DAYS_MAX).optional(),
+        }),
+      ]),
     },
   },
   actions: {},

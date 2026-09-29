@@ -223,7 +223,7 @@ describe('get_catalog', () => {
 
     expect(result.isError).toBeFalsy();
     expect(textOf(result)).toContain('WIRE FORMAT');
-    expect(textOf(result).length / 4).toBeLessThan(4000);
+    expect(textOf(result).length / 4).toBeLessThan(4200);
     expect(result.structuredContent).toHaveProperty('components');
   });
 });

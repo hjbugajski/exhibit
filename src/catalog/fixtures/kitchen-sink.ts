@@ -410,7 +410,29 @@ export const kitchenSinkFixture: Spec = {
     'day-1': {
       type: 'Day',
       props: { label: 'Install Day', date: 'June 20, 2026', summary: 'Marcus on site 8 AM – 2 PM' },
-      children: ['stop-1', 'stop-2', 'stop-3', 'stop-4', 'stop-5'],
+      children: ['install-weather', 'stop-1', 'stop-2', 'stop-3', 'stop-4', 'stop-5'],
+    },
+    'install-weather': {
+      type: 'Weather',
+      props: {
+        source: 'static',
+        unit: 'f',
+        label: 'Install week forecast',
+        summary: 'Dry through install day; rain on Sunday does not affect indoor work.',
+        days: [
+          { date: 'Thu, Jun 18', high: 81, low: 63, condition: 'clear', precipitationChance: 0 },
+          {
+            date: 'Fri, Jun 19',
+            high: 79,
+            low: 62,
+            condition: 'partly-cloudy',
+            precipitationChance: 10,
+          },
+          { date: 'Sat, Jun 20', high: 76, low: 61, condition: 'cloudy', precipitationChance: 20 },
+          { date: 'Sun, Jun 21', high: 70, low: 59, condition: 'rain', precipitationChance: 80 },
+        ],
+      },
+      children: [],
     },
     'stop-1': {
       type: 'Stop',

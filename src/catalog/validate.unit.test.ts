@@ -34,7 +34,7 @@ describe('validateArtifactSpec', () => {
         {
           "component": "NotAComponent",
           "element": "unknown-el",
-          "message": "Invalid option: expected one of "Section"|"Grid"|"Columns"|"Tabs"|"Divider"|"Heading"|"Prose"|"Callout"|"Quote"|"CodeBlock"|"Card"|"Table"|"KeyValueList"|"Steps"|"Timeline"|"Checklist"|"Details"|"Badge"|"Figure"|"Progress"|"Chart"|"Mermaid"|"Map"|"Choice"|"NoteBox"|"Rating"|"Itinerary"|"Day"|"Stop"",
+          "message": "Invalid option: expected one of "Section"|"Grid"|"Columns"|"Tabs"|"Divider"|"Heading"|"Prose"|"Callout"|"Quote"|"CodeBlock"|"Card"|"Table"|"KeyValueList"|"Steps"|"Timeline"|"Checklist"|"Details"|"Badge"|"Figure"|"Progress"|"Chart"|"Mermaid"|"Map"|"Choice"|"NoteBox"|"Rating"|"Itinerary"|"Day"|"Stop"|"Weather"",
           "path": "elements.unknown-el.type",
         },
         {
@@ -92,6 +92,45 @@ describe('validateArtifactSpec', () => {
         component: 'Prose',
         path: 'elements.prose.props.markdown',
       }),
+    );
+  });
+
+  it.each([
+    [
+      'a live Weather without location',
+      { source: 'live', unit: 'c' },
+      'elements.weather.props.location',
+    ],
+    [
+      'a Weather with an unknown source',
+      { source: 'hourly', location: { lat: 0, lng: 0 } },
+      'elements.weather.props.source',
+    ],
+    [
+      'a static Weather with a repeated date',
+      {
+        source: 'static',
+        unit: 'c',
+        days: [
+          { date: 'Mon', high: 20, low: 10, condition: 'clear' },
+          { date: 'Mon', high: 21, low: 11, condition: 'rain' },
+        ],
+      },
+      'elements.weather.props.days',
+    ],
+  ])('rejects %s at the offending field', (_name, props, path) => {
+    const result = validateArtifactSpec({
+      root: 'weather',
+      elements: { weather: { type: 'Weather', props, children: [] } },
+    });
+
+    expect(result.valid).toBe(false);
+    if (result.valid) {
+      throw new Error('expected invalid result');
+    }
+
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({ element: 'weather', component: 'Weather', path }),
     );
   });
 

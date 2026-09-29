@@ -134,7 +134,7 @@ Single-user app, so there is no admin reset path. With Resend configured, use â€
 - **Specs are data, not code.** Spec artifacts are JSON validated against a zod catalog and rendered by the app's own React components; markdown rendering strips raw HTML and filters link/image protocols. No `dangerouslySetInnerHTML`.
 - **MCP auth is standard OAuth 2.1.** `/mcp` requires a Bearer JWT issued by the app's own authorization server (Better Auth + oauth-provider): PKCE, dynamic client registration, consent, discovery documents under `/.well-known/`. Tokens are verified locally against the JWKS in the database; the server never calls itself.
 - **Single owner.** Sign-up is disabled in the auth config, not just hidden. The seed runs only on an empty database.
-- **External fetches.** Rendered artifacts can reference `https:` images, and the map component loads CARTO basemap tiles; both expose your IP and referrer to those hosts, same as any embedded image. No other third-party calls are made.
+- **External fetches.** Rendered artifacts can reference `https:` images, and the map component loads CARTO basemap tiles; both expose your IP and referrer to those hosts, same as any embedded image. Live Weather blocks make the server call `api.open-meteo.com` with the block's coordinates rounded to 2 decimal places; your IP is not sent. No other third-party calls are made.
 
 ## Development
 

@@ -41,7 +41,7 @@ Produced by a deep audit at commit `ffee99b` (2026-09-26): 15 opus auditors (9 p
 | 31   | Direction: owner-response inbox for Claude (stateUpdatedAt sort/filter)                              | S                     | —          | DONE                                                 |
 | 32   | Direction spike: search beyond titles                                                                | M                     | —          | TODO                                                 |
 | 33   | Direction spike: opt-in revocable share links                                                        | M (spike; L if built) | —          | DONE (spike; verdict BUILD, owner decisions pending) |
-| 34   | Weather catalog component (static and live)                                                          | M                     | —          | TODO                                                 |
+| 34   | Weather catalog component (static and live)                                                          | M                     | —          | DONE                                                 |
 | 35   | Trail catalog component for hikes                                                                    | M                     | —          | TODO                                                 |
 | 36   | Itinerary improvements                                                                               | M                     | 34, 35     | TODO                                                 |
 

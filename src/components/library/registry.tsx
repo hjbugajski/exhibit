@@ -31,6 +31,7 @@ import { catalogStepsDemo } from '@/components/library/demos/catalog-steps';
 import { catalogTableDemo } from '@/components/library/demos/catalog-table';
 import { catalogTabsDemo } from '@/components/library/demos/catalog-tabs';
 import { catalogTimelineDemo } from '@/components/library/demos/catalog-timeline';
+import { catalogWeatherDemo } from '@/components/library/demos/catalog-weather';
 import { checkboxDemo } from '@/components/library/demos/checkbox';
 import { collapsibleDemo } from '@/components/library/demos/collapsible';
 import { diagramDemo } from '@/components/library/demos/diagram';
@@ -110,6 +111,7 @@ export const libraryDemos: LibraryDemo[] = [
   catalogTableDemo,
   catalogTabsDemo,
   catalogTimelineDemo,
+  catalogWeatherDemo,
   // Examples
   diagramDemo,
   diagramPlaygroundDemo,

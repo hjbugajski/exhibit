@@ -34,6 +34,7 @@ import { Stop } from '@/components/catalog/stop';
 import { Table } from '@/components/catalog/table';
 import { Tabs } from '@/components/catalog/tabs';
 import { Timeline } from '@/components/catalog/timeline';
+import { Weather } from '@/components/catalog/weather';
 
 /**
  * The concrete React component per catalog name. Exported as well as registered because markdown
@@ -70,6 +71,7 @@ export const catalogComponents = {
   Itinerary,
   Day,
   Stop,
+  Weather,
 };
 
 export const { registry } = defineRegistry(catalog, { components: catalogComponents });
