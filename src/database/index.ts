@@ -1,3 +1,4 @@
+import '@tanstack/react-start/server-only';
 import { mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 

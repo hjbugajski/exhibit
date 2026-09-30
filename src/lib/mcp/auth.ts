@@ -1,3 +1,4 @@
+import '@tanstack/react-start/server-only';
 import { createHash } from 'node:crypto';
 
 import { eq } from 'drizzle-orm';

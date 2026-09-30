@@ -40,3 +40,4 @@ Node/pnpm via mise (`mise.toml`).
 - Public routes: `/sign-in`, `/reset-password`, `/api/auth/*`, `/.well-known/*`, `/healthz` only. Everything else needs a session; `/mcp` needs a Bearer token.
 - HTML artifacts are hostile: opened as their own page at `/render/:id/:n` (never iframe/srcdoc) with CSP `sandbox allow-scripts` for an opaque origin — never same-origin with the app. Nothing else in the app uses an iframe or srcdoc: diagrams are drawn by the in-repo engine (`src/lib/diagram`) as inline SVG the app itself builds, so there is no third-party renderer output to frame.
 - No `dangerouslySetInnerHTML` outside the vetted markdown renderer. Signup disabled in Better Auth config, not just UI.
+- Server-only modules import `@tanstack/react-start/server-only`; a client leak fails `pnpm build`.

@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 
-import type { ArtifactType } from '@/database/repository';
+import type { ArtifactType } from '@/lib/artifact-types';
 import { requestLog } from '@/lib/request-log';
 import { resolveArtifactVersion } from '@/lib/resolve-artifact-version';
 import { slugify } from '@/lib/slugify';

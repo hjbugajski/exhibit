@@ -1,3 +1,4 @@
+import '@tanstack/react-start/server-only';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
@@ -8,7 +9,7 @@ import {
   validateArtifactSpec,
   type ArtifactSpecError,
 } from '@/catalog/validate';
-import type { ArtifactListItem, ArtifactType, Db } from '@/database/repository';
+import type { ArtifactListItem, Db } from '@/database/repository';
 import {
   artifactExists,
   createArtifact,
@@ -26,7 +27,8 @@ import {
 } from '@/database/repository';
 import { markdownStatePaths } from '@/lib/answer-count';
 import { descriptionField, tagField, tagsField, titleField } from '@/lib/artifact-metadata';
-import { artifactSorts, artifactTypes } from '@/lib/artifact-sorts';
+import { artifactSorts } from '@/lib/artifact-sorts';
+import { artifactTypes, type ArtifactType } from '@/lib/artifact-types';
 import { buildCatalogSummary } from '@/lib/mcp/catalog-summary';
 import { checkBodySize } from '@/lib/mcp/limits';
 import type { McpToolName } from '@/lib/mcp/tool-names';

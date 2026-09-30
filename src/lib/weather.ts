@@ -9,8 +9,8 @@ import { sessionMiddleware } from '@/lib/session-middleware';
  * caches each coordinate for 30 minutes; the browser never contacts a third party for weather.
  *
  * IMPORTANT: `getForecastFn`'s handler delegates to `fetchForecast`, so TanStack Start keeps
- * `fetchForecast` and the cache in the client bundle as dead code (see src/lib/artifacts.ts). This
- * module must therefore import nothing server-only: no `db`, no `env`.
+ * `fetchForecast` and the cache in the client bundle as dead code (see src/lib/artifacts.ts). A
+ * server-only import here, such as `db` or `env`, fails `pnpm build`.
  */
 
 /** One forecast day. `date` is ISO `YYYY-MM-DD` in the location's time zone; temperatures are °C. */

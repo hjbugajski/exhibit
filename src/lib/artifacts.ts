@@ -29,7 +29,8 @@ import {
   tagsField,
   titleField,
 } from '@/lib/artifact-metadata';
-import { artifactSorts, artifactTypes } from '@/lib/artifact-sorts';
+import { artifactSorts } from '@/lib/artifact-sorts';
+import { artifactTypes } from '@/lib/artifact-types';
 import { normalizeTags } from '@/lib/normalize-tags';
 import { sessionMiddleware } from '@/lib/session-middleware';
 
@@ -38,13 +39,10 @@ import { sessionMiddleware } from '@/lib/session-middleware';
  * UX-only (see auth-session.ts) - `sessionMiddleware` (src/lib/session-middleware.ts) re-checks the
  * session itself before any handler here touches artifact data.
  *
- * IMPORTANT: each handler below must stay written *inline* inside `.handler(...)`, never delegated
- * to a separately-exported function that calls `db`. The `_authed/index.tsx` route
- * (client-rendered) imports `listArtifactsFn` from this file, so this whole module is part of the
- * client bundle; TanStack Start's build only strips the server-only body (and its
- * `db`/better-sqlite3 dependency chain) out of the client bundle when that body is the literal
- * argument to `.handler()` — anything else ships better-sqlite3 to the browser and crashes
- * hydration.
+ * IMPORTANT: each handler below must stay written inline inside `.handler(...)`. Client routes
+ * import this module, and TanStack Start strips only the literal handler body from the client
+ * bundle. An exported helper that calls `db` keeps `@/database` in the client bundle, and
+ * `pnpm build` fails with an import-protection error.
  */
 
 const listArtifactsInput = z.object({

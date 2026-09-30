@@ -2,15 +2,13 @@
  * Counts the questions an artifact body asks (statePath-bearing catalog components) and how many
  * the owner has answered, for the "awaiting your reply" surface.
  *
- * Server-only: it pulls the catalog and the markdown parser in transitively, so only server code
- * may import it.
- *
  * Answers are addressed by JSON Pointer, not by literal key — the state store nests
  * `/tasks/cabinets` as `{ tasks: { cabinets: … } }` — so lookups go through the store's own
  * `getByPath`. `null` and `''` read as unanswered (a cleared Rating, an emptied NoteBox); `false`
  * and `0` are real values and count.
  */
 
+import '@tanstack/react-start/server-only';
 import { getByPath } from '@json-render/core';
 import { commentComponentsExtension } from '@tanstack/markdown/extensions/comment-components';
 import { parseMarkdown } from '@tanstack/markdown/parser';
@@ -18,7 +16,7 @@ import { parseMarkdown } from '@tanstack/markdown/parser';
 import { resolveCatalogDirective } from '@/catalog/directive';
 import { resolveExhibitFence } from '@/catalog/exhibit-fence';
 import { collectStatePaths } from '@/catalog/validate';
-import type { ArtifactType } from '@/database/repository';
+import type { ArtifactType } from '@/lib/artifact-types';
 import { markdownParseOptions } from '@/lib/markdown-parse-options';
 
 export interface AnswerCount {

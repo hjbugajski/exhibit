@@ -1,8 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 
 import { Home } from '@/components/artifacts/home';
-import type { ArtifactType } from '@/database/repository';
-import { artifactSorts, artifactTypes, type ArtifactSort } from '@/lib/artifact-sorts';
+import { artifactSorts, type ArtifactSort } from '@/lib/artifact-sorts';
+import { artifactTypes, type ArtifactType } from '@/lib/artifact-types';
 import { listArtifactsFn } from '@/lib/artifacts';
 
 interface GallerySearch {

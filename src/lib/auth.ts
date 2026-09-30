@@ -1,3 +1,4 @@
+import '@tanstack/react-start/server-only';
 import { drizzleAdapter } from '@better-auth/drizzle-adapter';
 import { oauthProvider } from '@better-auth/oauth-provider';
 import { betterAuth, type BetterAuthOptions } from 'better-auth';

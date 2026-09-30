@@ -21,8 +21,7 @@ const ARTIFACT_NOT_FOUND = 'Artifact not found. It may have been deleted.';
 /**
  * Turns a missed repository lookup or mutation into the user-facing not-found error. Repository
  * mutations return undefined for unknown or soft-deleted ids, so passing their result here is the
- * whole liveness guard. Takes the result rather than `(db, id)` so this module stays free of the
- * database import chain.
+ * whole liveness guard.
  */
 export function requireArtifact<T>(result: T | undefined | null): T {
   if (!result) {

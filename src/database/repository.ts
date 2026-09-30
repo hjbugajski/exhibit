@@ -1,3 +1,4 @@
+import '@tanstack/react-start/server-only';
 import type { SQL } from 'drizzle-orm';
 import {
   and,
@@ -22,13 +23,12 @@ import { artifactStates } from '@/database/schemas/artifact-state';
 import { artifactVersions } from '@/database/schemas/artifact-version';
 import type { AnswerCount } from '@/lib/answer-count';
 import { countAnswers } from '@/lib/answer-count';
-import type { ArtifactSort, artifactTypes } from '@/lib/artifact-sorts';
+import type { ArtifactSort } from '@/lib/artifact-sorts';
 import { artifactSorts } from '@/lib/artifact-sorts';
+import type { ArtifactType } from '@/lib/artifact-types';
 import { normalizeTags } from '@/lib/normalize-tags';
 
 export type Db = BetterSQLite3Database;
-
-export type ArtifactType = (typeof artifactTypes)[number];
 
 /**
  * Timestamps are epoch milliseconds; `deletedAt` is null while live, `archivedAt` is null while

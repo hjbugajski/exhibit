@@ -21,11 +21,11 @@ import {
   softDeleteArtifact,
   updateArtifact,
 } from '@/database/repository';
-import type { ArtifactType, Db } from '@/database/repository';
+import type { Db } from '@/database/repository';
 import { artifacts } from '@/database/schemas/artifact';
 import { artifactStates } from '@/database/schemas/artifact-state';
 import { artifactVersions } from '@/database/schemas/artifact-version';
-import { artifactTypes } from '@/lib/artifact-sorts';
+import { artifactTypes, type ArtifactType } from '@/lib/artifact-types';
 import { normalizeTags } from '@/lib/normalize-tags';
 import { createTestDb } from '@testing/db';
 

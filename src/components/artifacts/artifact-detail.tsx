@@ -31,7 +31,8 @@ import { Select } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs } from '@/components/ui/tabs';
-import type { ArtifactType, JsonObject } from '@/database/repository';
+import type { JsonObject } from '@/database/repository';
+import type { ArtifactType } from '@/lib/artifact-types';
 import type { ArtifactDetail } from '@/lib/artifacts';
 import {
   deleteArtifactFn,

@@ -1,5 +1,5 @@
 import { Badge } from '@/components/ui/badge';
-import type { ArtifactType } from '@/database/repository';
+import type { ArtifactType } from '@/lib/artifact-types';
 
 const typeVariants = { spec: 'info', html: 'warning', markdown: 'success' } as const;
 

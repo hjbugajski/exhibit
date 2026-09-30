@@ -20,8 +20,9 @@ import { RadioGroup } from '@/components/ui/radio-group';
 import { Spinner } from '@/components/ui/spinner';
 import { Table as TablePrimitive } from '@/components/ui/table';
 import { ToggleGroup } from '@/components/ui/toggle-group';
-import type { ArtifactListItem, ArtifactType } from '@/database/repository';
+import type { ArtifactListItem } from '@/database/repository';
 import type { ArtifactSort } from '@/lib/artifact-sorts';
+import type { ArtifactType } from '@/lib/artifact-types';
 import { cn } from '@/lib/utils';
 
 export type TypeFilter = ArtifactType | 'all';
