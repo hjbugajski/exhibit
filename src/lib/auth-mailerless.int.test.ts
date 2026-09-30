@@ -49,6 +49,13 @@ function authFetch(
   );
 }
 
+async function getSessionUserEmail(cookie: string): Promise<string | null> {
+  const response = await authFetch('/get-session', { cookie });
+  const session = (await response.json()) as { user?: { email: string } } | null;
+
+  return session?.user?.email ?? null;
+}
+
 beforeAll(async () => {
   const { seedOwner } = await import('@/lib/seed');
 
@@ -84,8 +91,6 @@ describe('with no mailer configured', () => {
   });
 
   it('applies an email change immediately instead of 400ing for a missing verification email', async () => {
-    const { db } = await import('@/database');
-
     const signInResponse = await authFetch('/sign-in/email', {
       body: { email: OWNER_EMAIL, password: OWNER_PASSWORD },
       ip: '203.0.113.10',
@@ -93,18 +98,13 @@ describe('with no mailer configured', () => {
 
     expect(signInResponse.status).toBe(200);
 
+    const cookie = cookieHeader(signInResponse);
     const changeResponse = await authFetch('/change-email', {
-      cookie: cookieHeader(signInResponse),
+      cookie,
       body: { newEmail: MOVED_EMAIL, callbackURL: '/' },
     });
 
     expect(changeResponse.status).toBe(200);
-    expect(
-      db
-        .select()
-        .from(user)
-        .all()
-        .map((row) => row.email),
-    ).toEqual([MOVED_EMAIL]);
+    expect(await getSessionUserEmail(cookie)).toBe(MOVED_EMAIL);
   });
 });

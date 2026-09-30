@@ -28,7 +28,6 @@ const forecast: ForecastDay[] = Array.from({ length: 7 }, (_, i) => ({
 
 afterEach(() => {
   cleanup();
-  vi.mocked(getForecastFn).mockReset();
 });
 
 describe('Weather (static)', () => {

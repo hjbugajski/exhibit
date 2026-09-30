@@ -22,7 +22,6 @@ import {
   updateArtifact,
 } from '@/database/repository';
 import type { Db } from '@/database/repository';
-import { artifacts } from '@/database/schemas/artifact';
 import { artifactStates } from '@/database/schemas/artifact-state';
 import { artifactVersions } from '@/database/schemas/artifact-version';
 import { artifactTypes, type ArtifactType } from '@/lib/artifact-types';
@@ -930,9 +929,8 @@ describe('listTagsWithCounts', () => {
 });
 
 describe('renameTag / removeTag', () => {
-  function tagsOf(id: string): string[] | null | undefined {
-    return db.select({ tags: artifacts.tags }).from(artifacts).where(eq(artifacts.id, id)).get()
-      ?.tags;
+  function tagsOf(id: string): string[] | undefined {
+    return getArtifact(db, id)?.artifact.tags;
   }
 
   it('renames a tag across every artifact carrying it', () => {
@@ -1017,10 +1015,10 @@ describe('renameTag / removeTag', () => {
 
     expect(renameTag(db, 'trips', 'travel')).toBe(2);
 
-    expect(tagsOf(deleted.id)).toEqual(['travel']);
     expect(tagsOf(archived.id)).toEqual(['travel']);
 
     restoreArtifact(db, deleted.id);
+    expect(tagsOf(deleted.id)).toEqual(['travel']);
     expect(listTags(db)).toEqual(['travel']);
   });
 

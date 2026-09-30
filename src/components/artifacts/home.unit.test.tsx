@@ -40,7 +40,6 @@ afterEach(() => {
   cleanup();
   vi.useRealTimers();
   vi.restoreAllMocks();
-  tagListRenders.mockClear();
   localStorage.clear();
 });
 

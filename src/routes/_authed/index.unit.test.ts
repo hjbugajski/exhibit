@@ -10,10 +10,9 @@ vi.mock('@/lib/artifacts', () => ({
 const { Route } = await import('./index');
 
 function validate(search: Record<string, unknown>) {
-  const validateSearch = Route.options.validateSearch as (search: Record<string, unknown>) => {
-    archived?: boolean;
-    deleted?: boolean;
-  };
+  const validateSearch = Route.options.validateSearch as (
+    search: Record<string, unknown>,
+  ) => Record<string, unknown>;
 
   return validateSearch(search);
 }
@@ -29,5 +28,29 @@ describe('/_authed/ validateSearch', () => {
       archived: undefined,
       deleted: true,
     });
+  });
+
+  it('keeps a valid query, tags, type and sort', () => {
+    expect(
+      validate({ query: 'kyoto', tags: ['travel', 'japan'], type: 'markdown', sort: 'title-asc' }),
+    ).toMatchObject({
+      query: 'kyoto',
+      tags: ['travel', 'japan'],
+      type: 'markdown',
+      sort: 'title-asc',
+    });
+  });
+
+  it.each([
+    [{ query: '' }, 'query', undefined],
+    [{ query: 42 }, 'query', undefined],
+    [{ tags: 'solo' }, 'tags', undefined],
+    [{ tags: ['a', 1, null, 'b'] }, 'tags', ['a', 'b']],
+    [{ type: 'pdf' }, 'type', undefined],
+    [{ sort: 'random' }, 'sort', undefined],
+    [{ archived: 'true' }, 'archived', undefined],
+    [{ deleted: 'true' }, 'deleted', undefined],
+  ])('sanitizes %o to %s = %o', (search, field, expected) => {
+    expect(validate(search)[field]).toEqual(expected);
   });
 });

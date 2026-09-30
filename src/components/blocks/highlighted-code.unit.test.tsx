@@ -13,7 +13,6 @@ vi.mock(import('@/lib/highlight'), async (importOriginal) => {
 
 afterEach(() => {
   cleanup();
-  vi.mocked(highlight).mockClear();
 });
 
 function renderCode(code: string, language?: string) {

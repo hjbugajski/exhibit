@@ -8,6 +8,12 @@ import { kitchenSinkFixture } from '@/catalog/fixtures/kitchen-sink';
 import { validateArtifactSpec } from '@/catalog/validate';
 import { invalidFixture } from '@testing/fixtures/invalid';
 
+import { decisionMemoExample } from '../../scripts/examples/decision-memo';
+import { researchSummaryExample } from '../../scripts/examples/research-summary';
+import { roadTripExample } from '../../scripts/examples/road-trip';
+import { statusReportExample } from '../../scripts/examples/status-report';
+import { yosemiteWeekendExample } from '../../scripts/examples/yosemite-weekend';
+
 describe('validateArtifactSpec', () => {
   it.each([
     ['itinerary', itineraryFixture],
@@ -15,6 +21,11 @@ describe('validateArtifactSpec', () => {
     ['comparison', comparisonFixture],
     ['kitchen-sink', kitchenSinkFixture],
     ['flow', flowFixture],
+    ['decision-memo example', decisionMemoExample.spec],
+    ['research-summary example', researchSummaryExample.spec],
+    ['road-trip example', roadTripExample.spec],
+    ['status-report example', statusReportExample.spec],
+    ['yosemite-weekend example', yosemiteWeekendExample.spec],
   ])('accepts the %s fixture', (_name, fixture) => {
     const result = validateArtifactSpec(fixture);
 

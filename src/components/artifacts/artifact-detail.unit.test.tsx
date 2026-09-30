@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import type * as StateStoreLoader from '@/components/artifacts/state-store-loader';
 import type { ArtifactDetail } from '@/lib/artifacts';
@@ -99,13 +99,19 @@ async function mountChecklist(detail: ArtifactDetail) {
   vi.useFakeTimers();
 }
 
+/**
+ * SpecView and MarkdownView are lazy chunks that evaluate the whole catalog, and under a loaded
+ * parallel suite that cold import can outlast a query's 1s default. Loading both once here, on the
+ * hook's budget, keeps the cost off whichever test happens to run first.
+ */
+beforeAll(async () => {
+  await Promise.all([import('@/catalog/registry'), import('@/components/markdown/markdown-view')]);
+});
+
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
   vi.restoreAllMocks();
-  vi.mocked(saveArtifactStateFn).mockReset();
-  vi.mocked(saveArtifactStateFn).mockResolvedValue(undefined as never);
-  vi.mocked(peekStateStoreFactory).mockReset();
 });
 
 describe('ArtifactDetailView', () => {
@@ -124,21 +130,14 @@ describe('ArtifactDetailView', () => {
       initialEntry: '/a/fixture-id',
     });
 
-    /*
-     * The spec body sits behind SpecView's lazy chunk, which now evaluates the whole catalog —
-     * diagram engine included. Under a loaded parallel suite that import can outlast the 1s
-     * default, so the first lazy-content wait gets a real timeout, and the test a longer one.
-     */
-    expect(
-      await screen.findByText('Kyoto in Three Days', undefined, { timeout: 10_000 }),
-    ).toBeTruthy();
+    expect(await screen.findByText('Kyoto in Three Days')).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Day 1 — Saturday' })).toBeTruthy();
 
     const panel = screen.getByRole('tabpanel');
     expect(screen.getByRole('tab', { name: 'Rendered' }).getAttribute('aria-controls')).toBe(
       panel.id,
     );
-  }, 15_000);
+  });
 
   it('lists all versions in the version dropdown, newest first, marking the latest and showing when each was created', async () => {
     const now = 1_000_000_000_000;
@@ -291,11 +290,8 @@ describe('ArtifactDetailView', () => {
 
     renderDetail(detail);
 
-    // Same lazy-chunk wait as the spec fixture above, for MarkdownView. The body's `#` ranks below
-    // the page title.
-    expect((await screen.findByText('Trip notes', undefined, { timeout: 10_000 })).tagName).toBe(
-      'H2',
-    );
+    // The body's `#` ranks below the page title.
+    expect((await screen.findByText('Trip notes')).tagName).toBe('H2');
     expect(document.querySelectorAll('h1')).toHaveLength(1);
     expect(screen.getByText('train').closest('a')?.getAttribute('href')).toBe(
       'https://example.com',

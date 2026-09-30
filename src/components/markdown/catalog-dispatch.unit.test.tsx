@@ -129,7 +129,7 @@ describe('exhibit fences', () => {
     const { container } = render(<MarkdownView markdown={'```exhibit\nnot json\n```'} />);
 
     expect(container.querySelector('pre')?.textContent).toBe('not json');
-    expect(container.querySelector('.text-danger')).toBeTruthy();
+    expect(screen.getByText(/^This exhibit block/)).toBeTruthy();
   });
 
   it('degrades a fence whose props fail validation to a code block plus the reason', () => {
@@ -137,7 +137,7 @@ describe('exhibit fences', () => {
     const { container } = render(<MarkdownView markdown={`\`\`\`exhibit\n${json}\n\`\`\``} />);
 
     expect(container.querySelector('pre')?.textContent).toBe(json);
-    const message = container.querySelector('.text-danger')?.textContent;
+    const message = screen.getByText(/^This exhibit block/).textContent;
 
     expect(message).toContain('didn’t validate');
     // The offending prop's path, not just the bare Zod message — `data` is the missing prop here,
@@ -157,18 +157,16 @@ describe('exhibit fences', () => {
   });
 
   it('degrades an unknown component name in a fence rather than rendering it', () => {
-    const { container } = render(
-      <MarkdownView markdown={'```exhibit\n{"type":"NotAComponent","props":{}}\n```'} />,
-    );
+    render(<MarkdownView markdown={'```exhibit\n{"type":"NotAComponent","props":{}}\n```'} />);
 
-    expect(container.querySelector('.text-danger')).toBeTruthy();
+    expect(screen.getByText(/^This exhibit block/)).toBeTruthy();
   });
 
   it('leaves a non-exhibit fence as highlighted code', () => {
     const { container } = render(<MarkdownView markdown={'```json\n{"type":"Heading"}\n```'} />);
 
     expect(container.querySelector('pre')?.textContent).toBe('{"type":"Heading"}');
-    expect(container.querySelector('.text-danger')).toBeNull();
+    expect(screen.queryByText(/^This exhibit block/)).toBeNull();
   });
 });
 

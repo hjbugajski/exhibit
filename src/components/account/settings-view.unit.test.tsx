@@ -28,9 +28,6 @@ const { SettingsView } = await import('@/components/account/settings-view');
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
-  // restoreAllMocks only resets spies; the module-factory vi.fn()s above keep their call history,
-  // which would leak into the "not called" assertions below.
-  vi.clearAllMocks();
 });
 
 function makeConnection(overrides: Partial<McpConnection> = {}): McpConnection {

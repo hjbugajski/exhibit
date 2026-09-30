@@ -42,7 +42,6 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  fetchMock.mockReset();
   vi.unstubAllGlobals();
   vi.useRealTimers();
 });

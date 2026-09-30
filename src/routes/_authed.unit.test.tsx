@@ -10,7 +10,7 @@ import {
   createRouter,
 } from '@tanstack/react-router';
 import { cleanup, render, screen } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { RouterContext, Session } from '@/lib/router-context';
 
@@ -49,10 +49,6 @@ function beforeLoad({
     matches: [{ routeId: '__root__' }, { routeId: '/_authed', cause, invalid }],
   } as never);
 }
-
-beforeEach(() => {
-  vi.mocked(getServerSession).mockReset();
-});
 
 afterEach(() => {
   cleanup();

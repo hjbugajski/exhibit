@@ -1098,3 +1098,53 @@ describe('delete_artifact', () => {
     expect(result.isError).toBe(true);
   });
 });
+
+describe('metadata bounds', () => {
+  const tagList = (count: number) => Array.from({ length: count }, (_, index) => `tag-${index}`);
+
+  const BOUND_VIOLATIONS: [string, Record<string, unknown>][] = [
+    ['an empty title', { title: '' }],
+    ['a 201-character title', { title: 'x'.repeat(201) }],
+    ['a 2001-character description', { description: 'x'.repeat(2001) }],
+    ['21 tags', { tags: tagList(21) }],
+    ['a 51-character tag', { tags: ['x'.repeat(51)] }],
+  ];
+
+  it.each(BOUND_VIOLATIONS)('publish_spec rejects %s and stores nothing', async (_, metadata) => {
+    const result = await callTool(client, 'publish_spec', {
+      title: 'Doc',
+      spec: itineraryFixture,
+      ...metadata,
+    });
+
+    expect(result.isError).toBe(true);
+    expect((await callTool(client, 'list_artifacts', {})).structuredContent?.items).toEqual([]);
+  });
+
+  it.each(BOUND_VIOLATIONS)(
+    'update_artifact rejects %s and keeps the title',
+    async (_, metadata) => {
+      const published = await callTool(client, 'publish_spec', {
+        title: 'Doc',
+        spec: itineraryFixture,
+      });
+      const id = published.structuredContent?.id as string;
+
+      const updated = await callTool(client, 'update_artifact', { id, ...metadata });
+
+      expect(updated.isError).toBe(true);
+      expect((await callTool(client, 'get_artifact', { id })).structuredContent?.title).toBe('Doc');
+    },
+  );
+
+  it('publish_spec accepts metadata at every limit', async () => {
+    const result = await callTool(client, 'publish_spec', {
+      title: 'x'.repeat(200),
+      description: 'x'.repeat(2000),
+      tags: [...tagList(19), 'x'.repeat(50)],
+      spec: itineraryFixture,
+    });
+
+    expect(result.isError).toBeFalsy();
+  });
+});

@@ -20,7 +20,6 @@ vi.mock(import('@tanstack/markdown/react'), async (importOriginal) => {
 
 afterEach(() => {
   cleanup();
-  vi.mocked(Markdown).mockClear();
 });
 
 describe('MarkdownView URL policy', () => {

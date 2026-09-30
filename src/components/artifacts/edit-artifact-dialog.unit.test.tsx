@@ -34,7 +34,6 @@ const pressEscape = () => fireEvent.keyDown(document, { key: 'Escape' });
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
-  vi.mocked(updateArtifactMetadataFn).mockReset();
 });
 
 describe('EditArtifactDialog', () => {

@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 
 import { eq } from 'drizzle-orm';
 import { exportJWK, generateKeyPair, SignJWT } from 'jose';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const BASE_URL = 'http://localhost:3000';
 
@@ -40,7 +40,9 @@ const publicJwk = await exportJWK(publicKey);
 publicJwk.kid = KID;
 publicJwk.alg = 'RS256';
 
-getJwks.mockResolvedValue({ keys: [publicJwk] });
+beforeEach(() => {
+  getJwks.mockResolvedValue({ keys: [publicJwk] });
+});
 
 /** Inserts an opaque access-token row for `raw`, stored hashed as the provider stores it. */
 function insertOpaqueToken(raw: string, values: { expiresAt: Date; revoked?: Date }): void {
