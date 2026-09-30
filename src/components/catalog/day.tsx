@@ -1,52 +1,41 @@
 import type { ReactNode } from 'react';
+import { useCallback, useState } from 'react';
 
 import type { CatalogComponentProps } from '@/catalog/catalog';
 import { MAP_MARKERS_MAX } from '@/catalog/catalog';
-import type { StopMarker } from '@/catalog/stop-markers';
+import type { DayStopMarker } from '@/components/catalog/day-map-context';
+import { DayMapContext } from '@/components/catalog/day-map-context';
 import { flowStandout, flowTight } from '@/components/catalog/flow';
 import { Map } from '@/components/catalog/map';
-import { slugify } from '@/lib/slugify';
-import { cn } from '@/lib/utils';
 
 type Props = CatalogComponentProps<'Day'>;
 
-/**
- * The day's Stops as a numbered route: pins labelled `1. Title` in document order, joined by one
- * dashed path. Dashed, because the path draws straight segments, not the road. Capped to mirror the
- * per-Day publish lint (validate.ts): stored bodies are never re-validated, so the render guard has
- * to stand on its own.
- */
-function routeMapProps(markers: StopMarker[]): CatalogComponentProps<'Map'> {
-  const pins = markers.slice(0, MAP_MARKERS_MAX);
+export function Day({ props, children }: { props: Props; children?: ReactNode }) {
+  /*
+   * Key insertion order is Stop mount order — document order on first render, though a
+   * `visible`-toggled Stop remounts and re-appends. Pins are placed by lat/lng, so order only
+   * affects DOM order and drift is harmless.
+   */
+  const [markers, setMarkers] = useState<Record<string, DayStopMarker>>({});
 
-  return {
-    markers: pins.map((marker, index) => ({ ...marker, label: `${index + 1}. ${marker.label}` })),
-    paths:
-      pins.length >= 2
-        ? [{ id: 'route', dashed: true, points: pins.map(({ lat, lng }) => ({ lat, lng })) }]
-        : undefined,
-  };
-}
+  const register = useCallback((id: string, marker: DayStopMarker | null) => {
+    setMarkers((previous) => {
+      const next = { ...previous };
 
-/**
- * `markers` are the day's Stop pins, read from the spec by the registry adapter (registry.tsx)
- * before render, so the map is in the first render. The markdown path passes none and renders no
- * map.
- */
-export function Day({
-  props,
-  markers = [],
-  children,
-}: {
-  props: Props;
-  markers?: StopMarker[];
-  children?: ReactNode;
-}) {
-  // An all-symbol label slugifies to '', and an empty id attribute is invalid.
-  const slug = slugify(props.label);
+      if (marker) {
+        next[id] = marker;
+      } else {
+        delete next[id];
+      }
+
+      return next;
+    });
+  }, []);
+
+  const markerEntries = Object.entries(markers);
 
   return (
-    <section className={cn('scroll-mt-16', flowStandout)} id={slug || undefined}>
+    <section className={flowStandout}>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h3 className="not-prose text-foreground text-xl font-semibold tracking-tight">
           {props.label}
@@ -55,18 +44,25 @@ export function Day({
       </div>
       {props.summary ? <p className="text-foreground-muted mt-2">{props.summary}</p> : null}
       <div className="mt-4">
-        {markers.length > 0 ? (
+        {markerEntries.length > 0 ? (
           /*
            * The map deliberately leads the day (overview before detail), whatever the authored
            * child order. The wrapper pulls Map out of its flowBlock tier into the Stop rhythm
            * (flowTight; Map's own margins zero out as an only child), keeping map-to-stop and
-           * stop-to-stop gaps equal.
+           * stop-to-stop gaps equal. Capped to mirror the per-Day publish lint (validate.ts) —
+           * stored bodies are never re-validated, so the render guard has to stand on its own.
            */
           <div className={flowTight}>
-            <Map props={routeMapProps(markers)} />
+            <Map
+              props={{
+                markers: markerEntries
+                  .slice(0, MAP_MARKERS_MAX)
+                  .map(([id, marker]) => ({ id, ...marker })),
+              }}
+            />
           </div>
         ) : null}
-        {children}
+        <DayMapContext.Provider value={register}>{children}</DayMapContext.Provider>
       </div>
     </section>
   );

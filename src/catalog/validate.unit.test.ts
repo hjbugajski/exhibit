@@ -12,7 +12,6 @@ import { decisionMemoExample } from '../../scripts/examples/decision-memo';
 import { researchSummaryExample } from '../../scripts/examples/research-summary';
 import { roadTripExample } from '../../scripts/examples/road-trip';
 import { statusReportExample } from '../../scripts/examples/status-report';
-import { yosemiteWeekendExample } from '../../scripts/examples/yosemite-weekend';
 
 describe('validateArtifactSpec', () => {
   it.each([
@@ -25,7 +24,6 @@ describe('validateArtifactSpec', () => {
     ['research-summary example', researchSummaryExample.spec],
     ['road-trip example', roadTripExample.spec],
     ['status-report example', statusReportExample.spec],
-    ['yosemite-weekend example', yosemiteWeekendExample.spec],
   ])('accepts the %s fixture', (_name, fixture) => {
     const result = validateArtifactSpec(fixture);
 
@@ -45,7 +43,7 @@ describe('validateArtifactSpec', () => {
         {
           "component": "NotAComponent",
           "element": "unknown-el",
-          "message": "Invalid option: expected one of "Section"|"Grid"|"Columns"|"Tabs"|"Divider"|"Heading"|"Prose"|"Callout"|"Quote"|"CodeBlock"|"Card"|"Table"|"KeyValueList"|"Steps"|"Timeline"|"Checklist"|"Details"|"Badge"|"Figure"|"Progress"|"Chart"|"Mermaid"|"Map"|"Choice"|"NoteBox"|"Rating"|"Itinerary"|"Day"|"Stop"|"Trail"|"Weather"",
+          "message": "Invalid option: expected one of "Section"|"Grid"|"Columns"|"Tabs"|"Divider"|"Heading"|"Prose"|"Callout"|"Quote"|"CodeBlock"|"Card"|"Table"|"KeyValueList"|"Steps"|"Timeline"|"Checklist"|"Details"|"Badge"|"Figure"|"Progress"|"Chart"|"Mermaid"|"Map"|"Choice"|"NoteBox"|"Rating"|"Itinerary"|"Day"|"Stop"",
           "path": "elements.unknown-el.type",
         },
         {
@@ -106,45 +104,6 @@ describe('validateArtifactSpec', () => {
     );
   });
 
-  it.each([
-    [
-      'a live Weather without location',
-      { source: 'live', unit: 'c' },
-      'elements.weather.props.location',
-    ],
-    [
-      'a Weather with an unknown source',
-      { source: 'hourly', location: { lat: 0, lng: 0 } },
-      'elements.weather.props.source',
-    ],
-    [
-      'a static Weather with a repeated date',
-      {
-        source: 'static',
-        unit: 'c',
-        days: [
-          { date: 'Mon', high: 20, low: 10, condition: 'clear' },
-          { date: 'Mon', high: 21, low: 11, condition: 'rain' },
-        ],
-      },
-      'elements.weather.props.days',
-    ],
-  ])('rejects %s at the offending field', (_name, props, path) => {
-    const result = validateArtifactSpec({
-      root: 'weather',
-      elements: { weather: { type: 'Weather', props, children: [] } },
-    });
-
-    expect(result.valid).toBe(false);
-    if (result.valid) {
-      throw new Error('expected invalid result');
-    }
-
-    expect(result.errors).toContainEqual(
-      expect.objectContaining({ element: 'weather', component: 'Weather', path }),
-    );
-  });
-
   it('rejects Stop coordinates outside valid ranges', () => {
     const result = validateArtifactSpec({
       root: 'stop',
@@ -202,74 +161,6 @@ describe('validateArtifactSpec', () => {
         path: 'elements.day.children',
         message: expect.stringContaining('at most 500'),
       }),
-    );
-  });
-
-  /** Two Days of coordinate Stops, each under the per-Day cap, totalling `total`. */
-  function tripOf(total: number) {
-    const firstDay = Math.ceil(total / 2);
-    const stops = Object.fromEntries(
-      Array.from({ length: total }, (_, i) => [
-        `stop-${i}`,
-        {
-          type: 'Stop',
-          props: { title: `Stop ${i}`, coordinates: { lat: 0, lng: 0 } },
-          children: [],
-        },
-      ]),
-    );
-    const keys = Object.keys(stops);
-
-    return validateArtifactSpec({
-      root: 'trip',
-      elements: {
-        trip: { type: 'Itinerary', props: {}, children: ['day-1', 'day-2'] },
-        'day-1': { type: 'Day', props: { label: 'Day 1' }, children: keys.slice(0, firstDay) },
-        'day-2': { type: 'Day', props: { label: 'Day 2' }, children: keys.slice(firstDay) },
-        ...stops,
-      },
-    });
-  }
-
-  it('rejects an Itinerary whose days together exceed the trip map marker cap', () => {
-    const result = tripOf(501);
-
-    expect(result.valid).toBe(false);
-    if (result.valid) {
-      throw new Error('expected invalid result');
-    }
-
-    expect(result.errors).toEqual([
-      expect.objectContaining({
-        element: 'trip',
-        component: 'Itinerary',
-        path: 'elements.trip.children',
-        message: expect.stringContaining('at most 500'),
-      }),
-    ]);
-  });
-
-  it('accepts an Itinerary whose days together reach the trip map marker cap', () => {
-    const result = tripOf(500);
-
-    expect(result.valid ? [] : result.errors).toEqual([]);
-  });
-
-  it('rejects a Stop with a non-http(s) url', () => {
-    const result = validateArtifactSpec({
-      root: 'stop',
-      elements: {
-        stop: { type: 'Stop', props: { title: 'Omen', url: 'ftp://x' }, children: [] },
-      },
-    });
-
-    expect(result.valid).toBe(false);
-    if (result.valid) {
-      throw new Error('expected invalid result');
-    }
-
-    expect(result.errors).toContainEqual(
-      expect.objectContaining({ element: 'stop', path: 'elements.stop.props.url' }),
     );
   });
 
@@ -801,77 +692,6 @@ describe('validateArtifactSpec statePath overlaps', () => {
   });
 });
 
-describe('validateArtifactSpec Trail', () => {
-  const trail = {
-    name: 'Mount Tam loop',
-    distance: { value: 8.4, unit: 'km' },
-    elevationGain: { value: 650, unit: 'm' },
-    difficulty: 'moderate',
-    routeType: 'loop',
-    duration: '4 hours',
-    track: [
-      { lat: 37.9, lng: -122.6 },
-      { lat: 37.91, lng: -122.58 },
-    ],
-    waypoints: [{ id: 'trailhead', lat: 37.9, lng: -122.6, label: 'Trailhead' }],
-    elevationProfile: [100, 400, 750],
-    markdown: 'Bring water.',
-  };
-
-  function validate(props: Record<string, unknown>) {
-    return validateArtifactSpec({
-      root: 'trail',
-      elements: { trail: { type: 'Trail', props, children: [] } },
-    });
-  }
-
-  it('accepts a full Trail', () => {
-    const result = validate(trail);
-
-    expect(result.valid ? [] : result.errors).toEqual([]);
-  });
-
-  it.each([
-    [
-      'a distance in feet',
-      { ...trail, distance: { value: 8.4, unit: 'ft' } },
-      'elements.trail.props.distance.unit',
-    ],
-    [
-      'a track over 500 points',
-      { ...trail, track: Array.from({ length: 501 }, () => ({ lat: 37.9, lng: -122.6 })) },
-      'elements.trail.props.track',
-    ],
-  ])('rejects %s at the offending field', (_name, props, path) => {
-    const result = validate(props);
-
-    expect(result.valid).toBe(false);
-    if (result.valid) {
-      throw new Error('expected invalid result');
-    }
-
-    expect(result.errors).toContainEqual(
-      expect.objectContaining({ element: 'trail', component: 'Trail', path }),
-    );
-  });
-
-  it('rejects duplicate waypoint ids', () => {
-    const result = validate({ ...trail, waypoints: [...trail.waypoints, ...trail.waypoints] });
-
-    expect(result.valid).toBe(false);
-    if (result.valid) {
-      throw new Error('expected invalid result');
-    }
-
-    expect(result.errors).toContainEqual(
-      expect.objectContaining({
-        path: 'elements.trail.props.waypoints',
-        message: 'Item id "trailhead" is used more than once; ids must be unique within the list.',
-      }),
-    );
-  });
-});
-
 describe('findStatePathConflicts', () => {
   it('reports exact duplicates first, then prefix pairs in first-use order', () => {
     const conflicts = findStatePathConflicts([
@@ -1066,14 +886,14 @@ describe('validateArtifactSpec element tree', () => {
       }),
     );
     expect(errors).not.toContainEqual(
-      expect.objectContaining({ component: 'Itinerary', path: 'elements.trip-0.children' }),
+      expect.objectContaining({ component: 'Day', path: 'elements.day-0.children' }),
     );
     expect(reads).toBeLessThan(20 * size);
     expect(elapsed).toBeLessThan(500);
   });
 
-  /** Each Itinerary's walk used to descend through every Itinerary nested in it. */
-  it('validates nested Itineraries in work linear in their size', () => {
+  /** Each Day's walk stops at a nested Day, so a chain of Days is walked once. */
+  it('validates nested Days in work linear in their size', () => {
     const depth = 60;
     const leaves = Array.from({ length: 20_000 }, (_, i) => `divider-${i}`);
     const raw: Record<string, unknown> = Object.fromEntries(
@@ -1081,10 +901,10 @@ describe('validateArtifactSpec element tree', () => {
     );
 
     for (let i = 0; i < depth; i += 1) {
-      raw[`trip-${i}`] = {
-        type: 'Itinerary',
-        props: {},
-        children: i + 1 < depth ? [`trip-${i + 1}`] : leaves,
+      raw[`day-${i}`] = {
+        type: 'Day',
+        props: { label: `Day ${i}` },
+        children: i + 1 < depth ? [`day-${i + 1}`] : leaves,
       };
     }
 
@@ -1097,59 +917,8 @@ describe('validateArtifactSpec element tree', () => {
       },
     });
 
-    expect(errorsOf({ root: 'trip-0', elements })).toEqual([]);
+    expect(errorsOf({ root: 'day-0', elements })).toEqual([]);
     expect(reads).toBeLessThan(40 * (depth + leaves.length));
-  });
-});
-
-describe('validateArtifactSpec live Weather cap', () => {
-  /** A Section of `live` live Weather blocks and one static one. */
-  function weatherSpec(live: number) {
-    const elements: Record<string, unknown> = {
-      static: {
-        type: 'Weather',
-        props: {
-          source: 'static',
-          unit: 'c',
-          days: [{ date: 'Mon', high: 20, low: 10, condition: 'clear' }],
-        },
-      },
-    };
-
-    for (let i = 0; i < live; i += 1) {
-      elements[`live-${i}`] = {
-        type: 'Weather',
-        props: { source: 'live', location: { lat: i, lng: i } },
-      };
-    }
-
-    return {
-      root: 'root',
-      elements: {
-        root: { type: 'Section', props: {}, children: Object.keys(elements) },
-        ...elements,
-      },
-    };
-  }
-
-  it('accepts 20 live Weather blocks', () => {
-    const result = validateArtifactSpec(weatherSpec(20));
-
-    expect(result.valid ? [] : result.errors).toEqual([]);
-  });
-
-  it('rejects a 21st live Weather block', () => {
-    const result = validateArtifactSpec(weatherSpec(21));
-
-    expect(result.valid ? [] : result.errors).toEqual([
-      {
-        element: null,
-        component: 'Weather',
-        path: 'source',
-        message:
-          '21 Weather blocks use source "live", and an artifact holds at most 20. Each live block fetches a forecast every time the artifact is viewed.',
-      },
-    ]);
   });
 });
 

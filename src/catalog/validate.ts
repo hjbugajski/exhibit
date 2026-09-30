@@ -15,8 +15,6 @@ import { validateSpec } from '@json-render/core';
 import type { z } from 'zod';
 
 import { catalog, MAP_MARKERS_MAX } from '@/catalog/catalog';
-import { collectItineraryDays, collectStopMarkers } from '@/catalog/stop-markers';
-import { LIVE_WEATHER_MAX } from '@/components/catalog/weather-schema';
 
 /**
  * Catalog components are typed as a fixed-key object; widen to an index signature so we can look up
@@ -347,10 +345,11 @@ function findElementDepthErrors(elements: Record<string, unknown>): ArtifactSpec
 }
 
 /**
- * A Day renders one map from every descendant Stop with coordinates (day.tsx), which never passes
- * through Map's own markers cap. The same cap applies per Day here, so an oversized day fails at
- * publish time instead of losing pins at render. The count uses the render path's walk
- * (stop-markers.ts), so a nested Day's stops count toward that Day only.
+ * A Day auto-renders one map from every descendant Stop with coordinates (day.tsx), which never
+ * passes through Map's own markers cap. The same cap applies per Day here, so an oversized day
+ * fails at publish time instead of losing pins at render. Nested Days are skipped: their stops
+ * register with their own map. Runs only on a tree (`findElementTreeErrors`), so the iterative walk
+ * visits each descendant once.
  */
 function findDayMapMarkerCapErrors(elements: Record<string, unknown>): ArtifactSpecError[] {
   const errors: ArtifactSpecError[] = [];
@@ -360,9 +359,29 @@ function findDayMapMarkerCapErrors(elements: Record<string, unknown>): ArtifactS
       continue;
     }
 
-    const count = Array.isArray(element.children)
-      ? collectStopMarkers(elements, element.children).length
-      : 0;
+    let count = 0;
+    const queue = Array.isArray(element.children) ? [...element.children] : [];
+
+    for (let childKey = queue.pop(); childKey !== undefined; childKey = queue.pop()) {
+      if (typeof childKey !== 'string') {
+        continue;
+      }
+
+      const child = elements[childKey];
+      const childType = elementType(elements, childKey);
+
+      if (!isRecord(child) || childType === 'Day') {
+        continue;
+      }
+
+      if (childType === 'Stop' && isRecord(child.props) && isRecord(child.props.coordinates)) {
+        count += 1;
+      }
+
+      if (Array.isArray(child.children)) {
+        queue.push(...child.children);
+      }
+    }
 
     if (count > MAP_MARKERS_MAX) {
       errors.push({
@@ -375,64 +394,6 @@ function findDayMapMarkerCapErrors(elements: Record<string, unknown>): ArtifactS
   }
 
   return errors;
-}
-
-/**
- * An Itinerary renders one trip map from the stops of all its Days (itinerary.tsx), so the Day cap
- * applies again to their sum.
- */
-function findItineraryMapMarkerCapErrors(elements: Record<string, unknown>): ArtifactSpecError[] {
-  const errors: ArtifactSpecError[] = [];
-
-  for (const [key, element] of Object.entries(elements)) {
-    if (elementType(elements, key) !== 'Itinerary' || !isRecord(element)) {
-      continue;
-    }
-
-    const count = Array.isArray(element.children)
-      ? collectItineraryDays(elements, element.children).reduce(
-          (sum, day) => sum + day.markers.length,
-          0,
-        )
-      : 0;
-
-    if (count > MAP_MARKERS_MAX) {
-      errors.push({
-        element: key,
-        component: 'Itinerary',
-        path: `elements.${key}.children`,
-        message: `Itinerary "${key}" has ${count} stops with coordinates across its days; its trip map shows at most ${MAP_MARKERS_MAX}. Split the trip or omit coordinates on some stops.`,
-      });
-    }
-  }
-
-  return errors;
-}
-
-/**
- * Each live Weather block fetches a forecast upstream every time the artifact is viewed, so one
- * artifact with many of them would spend the shared Open-Meteo quota and evict every cached
- * forecast. Takes spec elements and markdown blocks alike, as `{ type, props }`.
- */
-export function findLiveWeatherCapErrors(
-  blocks: { type?: unknown; props?: unknown }[],
-): ArtifactSpecError[] {
-  const count = blocks.filter(
-    ({ type, props }) => type === 'Weather' && isRecord(props) && props.source === 'live',
-  ).length;
-
-  if (count <= LIVE_WEATHER_MAX) {
-    return [];
-  }
-
-  return [
-    {
-      element: null,
-      component: 'Weather',
-      path: 'source',
-      message: `${count} Weather blocks use source "live", and an artifact holds at most ${LIVE_WEATHER_MAX}. Each live block fetches a forecast every time the artifact is viewed.`,
-    },
-  ];
 }
 
 /**
@@ -587,11 +548,8 @@ export function validateArtifactSpec(spec: unknown): ArtifactValidationResult {
     errors.push(
       ...findStatePathConflictErrors(elements),
       ...findTabsChildCountMismatchErrors(elements),
-      ...findLiveWeatherCapErrors(Object.values(elements).filter(isRecord)),
       ...structureErrors,
-      ...(structureErrors.length === 0
-        ? [...findDayMapMarkerCapErrors(elements), ...findItineraryMapMarkerCapErrors(elements)]
-        : []),
+      ...(structureErrors.length === 0 ? findDayMapMarkerCapErrors(elements) : []),
     );
   }
 

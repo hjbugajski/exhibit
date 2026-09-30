@@ -27,7 +27,6 @@ import { markdownNotesExample } from './examples/markdown-notes.ts';
 import { researchSummaryExample } from './examples/research-summary.ts';
 import { roadTripExample } from './examples/road-trip.ts';
 import { statusReportExample } from './examples/status-report.ts';
-import { yosemiteWeekendExample } from './examples/yosemite-weekend.ts';
 
 function requireEnv(name: string): string {
   const value = process.env[name];
@@ -205,13 +204,6 @@ async function main() {
     spec: roadTripExample.spec,
   });
 
-  const yosemiteWeekend = await callTool(accessToken, 'publish_spec', {
-    title: yosemiteWeekendExample.title,
-    description: yosemiteWeekendExample.description,
-    tags: yosemiteWeekendExample.tags,
-    spec: yosemiteWeekendExample.spec,
-  });
-
   const flow = await callTool(accessToken, 'publish_spec', {
     title: 'Flow Stress Test',
     description: 'Every block seam in sequence — the prose-flow margin rhythm stress test.',
@@ -245,7 +237,6 @@ async function main() {
         decisionMemo: { id: decisionMemo.id, title: decisionMemoExample.title },
         statusReport: { id: statusReport.id, title: statusReportExample.title },
         roadTrip: { id: roadTrip.id, title: roadTripExample.title },
-        yosemiteWeekend: { id: yosemiteWeekend.id, title: yosemiteWeekendExample.title },
         flow: { id: flow.id, title: 'Flow Stress Test' },
         markdownNotes: { id: markdownNotes.id, title: markdownNotesExample.title },
         html: { id: htmlArtifact.id, title: 'Sandbox Check Page', version: htmlArtifact.version },

@@ -19,11 +19,6 @@ import { schema } from '@json-render/react/schema';
 import { z } from 'zod';
 
 import { ALLOWED_FAMILIES, MERMAID_MAX_CHARS } from '@/catalog/mermaid-schema';
-import {
-  FORECAST_DAYS_MAX,
-  LIVE_WEATHER_MAX,
-  weatherConditions,
-} from '@/components/catalog/weather-schema';
 
 /** Generous cap for a title/label/short string field. */
 const SHORT_MAX = 500;
@@ -42,9 +37,8 @@ const latLng = z.object({
 });
 
 /**
- * Marker cap for a single map. Shared by Map's own schema, Trail's waypoints, the per-Day and
- * per-Itinerary lints in validate.ts, and the render guards of the day map (day.tsx) and the trip
- * map (itinerary.tsx) so they can't drift.
+ * Marker cap for a single map. Shared by Map's own schema, the per-Day lint in validate.ts, and the
+ * Day auto-map's render guard (day.tsx) so the three can't drift.
  */
 export const MAP_MARKERS_MAX = 500;
 const listItemId = z
@@ -52,18 +46,6 @@ const listItemId = z
   .min(1)
   .max(SHORT_MAX)
   .describe('Unique id for this item within the list; stable across versions.');
-/** A labeled map pin, shared by Map markers and Trail waypoints. */
-const mapMarker = latLng.extend({
-  id: listItemId,
-  label: z.string().max(SHORT_MAX).describe('Short label shown next to the marker.'),
-  description: z
-    .string()
-    .max(SHORT_MAX)
-    .optional()
-    .describe('Detail shown in a popup when the marker is clicked.'),
-});
-/** An ordered line of points, shared by Map paths and Trail tracks. */
-const trackPoints = z.array(latLng).min(2).max(500);
 
 /**
  * Zod check flagging string values that appear more than once in an array, keyed by `pick` — one
@@ -529,7 +511,17 @@ export const catalog = defineCatalog(schema, {
           .optional()
           .describe('Initial zoom level, from 1 (world) to 18 (street); usually omit.'),
         markers: z
-          .array(mapMarker)
+          .array(
+            latLng.extend({
+              id: listItemId,
+              label: z.string().max(SHORT_MAX).describe('Short label shown next to the marker.'),
+              description: z
+                .string()
+                .max(SHORT_MAX)
+                .optional()
+                .describe('Detail shown in a popup when the marker is clicked.'),
+            }),
+          )
           .max(MAP_MARKERS_MAX)
           .check(uniqueIds)
           .optional()
@@ -538,7 +530,7 @@ export const catalog = defineCatalog(schema, {
           .array(
             z.object({
               id: listItemId,
-              points: trackPoints.describe('Waypoints of the path, in order.'),
+              points: z.array(latLng).min(2).max(500).describe('Waypoints of the path, in order.'),
               dashed: z
                 .boolean()
                 .optional()
@@ -626,7 +618,7 @@ export const catalog = defineCatalog(schema, {
     Itinerary: {
       slots: ['default'],
       description:
-        'Top-level container for a trip; children are Day elements. Adds a trip map and links to each day automatically.',
+        'Top-level container for a multi-day trip; children must be Day elements. Use once per itinerary document.',
       props: z.object({
         title: z
           .string()
@@ -643,7 +635,7 @@ export const catalog = defineCatalog(schema, {
     Day: {
       slots: ['default'],
       description:
-        'One day in an Itinerary. Children are Stops, optionally mixed with other blocks such as Weather, Trail, or Figure. Stops with coordinates appear on an automatic day map, numbered in order; do not add a Map for them.',
+        'One day within an Itinerary. Children are usually Stop elements, optionally mixed with other blocks such as a Figure between stops. When any child Stop has coordinates, the day renders a map of those stops automatically; do not add a separate Map element for them.',
       props: z.object({
         label: z.string().max(SHORT_MAX).describe('Day label, such as "Day 1: Sunday".'),
         date: z
@@ -659,7 +651,8 @@ export const catalog = defineCatalog(schema, {
       }),
     },
     Stop: {
-      description: 'One stop in a Day: a meal, activity, stay, or travel leg.',
+      description:
+        'A single stop within a Day: a meal, activity, place to stay, or leg of travel. The most granular unit of an itinerary.',
       props: z.object({
         time: z
           .string()
@@ -676,105 +669,23 @@ export const catalog = defineCatalog(schema, {
           .max(SHORT_MAX)
           .describe('Name of the stop, such as "Fushimi Inari Shrine".'),
         location: z.string().max(SHORT_MAX).optional().describe('Neighborhood, address, or area.'),
-        coordinates: latLng.optional().describe('Pins the stop on the day and trip maps.'),
+        coordinates: latLng
+          .optional()
+          .describe(
+            'Geographic coordinates of the stop. When any stop in a Day has coordinates, the day renders a map of its stops automatically.',
+          ),
         markdown: z
           .string()
           .max(LONG_MAX)
           .optional()
           .describe('Markdown detail: what to do, tips, booking info.'),
         kind: z
-          .enum(['food', 'activity', 'lodging', 'travel', 'hike', 'shopping', 'other'])
+          .enum(['food', 'activity', 'lodging', 'travel', 'other'])
           .optional()
-          .describe('Sets the icon. Defaults to other.'),
-        url: z
-          .string()
-          .max(2_000)
-          // Same rule as Table links: http(s) only.
-          .regex(/^https?:\/\//i, 'must be an http(s) URL')
-          .optional()
-          .describe('Booking or info link; the title links to it.'),
-        cost: z.string().max(SHORT_MAX).optional().describe('Price as shown, such as "¥500".'),
-        status: z.enum(['booked', 'planned', 'optional']).optional(),
-        transit: z
-          .object({
-            mode: z.enum(['walk', 'transit', 'drive', 'bike', 'flight', 'boat']),
-            duration: z.string().max(SHORT_MAX).optional(),
-          })
-          .optional()
-          .describe('Travel from the previous stop to this one.'),
+          .describe(
+            'Category that sets the stop icon: food (fork and knife), activity (compass), lodging (bed), travel (plane), other (pin). Defaults to other.',
+          ),
       }),
-    },
-    Trail: {
-      description:
-        'One hike with its stats, an optional track map, and an optional elevation profile. Use Trail rather than Stop to detail a hike, including inside a Day. Trail draws its own map, and its points never join the Day map.',
-      props: z.object({
-        name: z.string().max(SHORT_MAX),
-        distance: z.object({ value: z.number().positive(), unit: z.enum(['km', 'mi']) }),
-        elevationGain: z.object({ value: z.number().min(0), unit: z.enum(['m', 'ft']) }),
-        difficulty: z.enum(['easy', 'moderate', 'hard', 'strenuous']),
-        routeType: z.enum(['loop', 'out-and-back', 'point-to-point']),
-        duration: z
-          .string()
-          .max(SHORT_MAX)
-          .optional()
-          .describe('How long the hike takes, such as "3 hours".'),
-        track: trackPoints.optional().describe('The trail line, start to finish.'),
-        waypoints: z
-          .array(mapMarker)
-          .max(MAP_MARKERS_MAX)
-          .check(uniqueIds)
-          .optional()
-          .describe('Pins along the trail; put the trailhead first.'),
-        elevationProfile: z
-          .array(z.number())
-          .min(2)
-          .max(500)
-          .optional()
-          .describe('Elevations in elevationGain.unit, sampled evenly from start to finish.'),
-        markdown: z
-          .string()
-          .max(LONG_MAX)
-          .optional()
-          .describe('Markdown notes: access, permits, water, hazards.'),
-      }),
-    },
-    Weather: {
-      // Field descriptions inside a union never reach get_catalog, so this description carries the
-      // semantics of both branches.
-      description: `Daily forecast strip covering 1 to 7 days. With source "static", you pass the days: date as displayed, high and low in unit, precipitationChance as a percentage. With source "live", the app fetches a forecast for location each time the artifact is viewed; use it for trips within the next week. At most ${LIVE_WEATHER_MAX} live blocks per artifact.`,
-      props: z.discriminatedUnion('source', [
-        z.object({
-          source: z.literal('static'),
-          unit: z.enum(['c', 'f']),
-          label: z.string().max(SHORT_MAX).optional(),
-          summary: z.string().max(SHORT_MAX).optional(),
-          days: z
-            .array(
-              z.object({
-                date: z.string().max(SHORT_MAX),
-                high: z.number(),
-                low: z.number(),
-                condition: z.enum(weatherConditions),
-                precipitationChance: z.number().int().min(0).max(100).optional(),
-              }),
-            )
-            .min(1)
-            .max(FORECAST_DAYS_MAX)
-            .check(
-              uniqueBy(
-                (day: { date?: unknown } | null | undefined) => day?.date,
-                (date) => `Date "${date}" is used more than once; each day needs its own date.`,
-              ),
-            ),
-        }),
-        z.object({
-          source: z.literal('live'),
-          location: latLng,
-          label: z.string().max(SHORT_MAX).optional(),
-          unit: z.enum(['c', 'f']).optional(),
-          dayCount: z.number().int().min(1).max(FORECAST_DAYS_MAX).optional(),
-        }),
-      ]),
     },
   },
   actions: {},

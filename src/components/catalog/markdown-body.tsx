@@ -1,6 +1,6 @@
 /**
  * Shared markdown renderer for every catalog component that accepts a `markdown` prop (Prose,
- * Callout, Quote, Steps, Timeline, Details, Stop, Trail).
+ * Callout, Quote, Steps, Timeline, Details, Stop).
  *
  * The security policy — no raw-HTML pass-through, http(s)-only links, https-only images, fences
  * through the app highlighter — lives in markdown-policy.tsx and is shared with the markdown

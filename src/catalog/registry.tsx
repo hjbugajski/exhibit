@@ -1,12 +1,9 @@
-import { createContext, use, useMemo } from 'react';
+import { useMemo } from 'react';
 
 import type { Spec, StateStore } from '@json-render/core';
-import type { ComponentRenderProps } from '@json-render/react';
-import { JSONUIProvider, Renderer, defineRegistry, useVisibility } from '@json-render/react';
+import { JSONUIProvider, Renderer, defineRegistry } from '@json-render/react';
 
-import type { CatalogComponentProps } from '@/catalog/catalog';
 import { catalog } from '@/catalog/catalog';
-import { collectItineraryDays, collectStopMarkers } from '@/catalog/stop-markers';
 import { withElementPadding } from '@/catalog/validate';
 import { Badge } from '@/components/catalog/badge';
 import { Callout } from '@/components/catalog/callout';
@@ -37,8 +34,6 @@ import { Stop } from '@/components/catalog/stop';
 import { Table } from '@/components/catalog/table';
 import { Tabs } from '@/components/catalog/tabs';
 import { Timeline } from '@/components/catalog/timeline';
-import { Trail } from '@/components/catalog/trail';
-import { Weather } from '@/components/catalog/weather';
 
 /**
  * The concrete React component per catalog name. Exported as well as registered because markdown
@@ -75,63 +70,9 @@ export const catalogComponents = {
   Itinerary,
   Day,
   Stop,
-  Trail,
-  Weather,
 };
 
 export const { registry } = defineRegistry(catalog, { components: catalogComponents });
-
-/**
- * The elements of the spec being rendered. json-render hands a component only its own element, so
- * Day and Itinerary read their descendants from here. Empty outside SpecView (an exhibit fence is a
- * one-element spec with no descendants).
- */
-const noElements: Record<string, unknown> = {};
-
-const SpecElementsContext = createContext(noElements);
-
-/** Reads the Day's Stop pins from the spec during render, so its map is in the first render. */
-function DayElement({ element, children }: ComponentRenderProps<CatalogComponentProps<'Day'>>) {
-  const elements = use(SpecElementsContext);
-  const { isVisible } = useVisibility();
-  const markers = useMemo(
-    () => collectStopMarkers(elements, element.children ?? [], isVisible),
-    [elements, element.children, isVisible],
-  );
-
-  return (
-    <Day markers={markers} props={element.props}>
-      {children}
-    </Day>
-  );
-}
-
-/** Reads the Itinerary's Days and their Stop pins from the spec, as DayElement does. */
-function ItineraryElement({
-  element,
-  children,
-}: ComponentRenderProps<CatalogComponentProps<'Itinerary'>>) {
-  const elements = use(SpecElementsContext);
-  const { isVisible } = useVisibility();
-  const days = useMemo(
-    () => collectItineraryDays(elements, element.children ?? [], isVisible),
-    [elements, element.children, isVisible],
-  );
-
-  return (
-    <Itinerary days={days} props={element.props}>
-      {children}
-    </Itinerary>
-  );
-}
-
-/*
- * Assigned onto the registry object itself, not a spread copy: json-render keys its slot metadata
- * by that object (registryMetadata, a WeakMap). These raw renderers receive the whole element,
- * where defineRegistry's wrappers pass on only its props.
- */
-registry.Day = DayElement;
-registry.Itinerary = ItineraryElement;
 
 /**
  * Renders a spec against the catalog registry. `Renderer` alone throws
@@ -150,10 +91,8 @@ export function SpecView({ spec, store }: { spec: Spec | null; store?: StateStor
   const padded = useMemo(() => withElementPadding(spec), [spec]);
 
   return (
-    <SpecElementsContext value={padded?.elements ?? noElements}>
-      <JSONUIProvider registry={registry} store={store}>
-        <Renderer registry={registry} spec={padded} />
-      </JSONUIProvider>
-    </SpecElementsContext>
+    <JSONUIProvider registry={registry} store={store}>
+      <Renderer registry={registry} spec={padded} />
+    </JSONUIProvider>
   );
 }

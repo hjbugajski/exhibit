@@ -2,7 +2,7 @@
 
 Execute in the order below unless dependencies say otherwise. Executors: read your plan fully before starting and update your row when done.
 
-Produced by a deep audit at commit `ffee99b` (2026-09-26): 15 opus auditors (9 playbook categories + 6 domain-skill sweeps), dedup, two-lens adversarial refutation, then advisor vetting against the code. Plans 34–36 are owner-requested features.
+Produced by a deep audit at commit `ffee99b` (2026-09-26): 15 opus auditors (9 playbook categories + 6 domain-skill sweeps), dedup, two-lens adversarial refutation, then advisor vetting against the code. Plans 34–36 were owner-requested features; the owner later withdrew them.
 
 ## Execution order & status
 
@@ -41,9 +41,9 @@ Produced by a deep audit at commit `ffee99b` (2026-09-26): 15 opus auditors (9 p
 | 31   | Direction: owner-response inbox for Claude (stateUpdatedAt sort/filter)                              | S                     | —          | DONE                                                                   |
 | 32   | Direction spike: search beyond titles                                                                | M                     | —          | DONE (phase 1 shipped; verdict go for body search in a follow-up plan) |
 | 33   | Direction spike: opt-in revocable share links                                                        | M (spike; L if built) | —          | DONE (spike; verdict BUILD, owner decisions pending)                   |
-| 34   | Weather catalog component (static and live)                                                          | M                     | —          | DONE                                                                   |
-| 35   | Trail catalog component for hikes                                                                    | M                     | —          | DONE                                                                   |
-| 36   | Itinerary improvements                                                                               | M                     | 34, 35     | DONE                                                                   |
+| 34   | Weather catalog component (static and live)                                                          | M                     | —          | REJECTED (owner withdrew the feature)                                  |
+| 35   | Trail catalog component for hikes                                                                    | M                     | —          | REJECTED (owner withdrew the feature)                                  |
+| 36   | Itinerary improvements                                                                               | M                     | 34, 35     | REJECTED (owner withdrew the feature)                                  |
 
 Status values: TODO | IN PROGRESS (phase N/M) | DONE | BLOCKED (one-line reason) | REJECTED (one-line rationale).
 
@@ -52,7 +52,7 @@ Status values: TODO | IN PROGRESS (phase N/M) | DONE | BLOCKED (one-line reason)
 - 01 before any Better Auth bump anywhere: 1.7.3+ validates the schema at boot and rejects every auth call while `account.issuer` exists.
 - 04 requires 01: token claim names are re-verified against the installed 1.7.6.
 - 06 requires 08: 08 builds the per-type body validator table; 06 Phase 4 plugs the markdown statePath collision check into it rather than adding a second markdown branch.
-- 18 requires 36: 36 rewrites the Itinerary, Day and Stop descriptions; the writing sweep runs over the final copy.
+- 18 ran after 36: 36 rewrote the Itinerary, Day and Stop descriptions, and the writing sweep ran over that copy. The withdrawal of 36 restored the earlier descriptions in the sweep's style.
 - 29 requires 02: both edit `validateSearch` in `src/routes/sign-in.tsx` and `sign-in-view.tsx`; 29 merges onto 02's helper.
 - 11 requires 06 and 07: both touch loader caching; 07 guards the server-fn boundary 11 relies on.
 - 17 requires 24: both edit the diagram parser files; sweep after the hoist to avoid churn.
@@ -61,11 +61,11 @@ Status values: TODO | IN PROGRESS (phase N/M) | DONE | BLOCKED (one-line reason)
 - 23 requires 07 and 08: 07 pins the auth boundary; 08 owns the MCP update path 23 makes atomic.
 - 25 requires 12: shared files (button, spinner).
 - 27 requires 13: both touch ui/map/route.tsx.
-- 36 requires 34 and 35: Day accepts a Weather child; Stop gains kind "hike" alongside Trail. 36 also owns the Day-map layout-shift root fix that plan 29 hands over.
+- 36 depended on 34 and 35: Day accepted a Weather child, and Stop gained kind "hike" alongside Trail. 36 also owned the Day-map layout-shift root fix that plan 29 handed over; that fix left with 36, so the layout shift is open again.
 
 ## Cross-plan notes
 
-- `get_catalog` budget (`src/lib/mcp/catalog-summary.unit.test.ts`, `< 4000` tokens, 13 tokens of headroom at `ffee99b`): plans 34, 35 and 36 share one rule — measure after each catalog change and, if the test fails, set the ceiling to the measured `text.length / 4` rounded up to the next 100, updating the "~4k" wording in `catalog-summary.ts`. Plan 18 measures at its own start and must not grow the payload. Plan order therefore does not matter for the budget.
+- `get_catalog` budget (`src/lib/mcp/catalog-summary.unit.test.ts`, `< 4000` tokens, 13 tokens of headroom at `ffee99b`): plans 34, 35 and 36 raised the ceiling as they grew the catalog, and their withdrawal restored `< 4000`. Plan 18 measured at its own start and did not grow the payload.
 - Plan 24 Phase 2 pulls the diagram families into the `catalog.ts` and MCP module graph; check against plan 22's server-only markers if 22 has landed.
 - Plan 15 and plan 22 both touch `src/routes/download.$id.$n.ts` on different lines; trivial merge.
 

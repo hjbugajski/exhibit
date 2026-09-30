@@ -1,6 +1,6 @@
 /**
  * Builds the get_catalog tool's payload: a compact textual description of every catalog component
- * plus a few trimmed example specs. Kept under ~4.4k tokens (see catalog-summary.unit.test.ts)
+ * plus a few trimmed example specs. Kept under ~4k tokens (see catalog-summary.unit.test.ts)
  * so it's cheap for Claude to read before every publish_spec call.
  */
 import type { Spec } from '@json-render/core';

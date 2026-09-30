@@ -4,13 +4,11 @@ A self-hosted gallery for Claude artifacts. Claude publishes through a Model Con
 
 Three artifact types:
 
-- **Specs**: declarative JSON rendered natively by the component catalog, such as prose, tables, charts, maps, itineraries, trails, weather, and steps. Checklist, Choice, Rating, and NoteBox are interactive: they persist your input per artifact, and Claude can read it back later. Artifacts can therefore double as lightweight feedback forms.
+- **Specs**: declarative JSON rendered natively by the component catalog, such as prose, tables, charts, maps, itineraries, and steps. Checklist, Choice, Rating, and NoteBox are interactive: they persist your input per artifact, and Claude can read it back later. Artifacts can therefore double as lightweight feedback forms.
 - **Markdown**: prose-first documents rendered in the gallery, with catalog components embeddable inline. Raw HTML is never interpreted.
 - **HTML**: full pages served sandboxed on their own route.
 
 Content headings rank one below the artifact title: a spec Heading at level 1 and a markdown `#` both render as an `h2`.
-
-Trip plans have their own components. In a spec, an Itinerary of two or more days adds a day index, and adds a trip map once two days have mapped stops. Each Day numbers its Stops that have coordinates on an automatic day map. A Stop can carry a `url`, `cost`, `status`, and `transit`, and its kinds include `hike` and `shopping`. Trail details one hike with its stats, plus an optional track map and elevation profile. Weather shows a daily forecast strip, from days you supply or from a live forecast the server fetches. In markdown, Itinerary and Day render without the derived index and maps.
 
 One owner, one container: session-authed UI, OAuth 2.1 with Proof Key for Code Exchange (PKCE) and dynamic client registration for MCP, and SQLite for storage.
 
@@ -66,7 +64,7 @@ MCP tools:
 
 `list_artifacts` matches `query` against title and description. The `state-updated-desc` sort and the `hasState` and `stateSince` filters find fresh owner input. Publish and `update_artifact` validate a body the same way. A markdown body that is empty or whitespace only is rejected, and so is one whose `statePath` values collide: a duplicate, or one that is a segment prefix of another. A mutation on a soft-deleted artifact reports not found.
 
-`get_catalog` returns the spec-authoring reference in about 4.4k tokens.
+`get_catalog` returns the spec-authoring reference in about 4k tokens.
 
 Connected clients appear in **/settings → MCP connections**, where you can revoke them. Revoking deletes the client's registration and tokens, so its access ends immediately, even for tokens it already holds. `/mcp` re-checks the client registration on every request, so an access token issued before the revocation stops working on its next call.
 
@@ -148,7 +146,7 @@ Exhibit has one user, so there is no admin reset path. With Resend configured, u
 - **MCP auth is standard OAuth 2.1.** `/mcp` requires a Bearer token issued by the app's own authorization server (Better Auth + oauth-provider): PKCE, dynamic client registration, consent, discovery documents under `/.well-known/`. JWTs are verified locally against the JWKS in the database; the server never calls itself. Opaque tokens are looked up in the database. `/mcp` rejects a revoked opaque token and a JWT whose session was deleted, so signing out cuts off MCP clients bound to that session.
 - **Single owner.** Sign-up is disabled in the auth config, not only hidden. The seed runs only on an empty database. The post-sign-in redirect is accepted only when it parses as a path on the app's own origin.
 - **Server code stays on the server.** Server-only modules import `@tanstack/react-start/server-only`, so a client bundle that pulls one in fails the build.
-- **External fetches.** In the browser, any artifact can load `https:` images. HTML artifacts can also load fonts from any `https:` host, and scripts and styles from `cdnjs.cloudflare.com`. Map blocks load Carto basemaps from `cartocdn.com` hosts. With `PROTOMAPS_API_KEY` set, they load tiles from `api.protomaps.com` and glyphs and sprites from `protomaps.github.io` instead. Each of these hosts sees the viewer's IP and referrer, same as any embedded image. On the server, the app calls Resend only when `RESEND_API_KEY` is set. Live Weather blocks make the server call `api.open-meteo.com` with the block's coordinates rounded to 2 decimal places, with no API key. Each forecast is cached in memory for 30 minutes, and your IP is not sent. No other third-party calls are made.
+- **External fetches.** In the browser, any artifact can load `https:` images. HTML artifacts can also load fonts from any `https:` host, and scripts and styles from `cdnjs.cloudflare.com`. Map blocks load Carto basemaps from `cartocdn.com` hosts. With `PROTOMAPS_API_KEY` set, they load tiles from `api.protomaps.com` and glyphs and sprites from `protomaps.github.io` instead. Each of these hosts sees the viewer's IP and referrer, same as any embedded image. On the server, the app calls Resend only when `RESEND_API_KEY` is set. No other third-party calls are made.
 
 ## Development
 
@@ -177,7 +175,7 @@ Schema changes go through `pnpm db:generate`; there is no `db:push` script. Lint
 
 The compose file pulls the published image. To run a local build instead, `docker build -t exhibit .` and point `compose.yaml`'s `image:` at it, or run the container directly.
 
-In dev, `/dev/library` is a component library with a props playground for every house UI component and every catalog component, plus the kitchen-sink example artifact. `scripts/dev-publish.ts` drives the full OAuth and MCP publish flow against a running instance. It publishes a set of example artifacts, including a "Yosemite Valley Weekend" trip with a live forecast (`scripts/examples/yosemite-weekend.ts`). It reads `OWNER_EMAIL` and `OWNER_PASSWORD` from an env file; `BASE_URL` set on the command line takes precedence over the file's value:
+In dev, `/dev/library` is a component library with a props playground for every house UI component and every catalog component, plus the kitchen-sink example artifact. `scripts/dev-publish.ts` drives the full OAuth and MCP publish flow against a running instance and publishes a set of example artifacts. It reads `OWNER_EMAIL` and `OWNER_PASSWORD` from an env file; `BASE_URL` set on the command line takes precedence over the file's value:
 
 ```sh
 BASE_URL=http://localhost:3000 node --env-file=.env scripts/dev-publish.ts
