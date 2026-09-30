@@ -175,6 +175,17 @@ const overlappingStatePathsMarkdown = [
   '```',
 ].join('\n');
 
+/** `count` exhibit fences, each a live Weather block at its own coordinates. */
+function liveWeatherMarkdown(count: number): string {
+  return Array.from({ length: count }, (_, i) =>
+    [
+      '```exhibit',
+      JSON.stringify({ type: 'Weather', props: { source: 'live', location: { lat: i, lng: i } } }),
+      '```',
+    ].join('\n'),
+  ).join('\n\n');
+}
+
 describe('publish_markdown', () => {
   it('round trips a markdown body byte for byte', async () => {
     // Trailing newline, CRLF, tabs and a directive: nothing may be normalized on the way through.
@@ -234,6 +245,32 @@ describe('publish_markdown', () => {
     expect(result.isError).toBe(true);
     expect(result.structuredContent?.errors).toEqual([
       expect.objectContaining({ path: 'statePath', element: null }),
+    ]);
+  });
+
+  it('accepts 20 live Weather blocks', async () => {
+    const result = await callTool(client, 'publish_markdown', {
+      title: 'Forecasts',
+      markdown: liveWeatherMarkdown(20),
+    });
+
+    expect(result.isError).toBeFalsy();
+  });
+
+  it('rejects a body with more than 20 live Weather blocks', async () => {
+    const result = await callTool(client, 'publish_markdown', {
+      title: 'Forecasts',
+      markdown: liveWeatherMarkdown(21),
+    });
+
+    expect(result.isError).toBe(true);
+    expect(result.structuredContent?.errors).toEqual([
+      expect.objectContaining({
+        element: null,
+        component: 'Weather',
+        path: 'source',
+        message: expect.stringContaining('21 Weather blocks use source "live"'),
+      }),
     ]);
   });
 });

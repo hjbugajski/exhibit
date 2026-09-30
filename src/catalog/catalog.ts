@@ -19,7 +19,11 @@ import { schema } from '@json-render/react/schema';
 import { z } from 'zod';
 
 import { ALLOWED_FAMILIES, MERMAID_MAX_CHARS } from '@/catalog/mermaid-schema';
-import { FORECAST_DAYS_MAX, weatherConditions } from '@/components/catalog/weather-schema';
+import {
+  FORECAST_DAYS_MAX,
+  LIVE_WEATHER_MAX,
+  weatherConditions,
+} from '@/components/catalog/weather-schema';
 
 /** Generous cap for a title/label/short string field. */
 const SHORT_MAX = 500;
@@ -737,8 +741,7 @@ export const catalog = defineCatalog(schema, {
     Weather: {
       // Field descriptions inside a union never reach get_catalog, so this description carries the
       // semantics of both branches.
-      description:
-        'Daily forecast strip covering 1 to 7 days. With source "static", you pass the days: date as displayed, high and low in unit, precipitationChance as a percentage. With source "live", the app fetches a forecast for location each time the artifact is viewed; use it for trips within the next week.',
+      description: `Daily forecast strip covering 1 to 7 days. With source "static", you pass the days: date as displayed, high and low in unit, precipitationChance as a percentage. With source "live", the app fetches a forecast for location each time the artifact is viewed; use it for trips within the next week. At most ${LIVE_WEATHER_MAX} live blocks per artifact.`,
       props: z.discriminatedUnion('source', [
         z.object({
           source: z.literal('static'),

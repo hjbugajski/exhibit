@@ -5,6 +5,8 @@ import { z } from 'zod';
 
 import { ALLOWED_FAMILIES } from '@/catalog/mermaid-schema';
 import {
+  collectStatePaths,
+  findLiveWeatherCapErrors,
   findStatePathConflicts,
   validateArtifactSpec,
   type ArtifactSpecError,
@@ -25,7 +27,7 @@ import {
   softDeleteArtifact,
   updateArtifact,
 } from '@/database/repository';
-import { markdownStatePaths } from '@/lib/answer-count';
+import { markdownBlocks } from '@/lib/answer-count';
 import { descriptionField, tagField, tagsField, titleField } from '@/lib/artifact-metadata';
 import { artifactSorts } from '@/lib/artifact-sorts';
 import { artifactTypes, type ArtifactType } from '@/lib/artifact-types';
@@ -115,19 +117,22 @@ function specErrorsResult(subject: string, errors: ArtifactSpecError[]): CallToo
 }
 
 /**
- * Formats an isError result when the statePaths a markdown body renders overlap (the same rule
- * specs follow), or `null` otherwise. Errors name the component, since markdown has no element
- * keys.
+ * Formats an isError result when the blocks a markdown body renders fail the rules specs follow
+ * (overlapping statePaths, too many live Weather blocks), or `null` otherwise. Errors name the
+ * component, since markdown has no element keys.
  */
-function markdownStatePathsOrError(markdown: string): CallToolResult | null {
-  const errors = findStatePathConflicts(markdownStatePaths(markdown)).map(
-    ({ keys, message }): ArtifactSpecError => ({
+function markdownBlocksOrError(markdown: string): CallToolResult | null {
+  const blocks = markdownBlocks(markdown);
+  const statePaths = blocks.flatMap(({ type, props }) => collectStatePaths(type, props));
+  const errors = [
+    ...findStatePathConflicts(statePaths).map(({ keys, message }): ArtifactSpecError => ({
       element: null,
       component: keys[0] ?? null,
       path: 'statePath',
       message,
-    }),
-  );
+    })),
+    ...findLiveWeatherCapErrors(blocks),
+  ];
 
   return errors.length === 0 ? null : specErrorsResult('Markdown', errors);
 }
@@ -164,7 +169,7 @@ function markdownBodyOrError(markdown: string): CallToolResult | null {
 const bodyChecks: Record<ArtifactType, (body: string) => CallToolResult | null> = {
   spec: (body) => validateSpecOrError(JSON.parse(body)),
   html: htmlDocumentOrError,
-  markdown: (body) => markdownBodyOrError(body) ?? markdownStatePathsOrError(body),
+  markdown: (body) => markdownBodyOrError(body) ?? markdownBlocksOrError(body),
 };
 
 /** Returns an isError result when `body` fails the size cap or its type's check, else `null`. */

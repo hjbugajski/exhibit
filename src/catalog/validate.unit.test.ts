@@ -5,7 +5,7 @@ import { explainerFixture } from '@/catalog/fixtures/explainer';
 import { flowFixture } from '@/catalog/fixtures/flow';
 import { itineraryFixture } from '@/catalog/fixtures/itinerary';
 import { kitchenSinkFixture } from '@/catalog/fixtures/kitchen-sink';
-import { validateArtifactSpec } from '@/catalog/validate';
+import { findStatePathConflicts, validateArtifactSpec } from '@/catalog/validate';
 import { invalidFixture } from '@testing/fixtures/invalid';
 
 import { decisionMemoExample } from '../../scripts/examples/decision-memo';
@@ -869,5 +869,283 @@ describe('validateArtifactSpec Trail', () => {
         message: 'Item id "trailhead" is used more than once; ids must be unique within the list.',
       }),
     );
+  });
+});
+
+describe('findStatePathConflicts', () => {
+  it('reports exact duplicates first, then prefix pairs in first-use order', () => {
+    const conflicts = findStatePathConflicts([
+      { key: 'a', path: '/x/y' },
+      { key: 'b', path: '/x' },
+      { key: 'c', path: '/x/y' },
+      { key: 'd', path: '/feedback/backup' },
+      { key: 'e', path: '/feedback/backup-decision' },
+      { key: 'f', path: '/x/y/z' },
+      { key: 'g', path: '/feedback' },
+    ]);
+
+    expect(conflicts.map(({ paths, keys }) => ({ paths, keys }))).toEqual([
+      { paths: ['/x/y'], keys: ['a', 'c'] },
+      { paths: ['/x', '/x/y'], keys: ['b', 'a'] },
+      { paths: ['/x/y', '/x/y/z'], keys: ['a', 'f'] },
+      { paths: ['/x', '/x/y/z'], keys: ['b', 'f'] },
+      { paths: ['/feedback', '/feedback/backup'], keys: ['g', 'd'] },
+      { paths: ['/feedback', '/feedback/backup-decision'], keys: ['g', 'e'] },
+    ]);
+    expect(conflicts[0]?.message).toBe(
+      'statePath "/x/y" is used by 2 elements (a, c). They share one saved state. Give each interactive element a unique statePath.',
+    );
+    expect(conflicts[1]?.message).toBe(
+      'statePath "/x" (b) contains "/x/y" (a). A write to "/x" replaces the value at "/x/y". Give each interactive element a statePath that is not a prefix of another.',
+    );
+  });
+
+  /** About 25,000 paths fit in the 1 MB body cap; a pairwise comparison of 20,000 took 20 s. */
+  it('checks 20,000 distinct paths in work linear in the path count', () => {
+    let pathReads = 0;
+    const entries = Array.from({ length: 20_000 }, (_, i) => {
+      const path = `/section-${i % 100}/item-${i}/answer`;
+
+      return {
+        key: `element-${i}`,
+        get path() {
+          pathReads += 1;
+
+          return path;
+        },
+      };
+    });
+
+    const started = performance.now();
+    const conflicts = findStatePathConflicts(entries);
+    const elapsed = performance.now() - started;
+
+    expect(conflicts).toEqual([]);
+    expect(pathReads).toBeLessThanOrEqual(4 * entries.length);
+    expect(elapsed).toBeLessThan(500);
+  });
+});
+
+describe('validateArtifactSpec element tree', () => {
+  function errorsOf(spec: unknown) {
+    const result = validateArtifactSpec(spec);
+
+    return result.valid ? [] : result.errors;
+  }
+
+  const divider = { type: 'Divider' };
+
+  it('rejects an element listed in the children of two parents', () => {
+    const errors = errorsOf({
+      root: 'root',
+      elements: {
+        root: { type: 'Section', props: {}, children: ['a', 'b'] },
+        a: { type: 'Section', props: {}, children: ['shared'] },
+        b: { type: 'Section', props: {}, children: ['shared'] },
+        shared: divider,
+      },
+    });
+
+    expect(errors).toContainEqual({
+      element: 'b',
+      component: 'Section',
+      path: 'elements.b.children.0',
+      message:
+        'Element "shared" is a child of both "a" and "b". Each element has at most one parent.',
+    });
+  });
+
+  it('rejects an element listed twice in one children list', () => {
+    const errors = errorsOf({
+      root: 'root',
+      elements: {
+        root: { type: 'Section', props: {}, children: ['a', 'a'] },
+        a: divider,
+      },
+    });
+
+    expect(errors).toContainEqual({
+      element: 'root',
+      component: 'Section',
+      path: 'elements.root.children.1',
+      message: 'Element "a" is listed more than once in the children of "root".',
+    });
+  });
+
+  it('rejects an element that contains itself', () => {
+    const errors = errorsOf({
+      root: 'root',
+      elements: {
+        root: { type: 'Section', props: {}, children: ['a'] },
+        a: { type: 'Section', props: {}, children: ['root'] },
+      },
+    });
+
+    expect(errors).toContainEqual({
+      element: 'root',
+      component: 'Section',
+      path: 'elements.root.children.0',
+      message: 'Element "a" is its own descendant through the children of "root".',
+    });
+  });
+
+  it('rejects an element that lists itself as a child', () => {
+    const errors = errorsOf({
+      root: 'root',
+      elements: { root: { type: 'Section', props: {}, children: ['root'] } },
+    });
+
+    expect(errors).toContainEqual({
+      element: 'root',
+      component: 'Section',
+      path: 'elements.root.children.0',
+      message: 'Element "root" is its own descendant through the children of "root".',
+    });
+  });
+
+  /**
+   * The reviewer's shape: 200 Itineraries share one Section of 500 Days, and every Day lists one
+   * shared Section of 1,000 Stops. A walk per Itinerary and per Day visited 10^8 elements (5 s).
+   */
+  it('validates a shared-subtree spec in work linear in its size', () => {
+    const itineraries = 200;
+    const days = 500;
+    const stops = 1_000;
+    const raw: Record<string, unknown> = {
+      root: {
+        type: 'Section',
+        props: {},
+        children: Array.from({ length: itineraries }, (_, i) => `trip-${i}`),
+      },
+      days: {
+        type: 'Section',
+        props: {},
+        children: Array.from({ length: days }, (_, i) => `day-${i}`),
+      },
+      shared: {
+        type: 'Section',
+        props: {},
+        children: Array.from({ length: stops }, (_, i) => `stop-${i}`),
+      },
+    };
+
+    for (let i = 0; i < itineraries; i += 1) {
+      raw[`trip-${i}`] = { type: 'Itinerary', props: {}, children: ['days'] };
+    }
+
+    for (let i = 0; i < days; i += 1) {
+      raw[`day-${i}`] = { type: 'Day', props: { label: `Day ${i}` }, children: ['shared'] };
+    }
+
+    for (let i = 0; i < stops; i += 1) {
+      raw[`stop-${i}`] = {
+        type: 'Stop',
+        props: { title: `Stop ${i}`, coordinates: { lat: 0, lng: 0 } },
+      };
+    }
+
+    const size = Object.keys(raw).length + itineraries + itineraries + days + days + stops;
+    let reads = 0;
+    const elements = new Proxy(raw, {
+      get(target, key, receiver) {
+        reads += 1;
+
+        return Reflect.get(target, key, receiver);
+      },
+    });
+
+    const started = performance.now();
+    const errors = errorsOf({ root: 'root', elements });
+    const elapsed = performance.now() - started;
+
+    expect(errors).toContainEqual(
+      expect.objectContaining({
+        path: 'elements.trip-1.children.0',
+        message:
+          'Element "days" is a child of both "trip-0" and "trip-1". Each element has at most one parent.',
+      }),
+    );
+    expect(errors).not.toContainEqual(
+      expect.objectContaining({ component: 'Itinerary', path: 'elements.trip-0.children' }),
+    );
+    expect(reads).toBeLessThan(20 * size);
+    expect(elapsed).toBeLessThan(500);
+  });
+
+  /** Each Itinerary's walk used to descend through every Itinerary nested in it. */
+  it('validates nested Itineraries in work linear in their count', () => {
+    const depth = 2_000;
+    const raw: Record<string, unknown> = {};
+
+    for (let i = 0; i < depth; i += 1) {
+      raw[`trip-${i}`] = {
+        type: 'Itinerary',
+        props: {},
+        children: i + 1 < depth ? [`trip-${i + 1}`] : [],
+      };
+    }
+
+    let reads = 0;
+    const elements = new Proxy(raw, {
+      get(target, key, receiver) {
+        reads += 1;
+
+        return Reflect.get(target, key, receiver);
+      },
+    });
+
+    expect(errorsOf({ root: 'trip-0', elements })).toEqual([]);
+    expect(reads).toBeLessThan(20 * 2 * depth);
+  });
+});
+
+describe('validateArtifactSpec live Weather cap', () => {
+  /** A Section of `live` live Weather blocks and one static one. */
+  function weatherSpec(live: number) {
+    const elements: Record<string, unknown> = {
+      static: {
+        type: 'Weather',
+        props: {
+          source: 'static',
+          unit: 'c',
+          days: [{ date: 'Mon', high: 20, low: 10, condition: 'clear' }],
+        },
+      },
+    };
+
+    for (let i = 0; i < live; i += 1) {
+      elements[`live-${i}`] = {
+        type: 'Weather',
+        props: { source: 'live', location: { lat: i, lng: i } },
+      };
+    }
+
+    return {
+      root: 'root',
+      elements: {
+        root: { type: 'Section', props: {}, children: Object.keys(elements) },
+        ...elements,
+      },
+    };
+  }
+
+  it('accepts 20 live Weather blocks', () => {
+    const result = validateArtifactSpec(weatherSpec(20));
+
+    expect(result.valid ? [] : result.errors).toEqual([]);
+  });
+
+  it('rejects a 21st live Weather block', () => {
+    const result = validateArtifactSpec(weatherSpec(21));
+
+    expect(result.valid ? [] : result.errors).toEqual([
+      {
+        element: null,
+        component: 'Weather',
+        path: 'source',
+        message:
+          '21 Weather blocks use source "live", and an artifact holds at most 20. Each live block fetches a forecast every time the artifact is viewed.',
+      },
+    ]);
   });
 });

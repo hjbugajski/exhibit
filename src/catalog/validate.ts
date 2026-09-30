@@ -16,6 +16,7 @@ import type { z } from 'zod';
 
 import { catalog, MAP_MARKERS_MAX } from '@/catalog/catalog';
 import { collectItineraryDays, collectStopMarkers } from '@/catalog/stop-markers';
+import { LIVE_WEATHER_MAX } from '@/components/catalog/weather-schema';
 
 /**
  * Catalog components are typed as a fixed-key object; widen to an index signature so we can look up
@@ -91,20 +92,17 @@ export function collectStatePaths(
   });
 }
 
+/** One statePath occurrence and the key of the element or component that owns it. */
+interface StatePathEntry {
+  key: string;
+  path: string;
+}
+
 /** Two or more statePath occurrences that write over each other, with their owning keys. */
 export interface StatePathConflict {
   paths: string[];
   keys: string[];
   message: string;
-}
-
-/** `/a/b` → `['a', 'b']`; the catalog's pointer pattern has no `~` escapes to decode. */
-function pathSegments(path: string): string[] {
-  return path.slice(1).split('/');
-}
-
-function isSegmentPrefix(shorter: string[], longer: string[]): boolean {
-  return shorter.length < longer.length && shorter.every((segment, i) => segment === longer[i]);
 }
 
 /**
@@ -113,18 +111,23 @@ function isSegmentPrefix(shorter: string[], longer: string[]): boolean {
  * pointers, so a write to `/feedback` replaces `{ note: … }` under it and a write to
  * `/feedback/note` replaces a non-object `/feedback` with `{}` — either way one input erases the
  * other. `/feedback/backup` and `/feedback/backup-decision` share no segment and do not conflict.
+ *
+ * Linear in the number of paths times their depth: each path looks up only its own proper segment
+ * prefixes, the substrings ending before one of its `/` separators. The catalog's pointer pattern
+ * starts every path with `/` and has no `~` escapes to decode.
  */
-export function findStatePathConflicts(
-  entries: { key: string; path: string }[],
-): StatePathConflict[] {
+export function findStatePathConflicts(entries: StatePathEntry[]): StatePathConflict[] {
   const usedBy = new Map<string, string[]>();
-  const firstUse = new Map<string, { key: string; path: string }>();
+  const distinct: StatePathEntry[] = [];
 
-  for (const entry of entries) {
-    usedBy.set(entry.path, [...(usedBy.get(entry.path) ?? []), entry.key]);
+  for (const { key, path } of entries) {
+    const keys = usedBy.get(path);
 
-    if (!firstUse.has(entry.path)) {
-      firstUse.set(entry.path, entry);
+    if (keys) {
+      keys.push(key);
+    } else {
+      usedBy.set(path, [key]);
+      distinct.push({ key, path });
     }
   }
 
@@ -140,22 +143,34 @@ export function findStatePathConflicts(
     }
   }
 
-  const distinct = [...firstUse.values()];
+  const firstUses = new Map(distinct.map((entry, index) => [entry.path, { entry, index }]));
+  const pairs: { rank: [number, number]; shorter: StatePathEntry; longer: StatePathEntry }[] = [];
 
-  for (const [i, a] of distinct.entries()) {
-    for (const b of distinct.slice(i + 1)) {
-      const [shorter, longer] = a.path.length <= b.path.length ? [a, b] : [b, a];
+  for (const [index, longer] of distinct.entries()) {
+    const { path } = longer;
 
-      if (!isSegmentPrefix(pathSegments(shorter.path), pathSegments(longer.path))) {
-        continue;
+    for (let end = path.indexOf('/', 1); end !== -1; end = path.indexOf('/', end + 1)) {
+      const shorter = firstUses.get(path.slice(0, end));
+
+      if (shorter) {
+        const rank: [number, number] = [
+          Math.min(shorter.index, index),
+          Math.max(shorter.index, index),
+        ];
+        pairs.push({ rank, shorter: shorter.entry, longer });
       }
-
-      conflicts.push({
-        paths: [shorter.path, longer.path],
-        keys: [shorter.key, longer.key],
-        message: `statePath "${shorter.path}" (${shorter.key}) contains "${longer.path}" (${longer.key}). A write to "${shorter.path}" replaces the value at "${longer.path}". Give each interactive element a statePath that is not a prefix of another.`,
-      });
     }
+  }
+
+  // The order a pairwise scan over first uses meets the pairs in.
+  pairs.sort((a, b) => a.rank[0] - b.rank[0] || a.rank[1] - b.rank[1]);
+
+  for (const { shorter, longer } of pairs) {
+    conflicts.push({
+      paths: [shorter.path, longer.path],
+      keys: [shorter.key, longer.key],
+      message: `statePath "${shorter.path}" (${shorter.key}) contains "${longer.path}" (${longer.key}). A write to "${shorter.path}" replaces the value at "${longer.path}". Give each interactive element a statePath that is not a prefix of another.`,
+    });
   }
 
   return conflicts;
@@ -176,6 +191,77 @@ function findStatePathConflictErrors(elements: Record<string, unknown>): Artifac
       message,
     };
   });
+}
+
+/**
+ * A spec is a tree: every element has at most one parent, appears once in its parent's children,
+ * and never contains itself. Shared children would make every walk over descendants (the marker
+ * lints below, the renderer) repeat the shared subtree once per parent, so one small spec could
+ * cost billions of visits. Linear in the number of child references.
+ */
+function findElementTreeErrors(elements: Record<string, unknown>): ArtifactSpecError[] {
+  const errors: ArtifactSpecError[] = [];
+  const parents = new Map<string, { parent: string; index: number }>();
+
+  for (const [parent, element] of Object.entries(elements)) {
+    if (!isRecord(element) || !Array.isArray(element.children)) {
+      continue;
+    }
+
+    for (const [index, child] of element.children.entries()) {
+      if (typeof child !== 'string' || !Object.hasOwn(elements, child)) {
+        continue;
+      }
+
+      const first = parents.get(child);
+
+      if (!first) {
+        parents.set(child, { parent, index });
+        continue;
+      }
+
+      errors.push({
+        element: parent,
+        component: elementType(elements, parent),
+        path: `elements.${parent}.children.${index}`,
+        message:
+          first.parent === parent
+            ? `Element "${child}" is listed more than once in the children of "${parent}".`
+            : `Element "${child}" is a child of both "${first.parent}" and "${parent}". Each element has at most one parent.`,
+      });
+    }
+  }
+
+  // With one parent each, a cycle is a loop of parent links. Each climb stops at an element an
+  // earlier climb already settled, so every element is climbed through once.
+  const settled = new Set<string>();
+
+  for (const start of parents.keys()) {
+    const climbed = new Set<string>();
+    let key: string | undefined = start;
+
+    while (key !== undefined && !settled.has(key) && !climbed.has(key)) {
+      climbed.add(key);
+      key = parents.get(key)?.parent;
+    }
+
+    const link = key !== undefined && climbed.has(key) ? parents.get(key) : undefined;
+
+    if (key !== undefined && link) {
+      errors.push({
+        element: link.parent,
+        component: elementType(elements, link.parent),
+        path: `elements.${link.parent}.children.${link.index}`,
+        message: `Element "${key}" is its own descendant through the children of "${link.parent}".`,
+      });
+    }
+
+    for (const climbedKey of climbed) {
+      settled.add(climbedKey);
+    }
+  }
+
+  return errors;
 }
 
 /**
@@ -239,6 +325,32 @@ function findItineraryMapMarkerCapErrors(elements: Record<string, unknown>): Art
   }
 
   return errors;
+}
+
+/**
+ * Each live Weather block fetches a forecast upstream every time the artifact is viewed, so one
+ * artifact with many of them would spend the shared Open-Meteo quota and evict every cached
+ * forecast. Takes spec elements and markdown blocks alike, as `{ type, props }`.
+ */
+export function findLiveWeatherCapErrors(
+  blocks: { type?: unknown; props?: unknown }[],
+): ArtifactSpecError[] {
+  const count = blocks.filter(
+    ({ type, props }) => type === 'Weather' && isRecord(props) && props.source === 'live',
+  ).length;
+
+  if (count <= LIVE_WEATHER_MAX) {
+    return [];
+  }
+
+  return [
+    {
+      element: null,
+      component: 'Weather',
+      path: 'source',
+      message: `${count} Weather blocks use source "live", and an artifact holds at most ${LIVE_WEATHER_MAX}. Each live block fetches a forecast every time the artifact is viewed.`,
+    },
+  ];
 }
 
 /**
@@ -384,11 +496,17 @@ export function validateArtifactSpec(spec: unknown): ArtifactValidationResult {
     // Per-prop uniqueness rules (tab labels, Choice option ids/labels, list item ids, Table column
     // keys) are zod `.check()`s on the catalog prop schemas, surfaced by the per-element parse
     // above. Only lints spanning more than one prop or element live here.
+    const treeErrors = findElementTreeErrors(elements);
+
+    // The marker lints walk descendants, so they run on a tree only.
     errors.push(
       ...findStatePathConflictErrors(elements),
       ...findTabsChildCountMismatchErrors(elements),
-      ...findDayMapMarkerCapErrors(elements),
-      ...findItineraryMapMarkerCapErrors(elements),
+      ...findLiveWeatherCapErrors(Object.values(elements).filter(isRecord)),
+      ...treeErrors,
+      ...(treeErrors.length === 0
+        ? [...findDayMapMarkerCapErrors(elements), ...findItineraryMapMarkerCapErrors(elements)]
+        : []),
     );
   }
 

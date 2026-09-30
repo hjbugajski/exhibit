@@ -48,22 +48,27 @@ function specStatePaths(body: string): string[] {
   );
 }
 
+/** One catalog block a markdown body renders, with its validated props. */
+export interface MarkdownBlock {
+  type: string;
+  props: unknown;
+}
+
 /**
- * Every statePath a markdown body renders, tagged with its component name. Also the input to the
- * publish-time collision check (src/lib/mcp/server.ts), so it covers exactly the questions the
- * renderer shows.
+ * Every catalog block a markdown body renders, with the props the renderer accepted. The input to
+ * the publish-time checks (src/lib/mcp/server.ts), so they cover exactly what the renderer shows.
  *
  * Walks the parsed document generically rather than by node type: both surfaces (an `exhibit` fence
  * and a `<!-- ::Name statePath="…" -->` directive) can sit inside another directive's children, and
  * only these two node shapes ever reach the catalog.
  */
-export function markdownStatePaths(body: string): { key: string; path: string }[] {
+export function markdownBlocks(body: string): MarkdownBlock[] {
   const document = parseMarkdown(body, {
     ...markdownParseOptions,
     extensions: [commentComponentsExtension()],
   });
 
-  const paths: { key: string; path: string }[] = [];
+  const blocks: MarkdownBlock[] = [];
 
   function walk(node: unknown): void {
     if (Array.isArray(node)) {
@@ -79,13 +84,13 @@ export function markdownStatePaths(body: string): { key: string; path: string }[
     }
 
     if (node.type === 'code' && typeof node.lang === 'string' && typeof node.value === 'string') {
-      // A fence the renderer rejects shows as an error block and asks nothing. Paths come from the
+      // A fence the renderer rejects shows as an error block and asks nothing. Props come from the
       // validated spec, never the raw JSON.
       const result = node.lang.toLowerCase() === 'exhibit' ? resolveExhibitFence(node.value) : null;
       const element = result?.valid ? result.spec.elements.exhibit : undefined;
 
       if (element) {
-        paths.push(...collectStatePaths(element.type, element.props));
+        blocks.push({ type: element.type, props: element.props });
       }
 
       return;
@@ -105,7 +110,7 @@ export function markdownStatePaths(body: string): { key: string; path: string }[
         return;
       }
 
-      paths.push(...collectStatePaths(resolved.name, resolved.props));
+      blocks.push({ type: resolved.name, props: resolved.props });
     }
 
     for (const value of Object.values(node)) {
@@ -115,7 +120,13 @@ export function markdownStatePaths(body: string): { key: string; path: string }[
 
   walk(document.children);
 
-  return paths;
+  return blocks;
+}
+
+function markdownStatePaths(body: string): string[] {
+  return markdownBlocks(body).flatMap((block) =>
+    collectStatePaths(block.type, block.props).map((found) => found.path),
+  );
 }
 
 /** html artifacts render in their own sandboxed page with no state store, so they ask nothing. */
@@ -128,9 +139,7 @@ export function countAnswers(
     return { answered: 0, total: 0 };
   }
 
-  const paths = new Set(
-    type === 'spec' ? specStatePaths(body) : markdownStatePaths(body).map((found) => found.path),
-  );
+  const paths = new Set(type === 'spec' ? specStatePaths(body) : markdownStatePaths(body));
 
   let answered = 0;
 

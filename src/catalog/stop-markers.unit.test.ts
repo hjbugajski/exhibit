@@ -119,4 +119,59 @@ describe('collectItineraryDays', () => {
       ),
     ).toEqual(['day-2']);
   });
+
+  it("leaves a nested Itinerary's days to that Itinerary", () => {
+    const elements = {
+      'day-1': { type: 'Day', props: { label: 'Day 1' }, children: [] },
+      inner: { type: 'Itinerary', props: {}, children: ['day-2'] },
+      'day-2': { type: 'Day', props: { label: 'Day 2' }, children: [] },
+    };
+
+    expect(collectItineraryDays(elements, ['day-1', 'inner']).map((day) => day.key)).toEqual([
+      'day-1',
+    ]);
+  });
+
+  /**
+   * Validation rejects shared children, but a stored artifact or a hostile spec can still reach the
+   * renderer. 500 Days listing one shared Section of 1,000 Stops cost a walk of the Section per Day.
+   */
+  it('expands each element once when Days share a subtree', () => {
+    const days = 500;
+    const stops = 1_000;
+    const raw: Record<string, unknown> = {
+      shared: {
+        type: 'Section',
+        props: {},
+        children: Array.from({ length: stops }, (_, i) => `stop-${i}`),
+      },
+    };
+
+    for (let i = 0; i < days; i += 1) {
+      raw[`day-${i}`] = { type: 'Day', props: { label: `Day ${i}` }, children: ['shared'] };
+    }
+
+    for (let i = 0; i < stops; i += 1) {
+      raw[`stop-${i}`] = stop(`Stop ${i}`, { lat: 0, lng: 0 });
+    }
+
+    let reads = 0;
+    const elements = new Proxy(raw, {
+      get(target, key, receiver) {
+        reads += 1;
+
+        return Reflect.get(target, key, receiver);
+      },
+    });
+
+    const result = collectItineraryDays(
+      elements,
+      Array.from({ length: days }, (_, i) => `day-${i}`),
+    );
+
+    expect(result).toHaveLength(days);
+    expect(result[0]?.markers).toHaveLength(stops);
+    expect(result.slice(1).every((day) => day.markers.length === 0)).toBe(true);
+    expect(reads).toBeLessThanOrEqual(days + 1 + stops);
+  });
 });

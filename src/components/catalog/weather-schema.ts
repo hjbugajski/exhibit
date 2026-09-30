@@ -21,3 +21,6 @@ export type WeatherCondition = (typeof weatherConditions)[number];
 
 /** The most days one Weather block shows, and the number of days the live fetch requests. */
 export const FORECAST_DAYS_MAX = 7;
+
+/** The most live Weather blocks one artifact holds; each fetches a forecast on every view. */
+export const LIVE_WEATHER_MAX = 20;

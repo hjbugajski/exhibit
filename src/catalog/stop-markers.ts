@@ -35,17 +35,18 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 /**
  * Visits the elements under `childKeys` in document order (pre-order). An element hidden by
  * `isVisible`, or one with `repeat` (its children render once per state item, from props this walk
- * cannot resolve), is skipped with its subtree. `visit` returns whether to descend. Each key is
- * visited once, so a cyclic `children` reference terminates. The walk is iterative because a
- * hostile spec can nest deeper than the call stack.
+ * cannot resolve), is skipped with its subtree. `visit` returns whether to descend. Each key in
+ * `visited` is skipped, and each key visited joins it, so a cyclic `children` reference terminates
+ * and a subtree shared by several parents is expanded once. The walk is iterative because a hostile
+ * spec can nest deeper than the call stack.
  */
 function walk(
   elements: Record<string, unknown>,
   childKeys: readonly unknown[],
   isVisible: IsVisible,
+  visited: Set<string>,
   visit: (key: string, element: Record<string, unknown>) => boolean,
 ): void {
-  const visited = new Set<string>();
   const stack = [...childKeys].reverse();
 
   while (stack.length > 0) {
@@ -95,18 +96,15 @@ function stopMarker(key: string, props: unknown): StopMarker | null {
   };
 }
 
-/**
- * The pins of every Stop with coordinates under `childKeys`, in document order. A nested Day keeps
- * its Stops for its own map.
- */
-export function collectStopMarkers(
+function stopMarkers(
   elements: Record<string, unknown>,
   childKeys: readonly unknown[],
-  isVisible: IsVisible = alwaysVisible,
+  isVisible: IsVisible,
+  visited: Set<string>,
 ): StopMarker[] {
   const markers: StopMarker[] = [];
 
-  walk(elements, childKeys, isVisible, (key, element) => {
+  walk(elements, childKeys, isVisible, visited, (key, element) => {
     if (element.type === 'Day') {
       return false;
     }
@@ -123,15 +121,36 @@ export function collectStopMarkers(
   return markers;
 }
 
-/** Each Day under `childKeys` in document order, with its pins. Days nested in a Day are its own. */
+/**
+ * The pins of every Stop with coordinates under `childKeys`, in document order. A nested Day keeps
+ * its Stops for its own map.
+ */
+export function collectStopMarkers(
+  elements: Record<string, unknown>,
+  childKeys: readonly unknown[],
+  isVisible: IsVisible = alwaysVisible,
+): StopMarker[] {
+  return stopMarkers(elements, childKeys, isVisible, new Set());
+}
+
+/**
+ * Each Day under `childKeys` in document order, with its pins. Days nested in a Day, or in a nested
+ * Itinerary, are their own. One walk covers the Days and their pins, so an element shared by
+ * several Days is expanded once, for the first Day.
+ */
 export function collectItineraryDays(
   elements: Record<string, unknown>,
   childKeys: readonly unknown[],
   isVisible: IsVisible = alwaysVisible,
 ): ItineraryDay[] {
   const days: ItineraryDay[] = [];
+  const visited = new Set<string>();
 
-  walk(elements, childKeys, isVisible, (key, element) => {
+  walk(elements, childKeys, isVisible, visited, (key, element) => {
+    if (element.type === 'Itinerary') {
+      return false;
+    }
+
     if (element.type !== 'Day') {
       return true;
     }
@@ -142,7 +161,7 @@ export function collectItineraryDays(
       key,
       label: typeof props.label === 'string' ? props.label : '',
       markers: Array.isArray(element.children)
-        ? collectStopMarkers(elements, element.children, isVisible)
+        ? stopMarkers(elements, element.children, isVisible, visited)
         : [],
     });
 
