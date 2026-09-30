@@ -68,14 +68,14 @@ function errorResult(message: string, structuredContent?: Record<string, unknown
 
 function notFoundResult(id: string): CallToolResult {
   return errorResult(
-    `No artifact found with id "${id}". Call list_artifacts to see available artifacts.`,
+    `No artifact has the id "${id}". Call list_artifacts to see the available artifacts.`,
   );
 }
 
 /** Shared by every tool that resolves a version number, so the wording can't drift between them. */
 function noSuchVersionResult(id: string, version: number): CallToolResult {
   return errorResult(
-    `Artifact "${id}" has no version ${version}. Call get_artifact without version to see which versions exist.`,
+    `Artifact "${id}" has no version ${version}. Call get_artifact without a version to see which versions exist.`,
   );
 }
 
@@ -142,7 +142,7 @@ function htmlDocumentOrError(html: string): CallToolResult | null {
   }
 
   return errorResult(
-    'html does not look like a complete standalone document (no <html> tag found). This is a lightweight sanity check, not full validation. Include a full HTML document.',
+    'The html body has no <html> tag, so it is not a complete standalone document. This check is a lightweight sanity check, not full validation. Pass a complete HTML document.',
   );
 }
 
@@ -153,7 +153,7 @@ function markdownBodyOrError(markdown: string): CallToolResult | null {
   }
 
   return errorResult(
-    'markdown has no content (it is empty or whitespace only). Include the markdown document body.',
+    'The markdown body has no content: it is empty or only whitespace. Pass the markdown document body.',
   );
 }
 
@@ -184,6 +184,10 @@ const publishLabels: Record<ArtifactType, string> = {
   html: 'HTML',
   markdown: 'markdown',
 };
+
+/** Closes every publish tool description: what the call returns and how to revise the result. */
+const PUBLISH_RESULT_DESCRIPTION =
+  'Returns the artifact id and url. The url opens only for the gallery owner, because it requires the owner’s session. It is not a link to share. To revise the artifact, call update_artifact with its id instead of publishing again.';
 
 /** Validates `input.body`, creates the artifact, and formats the publish response. */
 function publishArtifact(
@@ -240,8 +244,7 @@ export function buildMcpServer(db: Db): McpServer {
     toolName('publish_spec'),
     {
       title: 'Publish spec artifact',
-      description:
-        'Creates a new artifact from a json-render spec — the preferred format for documents, guides, itineraries, comparisons, checklists, and dashboards, since specs render with the gallery’s native theming. Call get_catalog once first to learn the component vocabulary and wire format. The spec is validated against the catalog; on failure you get per-element errors to fix and resubmit. Returns the artifact id and url — the url opens for the gallery owner only, since it requires their session, so it is not a link to share. To revise the artifact later, call update_artifact with that id instead of publishing again. Use publish_html only when the content needs custom code the catalog cannot express.',
+      description: `Creates a new artifact from a json-render spec. Specs are the preferred format for documents, guides, itineraries, comparisons, checklists, and dashboards, because they render with the gallery’s native theming. Before you publish, call get_catalog once to learn the component vocabulary and the wire format. The server validates the spec against the catalog. If validation fails, the result lists the errors for each element. Fix the errors and publish again. Use publish_html only when the content needs custom code that the catalog cannot express. ${PUBLISH_RESULT_DESCRIPTION}`,
       inputSchema: {
         title: titleField.describe('Artifact title.'),
         description: descriptionField.optional().describe('Optional short description.'),
@@ -262,8 +265,7 @@ export function buildMcpServer(db: Db): McpServer {
     toolName('publish_html'),
     {
       title: 'Publish HTML artifact',
-      description:
-        'Creates a new artifact from a complete standalone HTML document. Prefer publish_spec — spec artifacts match the gallery’s theming and stay editable at the component level; use HTML only for content the catalog cannot express (custom visualizations, bespoke interactivity). The document renders sandboxed on its own page under a strict CSP: fetch, XHR, and WebSocket connections are blocked entirely, so the page must work with zero network calls; scripts and styles must be inline or loaded from cdnjs.cloudflare.com; images and fonts may come from any https: URL or a data: URI. Include <html>, <head>, and <body>. Returns the artifact id and url — the url opens for the gallery owner only, since it requires their session, so it is not a link to share. Revise later with update_artifact, not a second publish.',
+      description: `Creates a new artifact from a complete standalone HTML document. Prefer publish_spec, because spec artifacts match the gallery’s theming and stay editable at the component level. Use HTML only for content that the catalog cannot express, such as custom visualizations or bespoke interactivity. The document renders sandboxed on its own page under a strict CSP:\n- Fetch, XHR, and WebSocket connections are blocked entirely, so the page must work with zero network calls.\n- Scripts and styles must be inline or load from cdnjs.cloudflare.com.\n- Images and fonts can come from any https: URL or a data: URI.\nThe document must include <html>, <head>, and <body>. ${PUBLISH_RESULT_DESCRIPTION}`,
       inputSchema: {
         title: titleField.describe('Artifact title.'),
         description: descriptionField.optional().describe('Optional short description.'),
@@ -271,7 +273,7 @@ export function buildMcpServer(db: Db): McpServer {
         html: z
           .string()
           .min(1)
-          .describe('Complete standalone HTML document, including <html> and <head>/<body>.'),
+          .describe('Complete standalone HTML document with <html>, <head>, and <body>.'),
       },
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
     },
@@ -283,10 +285,7 @@ export function buildMcpServer(db: Db): McpServer {
     toolName('publish_markdown'),
     {
       title: 'Publish markdown artifact',
-      description:
-        'Creates a new artifact from a markdown document — the quickest format for prose-first content (notes, briefs, explainers, meeting summaries, research write-ups) that does not need spec-level structure. Renders in the gallery with GFM tables, task lists, strikethrough and footnotes, and syntax-highlighted code fences. Two deliberate differences from most markdown renderers: raw HTML is never interpreted (it shows as literal text — do not reach for it), and bare URLs do not autolink, so write explicit [text](https://example.com) links. Links render only for http(s) URLs and images only for https: URLs; anything else is dropped. Catalog components embed two ways. (1) Comment directive — `<!-- ::Divider -->` for a component with no content, or `<!-- ::start:Card title="Budget" -->` … markdown … `<!-- ::end:Card -->` to wrap markdown inside a container component (Section, Card, Itinerary, Day). Directive attributes are flat strings, so they only carry text and enum props — components whose props need numbers or arrays (Grid, Tabs) cannot be driven by a directive; use an exhibit fence or publish_spec for those. (2) An `exhibit` code fence whose body is JSON `{ "type": "Chart", "props": { ... } }` — one component, full prop types, for anything needing numbers, booleans, arrays or objects (Chart, Table, Callout, Checklist, KeyValueList, ...). Call get_catalog for component names and prop shapes. A `mermaid` code fence renders as a diagram (' +
-        ALLOWED_FAMILIES +
-        '); any other diagram type shows the source with the reason instead. Components with a statePath (Checklist, Choice, Rating, NoteBox) persist the owner’s input exactly as they do in specs, readable back through get_artifact. As in specs, a statePath that equals or is a segment prefix of another (`/feedback` and `/feedback/note`) is rejected. Prefer publish_spec when the content is mostly structured components rather than prose. Returns the artifact id and url — the url opens for the gallery owner only, since it requires their session, so it is not a link to share. Revise later with update_artifact, not a second publish.',
+      description: `Creates a new artifact from a markdown document. Use markdown for prose-first content that does not need spec-level structure, such as notes, briefs, explainers, meeting summaries, and research write-ups. The gallery renders GFM tables, task lists, strikethrough, footnotes, and syntax-highlighted code fences. Two rules differ from most markdown renderers by design:\n- Raw HTML is never interpreted. It shows as literal text, so do not use it.\n- Bare URLs do not autolink. Write explicit links, such as [text](https://example.com).\nLinks render only for http(s) URLs, and images only for https: URLs. Anything else is dropped. Catalog components embed in two ways:\n1. A comment directive. For a component with no content, write \`<!-- ::Divider -->\`. To wrap markdown inside a container component (Section, Card, Itinerary, or Day), write \`<!-- ::start:Card title="Budget" -->\` … markdown … \`<!-- ::end:Card -->\`. Directive attributes are flat strings, so they carry only text and enum props. A component whose props need numbers or arrays, such as Grid or Tabs, cannot be a directive. For those components, use an exhibit fence or publish_spec.\n2. An \`exhibit\` code fence whose body is JSON \`{ "type": "Chart", "props": { ... } }\`. The fence holds one component with full prop types. Use it for any component that needs numbers, booleans, arrays, or objects, such as Chart, Table, Callout, Checklist, or KeyValueList.\nCall get_catalog for component names and prop shapes. A \`mermaid\` code fence draws these diagram types: ${ALLOWED_FAMILIES}. Any other diagram type shows the source with the reason. Checklist, Choice, Rating, and NoteBox take a statePath. They persist the owner’s input as they do in specs, and get_artifact reads it back. As in specs, a statePath is rejected if it equals another statePath or is a segment prefix of one, such as \`/feedback\` and \`/feedback/note\`. If the content is mostly structured components rather than prose, prefer publish_spec. ${PUBLISH_RESULT_DESCRIPTION}`,
       inputSchema: {
         title: titleField.describe('Artifact title.'),
         description: descriptionField.optional().describe('Optional short description.'),
@@ -304,7 +303,7 @@ export function buildMcpServer(db: Db): McpServer {
     {
       title: 'Get component catalog',
       description:
-        'Returns the json-render component vocabulary (names, descriptions, prop shapes, children rules), the wire format, and complete example specs. Call this once before your first publish_spec or spec update_artifact of a session and author against it — specs referencing unknown components or props fail validation. Read-only and stable within a session; no need to call it again unless validation errors surprise you.',
+        'Returns the json-render component vocabulary, the wire format, and complete example specs. For each component, the vocabulary lists the name, description, prop shapes, and children rules. Call get_catalog before the first publish_spec call or spec update of a session, and write specs against it. A spec that references an unknown component or prop fails validation. The result does not change within a session. One call per session is enough.',
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
     },
     () => {
@@ -319,7 +318,7 @@ export function buildMcpServer(db: Db): McpServer {
     {
       title: 'Update artifact',
       description:
-        'Updates an existing artifact — the right way to revise anything already published (find ids via list_artifacts; fetch the current body via get_artifact first when editing rather than replacing). Providing `spec`, `html` or `markdown` appends a new version, validated per the artifact type and matching it — a spec artifact only accepts `spec`, an html artifact only `html`, a markdown artifact only `markdown`, and never more than one in a single call. Providing only title/description/tags updates metadata in place with no new version; body and metadata changes can be combined. Old versions stay browsable by the owner.',
+        'Updates an existing artifact. Use it to revise anything already published. Call list_artifacts to find the id. If you edit the body rather than replace it, call get_artifact first to fetch the current body. Passing a body appends a new version, which the server validates for the artifact type. The body key must match the artifact type:\n- `spec` for a spec artifact\n- `html` for an html artifact\n- `markdown` for a markdown artifact\nPass at most one body in a single call. If you pass only title, description, or tags, the metadata changes in place and no new version is created. You can combine body and metadata changes in one call. The owner can still browse old versions.',
       inputSchema: {
         id: z.string().describe('Artifact id.'),
         spec: z
@@ -351,7 +350,7 @@ export function buildMcpServer(db: Db): McpServer {
 
       if (provided.length > 1) {
         return errorResult(
-          `Provide at most one body payload; got ${provided.map((entry) => entry.type).join(' and ')}.`,
+          `Pass at most one body payload. This call passed ${provided.map((entry) => entry.type).join(' and ')}.`,
         );
       }
 
@@ -366,7 +365,7 @@ export function buildMcpServer(db: Db): McpServer {
       if (update) {
         if (existing.artifact.type !== update.type) {
           return errorResult(
-            `Artifact "${id}" is type "${existing.artifact.type}"; cannot update its body with ${article(update.type)} ${update.type} payload. Provide ${article(existing.artifact.type)} ${existing.artifact.type} payload instead.`,
+            `Artifact "${id}" is type "${existing.artifact.type}", so it does not accept ${article(update.type)} ${update.type} payload. Pass ${article(existing.artifact.type)} ${existing.artifact.type} payload instead.`,
           );
         }
 
@@ -403,7 +402,7 @@ export function buildMcpServer(db: Db): McpServer {
     {
       title: 'Restore an earlier version',
       description:
-        'Brings an earlier version of an artifact back as the current one, by copying that version’s body forward as a new latest version. Nothing is overwritten or removed — the history stays intact, and the restore itself can be undone by restoring the version that preceded it. Use this instead of fetching an old body with get_artifact and resubmitting it through update_artifact: the copy is exact. Call get_artifact to see which version numbers exist.',
+        'Makes an earlier version of an artifact the current one. The tool copies that version’s body forward as a new latest version. Nothing is overwritten or removed, so the history stays intact. To undo a restore, restore the version that preceded it. Use this tool rather than passing an old body from get_artifact to update_artifact, because the copy is exact. Call get_artifact to see which version numbers exist.',
       inputSchema: {
         id: z.string().describe('Artifact id.'),
         version: z.number().int().positive().describe('Version number to restore.'),
@@ -433,7 +432,7 @@ export function buildMcpServer(db: Db): McpServer {
     {
       title: 'List artifacts',
       description:
-        'Lists published artifacts (metadata only, no bodies), sortable, with cursor pagination. Use it to find an artifact’s id before get_artifact, update_artifact, or delete_artifact, and to check what already exists before publishing something similar. Archived artifacts are excluded unless you pass `archived: true`, which returns those and only those. Each item’s `stateUpdatedAt` is when the owner’s interaction state last changed, or null if untouched. To find fresh owner input, pass `sort: "state-updated-desc"` and `hasState: true`. To limit the result to input at or after a timestamp, pass `stateSince`.',
+        'Lists published artifacts with metadata only, no bodies. The list is sortable and uses cursor pagination. Call it to find an artifact’s id before get_artifact, update_artifact, or delete_artifact. Also call it to check what already exists before you publish something similar. The list excludes archived artifacts. If you pass `archived: true`, the list holds only archived artifacts. Each item’s `stateUpdatedAt` is when the owner’s interaction state last changed, or null if the state is untouched. To find fresh owner input, pass `sort: "state-updated-desc"` and `hasState: true`. To limit the result to input at or after a timestamp, pass `stateSince`.',
       inputSchema: {
         query: z
           .string()
@@ -453,7 +452,7 @@ export function buildMcpServer(db: Db): McpServer {
           .boolean()
           .optional()
           .describe(
-            'Omit (the default) to list only unarchived artifacts; true to list only archived ones.',
+            'If omitted, the list holds only unarchived artifacts. If true, the list holds only archived artifacts.',
           ),
         hasState: z
           .boolean()
@@ -473,7 +472,7 @@ export function buildMcpServer(db: Db): McpServer {
           .enum(artifactSorts)
           .optional()
           .describe(
-            'Sort order, default updated-desc: updated-desc/updated-asc (last modified), created-desc/created-asc (publish date), title-asc/title-desc (alphabetical), state-updated-desc (last owner interaction; untouched artifacts last).',
+            'Sort order. The default is updated-desc. updated-desc and updated-asc sort by last modification. created-desc and created-asc sort by publish date. title-asc and title-desc sort alphabetically. state-updated-desc sorts by last owner interaction, with untouched artifacts last.',
           ),
         limit: z
           .number()
@@ -481,7 +480,7 @@ export function buildMcpServer(db: Db): McpServer {
           .min(1)
           .max(100)
           .optional()
-          .describe('Page size, default 20, max 100.'),
+          .describe('Page size. The default is 20 and the maximum is 100.'),
         cursor: z.string().optional().describe('Cursor from a previous call’s nextCursor.'),
       },
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
@@ -514,7 +513,7 @@ export function buildMcpServer(db: Db): McpServer {
     {
       title: 'List tags',
       description:
-        'Lists all tags currently in use across published artifacts, alphabetically. Call this before publishing or tagging to reuse existing tags instead of inventing near-duplicates (e.g. "trip" vs "travel").',
+        'Lists every tag in use across published artifacts, in alphabetical order. Before you publish or tag an artifact, call list_tags. Reuse existing tags instead of inventing near-duplicates, such as "trip" and "travel".',
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
     },
     () => {
@@ -532,7 +531,7 @@ export function buildMcpServer(db: Db): McpServer {
     {
       title: 'Rename or delete a tag',
       description:
-        'Consolidates the tag vocabulary across the whole gallery. Tags are chosen one session at a time with no memory of earlier ones, so near-duplicates accumulate ("trip" / "trips" / "travel"); list_tags only helps you avoid new ones, this fixes the ones already there. action "rename" renames a tag on every artifact that carries it — renaming into a tag that already exists merges the two, leaving no duplicates. action "delete" removes a tag from every artifact; the artifacts themselves are untouched. Both apply to archived and deleted artifacts too, so a restored artifact comes back with the corrected tags. A tag nothing carries is not an error — you get affected 0. Call list_tags first to see the exact spellings.',
+        'Consolidates the tag vocabulary across the whole gallery. Each session chooses tags with no memory of earlier sessions, so near-duplicates accumulate, such as "trip", "trips", and "travel". list_tags helps you avoid new near-duplicates. manage_tags fixes the ones that already exist:\n- action "rename" renames a tag on every artifact that carries it. If the new name is an existing tag, the two tags merge and no duplicate remains.\n- action "delete" removes a tag from every artifact. The artifacts themselves are untouched.\nBoth actions also apply to archived and deleted artifacts, so a restored artifact comes back with the corrected tags. A tag that no artifact carries is not an error, and the result reports `affected: 0`. Call list_tags first to see the exact spellings.',
       inputSchema: {
         action: z.enum(['rename', 'delete']).describe('"rename" a tag, or "delete" it everywhere.'),
         tag: z.string().min(1).describe('The existing tag to rename or delete.'),
@@ -565,7 +564,7 @@ export function buildMcpServer(db: Db): McpServer {
 
       if (!normalized) {
         return errorResult(
-          `action "rename" requires a non-empty "to" — the tag name to rename "${tag}" into. To remove the tag instead, call manage_tags with action "delete".`,
+          `action "rename" requires a non-empty "to". Pass the tag name to rename "${tag}" into. To remove the tag instead, call manage_tags with action "delete".`,
         );
       }
 
@@ -585,7 +584,7 @@ export function buildMcpServer(db: Db): McpServer {
     {
       title: 'Get artifact',
       description:
-        'Fetches an artifact’s metadata and the body of a specific version (default: latest), plus the list of all available version numbers. Call it before update_artifact when revising, so your new body builds on what is actually published. `state` holds the owner’s saved interaction state (e.g. which Checklist statePath items they checked), or null if untouched. `stateUpdatedAt` is when state last changed, or null if never. To find fresh owner input across artifacts, call list_artifacts with `sort: "state-updated-desc"`.',
+        'Fetches an artifact’s metadata, the body of one version, and the list of all version numbers. The version defaults to the latest. Before you revise an artifact with update_artifact, call get_artifact, so the new body builds on what is published. `state` holds the owner’s saved interaction state, or null if it is untouched. For example, `state` records which Checklist items the owner checked under a statePath. `stateUpdatedAt` is when the state last changed, or null if it never changed. To find fresh owner input across artifacts, call list_artifacts with `sort: "state-updated-desc"`.',
       inputSchema: {
         id: z.string().describe('Artifact id.'),
         version: z
@@ -593,7 +592,7 @@ export function buildMcpServer(db: Db): McpServer {
           .int()
           .positive()
           .optional()
-          .describe('Version number; defaults to the latest.'),
+          .describe('Version number. Defaults to the latest.'),
       },
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
     },
@@ -639,7 +638,7 @@ export function buildMcpServer(db: Db): McpServer {
     {
       title: 'Archive or unarchive artifact',
       description:
-        'Archives an artifact, or restores an archived one. Archiving keeps the artifact, its versions, and its url intact and still fetchable by get_artifact — it only drops out of list_artifacts unless you ask for `archived: true`. Use it to clear finished work out of the default listing; use delete_artifact only when the artifact should stop existing.',
+        'Archives an artifact, or restores an archived one. Archiving keeps the artifact, its versions, and its url intact, and get_artifact can still fetch it. An archived artifact drops out of list_artifacts unless you pass `archived: true`. Use archiving to clear finished work out of the default listing. Use delete_artifact only when the artifact must stop existing.',
       inputSchema: {
         id: z.string().describe('Artifact id.'),
         archived: z.boolean().describe('true to archive, false to restore to the default listing.'),
@@ -667,7 +666,7 @@ export function buildMcpServer(db: Db): McpServer {
     {
       title: 'Delete artifact',
       description:
-        'Soft-deletes an artifact and all of its versions; it stops appearing in list_artifacts and get_artifact afterward. Deleting an already-deleted artifact succeeds as a no-op. To revise content, prefer update_artifact — it keeps the artifact’s id, url, and version history.',
+        'Soft-deletes an artifact and all of its versions. After the delete, list_artifacts and get_artifact no longer return the artifact. Deleting an already deleted artifact succeeds and changes nothing. To revise content, prefer update_artifact, because it keeps the artifact’s id, url, and version history.',
       inputSchema: { id: z.string().describe('Artifact id.') },
       annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true },
     },

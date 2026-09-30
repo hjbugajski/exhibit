@@ -137,7 +137,7 @@ export function ExhibitBlock({ json }: { json: string }) {
     return (
       <ExhibitError
         json={json}
-        message='This exhibit block isn’t a JSON object with a `type` — expected { "type": ComponentName, "props": { … } }.'
+        message='This exhibit block is not a JSON object with a "type" field. Write it as { "type": ComponentName, "props": { … } }.'
       />
     );
   }

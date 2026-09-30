@@ -48,7 +48,7 @@ export function SignInView({
       if (!email) {
         forgotPassword.setStatus({
           kind: 'error',
-          message: 'Enter your email first, then request a reset link.',
+          message: 'Email is required to request a reset link.',
         });
         return;
       }
@@ -61,7 +61,7 @@ export function SignInView({
       if (error) {
         forgotPassword.setStatus({
           kind: 'error',
-          message: error.message ?? 'Could not request a reset link.',
+          message: error.message ?? 'Could not request a reset link. Try again.',
         });
         return;
       }

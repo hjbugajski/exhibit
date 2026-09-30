@@ -30,7 +30,10 @@ function AvatarCard({ seed }: { seed: string }) {
       const { error } = await authClient.updateUser({ image: crypto.randomUUID() });
 
       if (error) {
-        setStatus({ kind: 'error', message: error.message ?? 'Could not update the avatar.' });
+        setStatus({
+          kind: 'error',
+          message: error.message ?? 'Could not update the avatar. Try again.',
+        });
         return;
       }
 
@@ -73,7 +76,10 @@ function EmailCard({ email, mailerAvailable }: { email: string; mailerAvailable:
       const { error } = await authClient.changeEmail({ newEmail: value });
 
       if (error) {
-        setStatus({ kind: 'error', message: error.message ?? 'Could not update the email.' });
+        setStatus({
+          kind: 'error',
+          message: error.message ?? 'Could not update the email. Try again.',
+        });
         return;
       }
 
@@ -145,7 +151,10 @@ function PasswordCard() {
       });
 
       if (error) {
-        setStatus({ kind: 'error', message: error.message ?? 'Could not update the password.' });
+        setStatus({
+          kind: 'error',
+          message: error.message ?? 'Could not update the password. Try again.',
+        });
         return;
       }
 
@@ -234,7 +243,7 @@ function ConnectionRow({ connection }: { connection: McpConnection }) {
       <ConfirmDestructiveAction
         action={action}
         actionLabel="Revoke"
-        description="The client’s registration and tokens are removed and it can no longer publish. Access ends immediately, including for tokens it already holds; the client can reconnect later by authorizing again."
+        description="Revoking deletes the client’s registration and tokens, so its access ends immediately, even for tokens it already holds. The client can reconnect later by authorizing again."
         onConfirm={handleRevoke}
         pendingLabel="Revoking…"
         title={`Revoke “${connection.name ?? connection.clientId}”?`}
@@ -250,8 +259,9 @@ function ConnectionsCard({ connections }: { connections: McpConnection[] }) {
       <Card.Header>
         <Card.Title render={<h2>MCP connections</h2>} />
         <Card.Description>
-          Clients that authorized against this gallery via OAuth (claude.ai connectors, Claude Code,
-          scripts). Revoking removes the registration and all of its tokens. See the{' '}
+          Clients that authorized against this gallery through OAuth, such as claude.ai connectors,
+          Claude Code, and scripts. Revoking deletes the client’s registration and tokens, so its
+          access ends immediately, even for tokens it already holds. See the{' '}
           <Link className="text-foreground underline underline-offset-4" to="/docs">
             docs
           </Link>{' '}

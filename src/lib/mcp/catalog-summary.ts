@@ -81,7 +81,7 @@ function summarizeProps(props: z.core.$ZodType): string {
       const optional = value instanceof z.ZodOptional;
       const description = value.description;
 
-      return `${key}${optional ? '?' : ''}: ${summarizeType(value)}${description ? ` — ${description}` : ''}`;
+      return `${key}${optional ? '?' : ''}: ${summarizeType(value)}${description ? `. ${description}` : ''}`;
     })
     .join('; ');
 }
@@ -103,7 +103,7 @@ function componentLines(): string {
     .join('\n\n');
 }
 
-const WIRE_FORMAT_REMINDER = `WIRE FORMAT: a spec is { root: string, elements: { [elementKey]: { type: ComponentName, props: {...}, children: string[] } } }. \`root\` is the key of the top-level element in \`elements\`. \`children\` is an array of other keys in \`elements\` (empty for leaf components). Every key referenced anywhere (root, children) must exist in \`elements\`; do not leave dangling references or orphaned elements.`;
+const WIRE_FORMAT_REMINDER = `WIRE FORMAT: a spec is { root: string, elements: { [elementKey]: { type: ComponentName, props: {...}, children: string[] } } }. \`root\` is the key of the top-level element in \`elements\`. \`children\` is an array of other keys in \`elements\`, empty for leaf components. Every key referenced anywhere (root, children) must exist in \`elements\`; do not leave dangling references or orphaned elements.`;
 
 /**
  * Drops every element `keep` rejects and prunes the retained elements' children down to the

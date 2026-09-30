@@ -12,5 +12,5 @@ export function checkBodySize(serialized: string, label: string): string | null 
     return null;
   }
 
-  return `${label} is ${bytes.toLocaleString()} bytes, which exceeds the ${MAX_BODY_BYTES.toLocaleString()}-byte (1 MB) limit.`;
+  return `The ${label} body is ${bytes.toLocaleString()} bytes, which exceeds the ${MAX_BODY_BYTES.toLocaleString()}-byte (1 MB) limit. Shorten the body, or split the content across several artifacts.`;
 }

@@ -135,7 +135,7 @@ export function findStatePathConflicts(
       conflicts.push({
         paths: [path],
         keys,
-        message: `statePath "${path}" is used by ${keys.length} elements (${keys.join(', ')}); they will silently share state — each interactive element needs a unique statePath.`,
+        message: `statePath "${path}" is used by ${keys.length} elements (${keys.join(', ')}). They share one saved state. Give each interactive element a unique statePath.`,
       });
     }
   }
@@ -153,7 +153,7 @@ export function findStatePathConflicts(
       conflicts.push({
         paths: [shorter.path, longer.path],
         keys: [shorter.key, longer.key],
-        message: `statePath "${shorter.path}" (${shorter.key}) contains "${longer.path}" (${longer.key}); a write to "${shorter.path}" replaces the value at "${longer.path}" — give each interactive element a statePath that is not a prefix of another.`,
+        message: `statePath "${shorter.path}" (${shorter.key}) contains "${longer.path}" (${longer.key}). A write to "${shorter.path}" replaces the value at "${longer.path}". Give each interactive element a statePath that is not a prefix of another.`,
       });
     }
   }
@@ -265,7 +265,7 @@ function findTabsChildCountMismatchErrors(elements: Record<string, unknown>): Ar
         element: key,
         component: 'Tabs',
         path: `elements.${key}.props.items`,
-        message: `Tabs has ${items.length} item(s) but ${children.length} child(ren); items and children must match one-to-one.`,
+        message: `Tabs item count ${items.length} does not match child count ${children.length}. Items and children must match one to one.`,
       });
     }
   }

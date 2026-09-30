@@ -30,7 +30,9 @@ export function ResetPasswordView({ token }: { token?: string }) {
               if (error) {
                 setStatus({
                   kind: 'error',
-                  message: error.message ?? 'Could not reset the password.',
+                  message:
+                    error.message ??
+                    'Could not reset the password. Request a new reset link from the sign-in page.',
                 });
                 return;
               }

@@ -131,7 +131,7 @@ describe('ArtifactDetailView', () => {
     });
 
     expect(await screen.findByText('Kyoto in Three Days')).toBeTruthy();
-    expect(screen.getByRole('heading', { name: 'Day 1 — Saturday' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Day 1: Sunday' })).toBeTruthy();
 
     const panel = screen.getByRole('tabpanel');
     expect(screen.getByRole('tab', { name: 'Rendered' }).getAttribute('aria-controls')).toBe(

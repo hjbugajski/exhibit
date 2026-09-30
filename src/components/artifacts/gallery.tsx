@@ -125,7 +125,7 @@ function Search() {
       aria-label="Search artifacts"
       className="min-w-48 flex-1"
       onChange={(event) => setQuery(event.target.value)}
-      placeholder="Search title and description…"
+      placeholder="Search titles and descriptions"
       type="search"
       value={query}
     />
@@ -349,8 +349,8 @@ function Empty() {
           </EmptyPrimitive.Media>
           <EmptyPrimitive.Title>No artifacts yet</EmptyPrimitive.Title>
           <EmptyPrimitive.Description>
-            Publish one from Claude via MCP: connect it to this app’s <code>/mcp</code> endpoint and
-            use the <code>publish_spec</code>, <code>publish_markdown</code>, or{' '}
+            Publish one from Claude through MCP: connect it to this app’s <code>/mcp</code> endpoint
+            and use the <code>publish_spec</code>, <code>publish_markdown</code>, or{' '}
             <code>publish_html</code> tool.
           </EmptyPrimitive.Description>
         </EmptyPrimitive.Header>

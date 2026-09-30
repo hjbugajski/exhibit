@@ -128,10 +128,10 @@ export const catalog = defineCatalog(schema, {
     Grid: {
       slots: ['default'],
       description:
-        'Grid of children with consistent spacing. 1 column is the default vertical-flow container; 2–4 columns suit cards or short items that compare well side by side.',
+        'Grid of children with consistent spacing. 1 column is the default vertical-flow container; 2 to 4 columns suit cards or short items that compare well side by side.',
       props: z.object({
         columns: columns.describe(
-          'Number of columns at desktop width (1–4). Always collapses to 1 column on small screens.',
+          'Number of columns at desktop width. Always collapses to 1 column on small screens.',
         ),
       }),
     },
@@ -149,7 +149,7 @@ export const catalog = defineCatalog(schema, {
     Tabs: {
       slots: ['default'],
       description:
-        'Tabbed container: one label per child, child i renders under items[i]. Use for alternate views of the same topic (e.g. two proposals, before/after). Give each tab exactly one child — use a 1-column Grid to group multiple blocks.',
+        'Tabbed container: one label per child, and child i renders under items[i]. Use for alternate views of one topic, such as two proposals or before and after. Give each tab exactly one child; use a 1-column Grid to group multiple blocks.',
       props: z.object({
         items: z
           .array(z.string().max(SHORT_MAX))
@@ -169,14 +169,14 @@ export const catalog = defineCatalog(schema, {
     },
     Divider: {
       description:
-        'Horizontal separator line between blocks. Use sparingly — block spacing usually suffices.',
+        'Horizontal separator line between blocks. Use sparingly; block spacing usually suffices.',
       props: z.object({}),
     },
 
     // Typography
     Heading: {
       description:
-        'Standalone heading, independent of Section titles. Use sparingly — prefer Section title/subtitle for structure.',
+        'Standalone heading, independent of Section titles. Use sparingly; prefer Section title and subtitle for structure.',
       props: z.object({
         level: z
           .union([z.literal(1), z.literal(2), z.literal(3)])
@@ -188,24 +188,24 @@ export const catalog = defineCatalog(schema, {
     },
     Prose: {
       description:
-        'Markdown-rendered body text — the primary workhorse for paragraphs, lists, links, bold/italic, and blockquotes. Use for any free-form writing.',
+        'Markdown body text for paragraphs, lists, links, bold, italic, and blockquotes. Use for any free-form writing.',
       props: z.object({
         markdown: z
           .string()
           .max(LONG_MAX)
           .describe(
-            'CommonMark + GFM markdown source. Raw HTML is never interpreted (it shows as literal text); links must be http(s) to render.',
+            'CommonMark and GFM source. Raw HTML shows as literal text; only http(s) links render.',
           ),
       }),
     },
     Callout: {
       description:
-        'Boxed aside that draws attention to a tip, warning, success note, or side note. Use sparingly — one or two per section, not for every paragraph.',
+        'Boxed aside that draws attention to a tip, warning, success note, or side note. Use sparingly: one or two per section, not for every paragraph.',
       props: z.object({
         variant: z
           .enum(['default', 'info', 'success', 'warning', 'danger'])
           .describe(
-            'Tone: default (aside, least urgent), info (neutral tip), success (good news / confirmation), warning (caution), danger (problem / blocker).',
+            'Tone: default (aside, least urgent), info (neutral tip), success (good news or confirmation), warning (caution), danger (problem or blocker).',
           ),
         title: z
           .string()
@@ -217,7 +217,7 @@ export const catalog = defineCatalog(schema, {
     },
     Quote: {
       description:
-        'Block quotation, optionally attributed. Use for a notable quote from a source, guide, or person — not for emphasis on your own writing.',
+        'Block quotation, optionally attributed. Use for a notable quote from a source, guide, or person, not for emphasis on your own writing.',
       props: z.object({
         markdown: z.string().max(LONG_MAX).describe('Markdown content of the quotation.'),
         attribution: z
@@ -236,12 +236,12 @@ export const catalog = defineCatalog(schema, {
           .string()
           .max(SHORT_MAX)
           .optional()
-          .describe('Language name shown in the header, e.g. "ts".'),
+          .describe('Language name shown in the header, such as "ts".'),
         filename: z
           .string()
           .max(SHORT_MAX)
           .optional()
-          .describe('Filename shown in the header, e.g. "vite.config.ts".'),
+          .describe('File name shown in the header, such as "vite.config.ts".'),
       }),
     },
 
@@ -249,7 +249,7 @@ export const catalog = defineCatalog(schema, {
     Card: {
       slots: ['default'],
       description:
-        'Bordered container for a self-contained chunk of content — pair with Grid for a set of comparable cards. With `value` it doubles as a key metric (label, big value, optional delta with trend arrow); put several in a Grid for a metrics row.',
+        'Bordered container for a self-contained chunk of content. Pair with Grid for a set of comparable cards. With `value`, it doubles as a key metric: label, big value, and optional delta with trend arrow. Put several in a Grid for a metrics row.',
       props: z
         .object({
           title: z.string().max(SHORT_MAX).optional().describe('Card heading.'),
@@ -258,22 +258,24 @@ export const catalog = defineCatalog(schema, {
             .string()
             .max(SHORT_MAX)
             .optional()
-            .describe('Short label shown in the corner, e.g. a price or status.'),
+            .describe('Short label shown in the corner, such as a price or status.'),
           value: z
             .string()
             .max(SHORT_MAX)
             .optional()
-            .describe('Headline metric value, preformatted, e.g. "$48.2k".'),
+            .describe('Headline metric value, preformatted, such as "$48.2k".'),
           delta: z
             .string()
             .max(SHORT_MAX)
             .optional()
-            .describe('Change vs a prior period, preformatted, e.g. "+12% vs Q1". Needs `value`.'),
+            .describe(
+              'Change from a prior period, preformatted, such as "+12% vs Q1". Needs `value`.',
+            ),
           trend: z
             .enum(['up', 'down', 'flat'])
             .optional()
             .describe(
-              'Arrow and color for the delta: up (green), down (red), flat (muted). Pick by desirability, not just sign. Defaults to flat.',
+              'Arrow and color for the delta: up (green), down (red), flat (muted). Pick by desirability, not only sign. Defaults to flat.',
             ),
         })
         .refine((props) => props.value !== undefined || (!props.delta && !props.trend), {
@@ -283,7 +285,7 @@ export const catalog = defineCatalog(schema, {
     },
     Table: {
       description:
-        'Data table for structured rows and columns. Cell values are plain strings or { text, href } links — no markdown; use for facts and figures, not for prose.',
+        'Data table for structured rows and columns. Cell values are plain strings or { text, href } links, never markdown. Use for facts and figures, not for prose.',
       props: z.object({
         columns: z
           .array(
@@ -332,7 +334,7 @@ export const catalog = defineCatalog(schema, {
     },
     KeyValueList: {
       description:
-        'Compact list of label/value pairs, like a spec sheet. Use for facts that do not need a full table (price, duration, dates, etc).',
+        'Compact list of label and value pairs, like a spec sheet. Use for facts that do not need a full table, such as price, duration, and dates.',
       props: z.object({
         items: z
           .array(
@@ -344,7 +346,7 @@ export const catalog = defineCatalog(schema, {
           )
           .max(500)
           .check(uniqueIds)
-          .describe('Ordered list of label/value pairs.'),
+          .describe('Ordered label and value pairs.'),
         columns: z
           .union([z.literal(1), z.literal(2)])
           .optional()
@@ -369,12 +371,12 @@ export const catalog = defineCatalog(schema, {
           )
           .max(500)
           .check(uniqueIds)
-          .describe('Ordered steps, rendered 1, 2, 3, ...'),
+          .describe('Ordered steps, numbered from 1.'),
       }),
     },
     Timeline: {
       description:
-        'Chronological sequence of dated/timed entries. Use for a history, schedule, or sequence of events (not step-by-step instructions — use Steps for that).',
+        'Chronological sequence of dated or timed entries. Use for a history, schedule, or sequence of events. For step-by-step instructions, use Steps.',
       props: z.object({
         items: z
           .array(
@@ -383,7 +385,7 @@ export const catalog = defineCatalog(schema, {
               label: z
                 .string()
                 .max(SHORT_MAX)
-                .describe('Date or time string for this entry, e.g. "9:00 AM" or "March 2024".'),
+                .describe('Date or time string for this entry, such as "9:00 AM" or "March 2024".'),
               title: z.string().max(SHORT_MAX).describe('Short title for the event.'),
               markdown: z.string().max(LONG_MAX).optional().describe('Optional markdown detail.'),
             }),
@@ -395,7 +397,7 @@ export const catalog = defineCatalog(schema, {
     },
     Checklist: {
       description:
-        'Checklist of items. Items with a statePath are interactive: the owner can toggle them in the browser and the state persists (readable back via get_artifact). Omit statePath for display-only items.',
+        'Checklist of items. An item with a statePath is interactive: the owner toggles it in the browser, the state persists, and get_artifact reads it back. Omit statePath for display-only items.',
       props: z.object({
         items: z
           .array(
@@ -406,12 +408,12 @@ export const catalog = defineCatalog(schema, {
                 .boolean()
                 .optional()
                 .describe(
-                  'Whether the item starts checked; defaults to unchecked. For stateful items this is only the default — saved state wins.',
+                  'Whether the item starts checked; defaults to unchecked. For a stateful item, this is only the default; saved state wins.',
                 ),
               statePath: statePath
                 .optional()
                 .describe(
-                  'JSON Pointer under which the checked state is stored, e.g. "/tasks/order-cabinets". Presence makes the item interactive and persisted; keep paths stable across versions.',
+                  'JSON Pointer under which the checked state is stored, such as "/tasks/order-cabinets". A statePath makes the item interactive and persisted. Keep paths stable across versions.',
                 ),
             }),
           )
@@ -433,9 +435,9 @@ export const catalog = defineCatalog(schema, {
     },
     Badge: {
       description:
-        'Small inline label for a status or tag, e.g. "Best value" or "Sold out". Use inline within Card badge/titles or KeyValueList values, not as a standalone block.',
+        'Small inline label for a status or tag, such as "Best value" or "Sold out". Use inline within Card badges and titles or KeyValueList values, not as a standalone block.',
       props: z.object({
-        text: z.string().min(1).max(SHORT_MAX).describe('Badge text — keep to a word or two.'),
+        text: z.string().min(1).max(SHORT_MAX).describe('Badge text of one or two words.'),
         variant: z
           .enum(['default', 'info', 'success', 'warning', 'danger'])
           .optional()
@@ -446,7 +448,7 @@ export const catalog = defineCatalog(schema, {
     },
     Figure: {
       description:
-        'Image with an optional caption. The URL must be https and publicly reachable; the image is lazy-loaded and sent without a referrer.',
+        'Image with an optional caption. The URL must be https and publicly reachable. The image is lazy-loaded and requested without a referrer.',
       props: z.object({
         src: z
           .string()
@@ -465,23 +467,23 @@ export const catalog = defineCatalog(schema, {
     // Data & metrics
     Progress: {
       description:
-        'Horizontal progress bar with an optional label and a percentage readout. Use for completion or capacity — a value from 0 to 100.',
+        'Horizontal progress bar with an optional label and a percentage readout. Use for completion or capacity, as a value from 0 to 100.',
       props: z.object({
         label: z
           .string()
           .max(SHORT_MAX)
           .optional()
-          .describe('What the bar measures, e.g. "Demo phase".'),
-        value: z.number().min(0).max(100).describe('Percent complete, 0-100.'),
+          .describe('What the bar measures, such as "Demo phase".'),
+        value: z.number().min(0).max(100).describe('Percent complete, 0 to 100.'),
       }),
     },
     Chart: {
       description:
-        'Single-series chart over categories or time; ~4-24 points, 4-6 donut slices. Use Table for exact values.',
+        'Single-series chart over categories or time: about 4 to 24 points, or 4 to 6 donut slices. Use Table for exact values.',
       props: z.object({
         kind: z
           .enum(['bar', 'line', 'area', 'scatter', 'donut'])
-          .describe('bar/scatter categories, line/area trends, donut shares.'),
+          .describe('bar or scatter for categories, line or area for trends, donut for shares.'),
         data: z
           .array(
             z.object({
@@ -498,12 +500,12 @@ export const catalog = defineCatalog(schema, {
           .string()
           .max(SHORT_MAX)
           .optional()
-          .describe('Series name in the tooltip, e.g. "Cost ($)".'),
+          .describe('Series name in the tooltip, such as "Cost ($)".'),
       }),
     },
 
     Mermaid: {
-      description: `Diagram from mermaid source (no code fence): ${ALLOWED_FAMILIES}; others show the source with the reason.`,
+      description: `Diagram from mermaid source without a code fence. Draws ${ALLOWED_FAMILIES}; other types show the source with the reason.`,
       props: z.object({
         code: z.string().min(1).max(MERMAID_MAX_CHARS),
       }),
@@ -511,17 +513,17 @@ export const catalog = defineCatalog(schema, {
 
     Map: {
       description:
-        'Interactive street map with labeled markers and optional route paths. The view fits the data automatically; give center/zoom only for a plain map with no markers or paths.',
+        'Interactive street map with labeled markers and optional route paths. The view fits the data automatically; pass center and zoom only for a plain map with no markers or paths.',
       props: z.object({
         center: latLng
           .optional()
-          .describe('Initial center; usually omit and let markers/paths fit the view.'),
+          .describe('Initial center; usually omit it so the markers and paths fit the view.'),
         zoom: z
           .number()
           .min(1)
           .max(18)
           .optional()
-          .describe('Initial zoom level (1 world - 18 street); usually omit.'),
+          .describe('Initial zoom level, from 1 (world) to 18 (street); usually omit.'),
         markers: z
           .array(mapMarker)
           .max(MAP_MARKERS_MAX)
@@ -536,32 +538,30 @@ export const catalog = defineCatalog(schema, {
               dashed: z
                 .boolean()
                 .optional()
-                .describe('Render the path dashed, e.g. for a planned or alternate leg.'),
+                .describe('Render the path dashed, such as for a planned or alternate leg.'),
             }),
           )
           .max(500)
           .check(uniqueIds)
           .optional()
-          .describe(
-            'Routes drawn as lines connecting waypoints (straight segments, not road-following).',
-          ),
+          .describe('Routes drawn as straight lines between waypoints, not following roads.'),
       }),
     },
 
     // Interactive
     Choice: {
       description:
-        'Single-select question the owner answers in the browser; the chosen option id is stored at statePath and persists (readable back via get_artifact). Use to ask the owner to pick between options — designs, plans, variants.',
+        'Single-select question the owner answers in the browser. The chosen option id persists at statePath, and get_artifact reads it back. Use to ask the owner to pick between options, such as designs, plans, or variants.',
       props: z.object({
         label: z
           .string()
           .max(SHORT_MAX)
-          .describe('The question or prompt, e.g. "Which direction should I take?"'),
+          .describe('The question or prompt, such as "Which direction should I take?"'),
         options: z
           .array(
             z.object({
               id: listItemId.describe(
-                'Unique id for this option within the list; this exact string is stored when selected. Stable across versions.',
+                'Unique id for this option within the list. The selection stores this exact string. Keep it stable across versions.',
               ),
               label: z.string().max(SHORT_MAX).describe('Option text.'),
               description: z
@@ -585,35 +585,35 @@ export const catalog = defineCatalog(schema, {
           )
           .describe('Options in display order.'),
         statePath: statePath.describe(
-          'JSON Pointer where the selected option id is stored, e.g. "/decisions/logo-direction". Keep paths stable across versions.',
+          'JSON Pointer where the selected option id is stored, such as "/decisions/logo-direction". Keep paths stable across versions.',
         ),
       }),
     },
     NoteBox: {
       description:
-        'Free-form text box the owner can type into; the text is stored at statePath and persists (readable back via get_artifact). Use to collect feedback or an answer to an open question.',
+        'Free-form text box the owner types into. The text persists at statePath, and get_artifact reads it back. Use to collect feedback or an answer to an open question.',
       props: z.object({
         label: z
           .string()
           .max(SHORT_MAX)
-          .describe('What you are asking for, e.g. "Anything to change?"'),
+          .describe('What you are asking for, such as "Anything to change?"'),
         placeholder: z
           .string()
           .max(SHORT_MAX)
           .optional()
           .describe('Hint text shown while the box is empty.'),
         statePath: statePath.describe(
-          'JSON Pointer where the text is stored, e.g. "/feedback/homepage". Keep paths stable across versions.',
+          'JSON Pointer where the text is stored, such as "/feedback/homepage". Keep paths stable across versions.',
         ),
       }),
     },
     Rating: {
       description:
-        'Five-star rating the owner sets in the browser; the number (1-5) is stored at statePath and persists (readable back via get_artifact). Use to ask the owner to score an option or result.',
+        'Five-star rating the owner sets in the browser. The number, 1 to 5, persists at statePath, and get_artifact reads it back. Use to ask the owner to score an option or result.',
       props: z.object({
-        label: z.string().max(SHORT_MAX).describe('What is being rated, e.g. "Draft 2".'),
+        label: z.string().max(SHORT_MAX).describe('What is being rated, such as "Draft 2".'),
         statePath: statePath.describe(
-          'JSON Pointer where the rating number is stored, e.g. "/ratings/draft-2". Keep paths stable across versions.',
+          'JSON Pointer where the rating number is stored, such as "/ratings/draft-2". Keep paths stable across versions.',
         ),
       }),
     },
@@ -628,25 +628,25 @@ export const catalog = defineCatalog(schema, {
           .string()
           .max(SHORT_MAX)
           .optional()
-          .describe('Itinerary title, e.g. "Kyoto in Five Days".'),
+          .describe('Itinerary title, such as "Kyoto in Five Days".'),
         dateRange: z
           .string()
           .max(SHORT_MAX)
           .optional()
-          .describe('Human-readable date range, e.g. "May 3 - May 8, 2026".'),
+          .describe('Human-readable date range, such as "May 3 to 8, 2026".'),
       }),
     },
     Day: {
       slots: ['default'],
       description:
-        'One day in an Itinerary; children are Stops, optionally mixed with other blocks (Weather, Trail, Figure). Stops with coordinates appear on an automatic day map, numbered in order; do not add a Map for them.',
+        'One day in an Itinerary. Children are Stops, optionally mixed with other blocks such as Weather, Trail, or Figure. Stops with coordinates appear on an automatic day map, numbered in order; do not add a Map for them.',
       props: z.object({
-        label: z.string().max(SHORT_MAX).describe('Day label, e.g. "Day 1 — Saturday".'),
+        label: z.string().max(SHORT_MAX).describe('Day label, such as "Day 1: Sunday".'),
         date: z
           .string()
           .max(SHORT_MAX)
           .optional()
-          .describe('Calendar date for this day, e.g. "May 3, 2026".'),
+          .describe('Calendar date for this day, such as "May 3, 2026".'),
         summary: z
           .string()
           .max(SHORT_MAX)
@@ -661,13 +661,16 @@ export const catalog = defineCatalog(schema, {
           .string()
           .max(SHORT_MAX)
           .optional()
-          .describe('Clock time for this stop, e.g. "9:30 AM".'),
+          .describe('Clock time for this stop, such as "9:30 AM".'),
         duration: z
           .string()
           .max(SHORT_MAX)
           .optional()
-          .describe('How long this stop takes, e.g. "1.5 hours".'),
-        title: z.string().max(SHORT_MAX).describe('Name of the stop, e.g. "Fushimi Inari Shrine".'),
+          .describe('How long this stop takes, such as "1.5 hours".'),
+        title: z
+          .string()
+          .max(SHORT_MAX)
+          .describe('Name of the stop, such as "Fushimi Inari Shrine".'),
         location: z.string().max(SHORT_MAX).optional().describe('Neighborhood, address, or area.'),
         coordinates: latLng.optional().describe('Pins the stop on the day and trip maps.'),
         markdown: z
@@ -686,7 +689,7 @@ export const catalog = defineCatalog(schema, {
           .regex(/^https?:\/\//i, 'must be an http(s) URL')
           .optional()
           .describe('Booking or info link; the title links to it.'),
-        cost: z.string().max(SHORT_MAX).optional().describe('Price as shown, e.g. "¥500".'),
+        cost: z.string().max(SHORT_MAX).optional().describe('Price as shown, such as "¥500".'),
         status: z.enum(['booked', 'planned', 'optional']).optional(),
         transit: z
           .object({
@@ -710,7 +713,7 @@ export const catalog = defineCatalog(schema, {
           .string()
           .max(SHORT_MAX)
           .optional()
-          .describe('How long the hike takes, e.g. "3 hours".'),
+          .describe('How long the hike takes, such as "3 hours".'),
         track: trackPoints.optional().describe('The trail line, start to finish.'),
         waypoints: z
           .array(mapMarker)
@@ -735,7 +738,7 @@ export const catalog = defineCatalog(schema, {
       // Field descriptions inside a union never reach get_catalog, so this description carries the
       // semantics of both branches.
       description:
-        'Daily forecast strip covering 1-7 days. With source "static", you supply the days: date as displayed, high and low in unit, precipitationChance as a percentage. With source "live", the app fetches a forecast for location each time the artifact is viewed; use it for trips within the next week.',
+        'Daily forecast strip covering 1 to 7 days. With source "static", you pass the days: date as displayed, high and low in unit, precipitationChance as a percentage. With source "live", the app fetches a forecast for location each time the artifact is viewed; use it for trips within the next week.',
       props: z.discriminatedUnion('source', [
         z.object({
           source: z.literal('static'),

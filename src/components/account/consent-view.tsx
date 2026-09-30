@@ -47,7 +47,11 @@ export function ConsentView({ client, clientId, scope }: ConsentViewProps) {
       });
 
       if (error || !data?.url) {
-        setStatus({ kind: 'error', message: error?.message ?? 'Could not process consent.' });
+        setStatus({
+          kind: 'error',
+          message:
+            error?.message ?? 'Could not process consent. Start the connection again from Claude.',
+        });
         return;
       }
 
@@ -88,8 +92,8 @@ export function ConsentView({ client, clientId, scope }: ConsentViewProps) {
               )}
             </Alert.Title>
             <Alert.Description>
-              This is the first time you are seeing this client. Allow it only if you just started
-              connecting one yourself.
+              This is the first time you are seeing this client. Allow it only if you started
+              connecting a client yourself in the last few minutes.
             </Alert.Description>
           </Alert.Root>
         ) : null}

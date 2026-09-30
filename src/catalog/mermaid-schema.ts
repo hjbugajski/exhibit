@@ -16,7 +16,7 @@ const labels = builtinFamilies.map((family) => FAMILY_LABELS[family.id] ?? famil
 
 /**
  * The families the house engine draws, derived from `builtinFamilies` in registration order and
- * joined as prose ("a, b and c"). Every other header keeps its source on screen with the reason, so
+ * joined as prose ("a, b, and c"). Every other header keeps its source on screen with the reason, so
  * this list is a promise about drawings, not about what parses.
  */
-export const ALLOWED_FAMILIES = `${labels.slice(0, -1).join(', ')} and ${labels.at(-1)}`;
+export const ALLOWED_FAMILIES = `${labels.slice(0, -1).join(', ')}, and ${labels.at(-1)}`;
