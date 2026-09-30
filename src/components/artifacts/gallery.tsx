@@ -121,10 +121,10 @@ function Search() {
 
   return (
     <Input
-      aria-label="Search by title"
+      aria-label="Search artifacts"
       className="min-w-48 flex-1"
       onChange={(event) => setQuery(event.target.value)}
-      placeholder="Search by title…"
+      placeholder="Search title and description…"
       type="search"
       value={query}
     />

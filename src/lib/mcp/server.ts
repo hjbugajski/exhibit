@@ -433,7 +433,10 @@ export function buildMcpServer(db: Db): McpServer {
       description:
         'Lists published artifacts (metadata only, no bodies), sortable, with cursor pagination. Use it to find an artifact’s id before get_artifact, update_artifact, or delete_artifact, and to check what already exists before publishing something similar. Archived artifacts are excluded unless you pass `archived: true`, which returns those and only those. Each item’s `stateUpdatedAt` is when the owner’s interaction state last changed, or null if untouched. To find fresh owner input, pass `sort: "state-updated-desc"` and `hasState: true`. To limit the result to input at or after a timestamp, pass `stateSince`.',
       inputSchema: {
-        query: z.string().optional().describe('Case-insensitive substring match on title.'),
+        query: z
+          .string()
+          .optional()
+          .describe('Case-insensitive substring match on title or description.'),
         tag: z
           .string()
           .optional()

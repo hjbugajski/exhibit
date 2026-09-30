@@ -550,6 +550,20 @@ describe('list_artifacts', () => {
     expect(items2).toHaveLength(1);
   });
 
+  it('matches query against the description', async () => {
+    await callTool(client, 'publish_html', {
+      title: 'Planning notes',
+      description: 'weekend trip to Kyoto',
+      html: '<html>a</html>',
+    });
+    await callTool(client, 'publish_html', { title: 'Budget', html: '<html>b</html>' });
+
+    const result = await callTool(client, 'list_artifacts', { query: 'kyoto' });
+    const items = result.structuredContent?.items as { title: string }[];
+
+    expect(items.map((item) => item.title)).toEqual(['Planning notes']);
+  });
+
   it('sorts alphabetically by title when sort is title-asc', async () => {
     await callTool(client, 'publish_spec', { title: 'Gamma', spec: itineraryFixture });
     await callTool(client, 'publish_html', { title: 'Alpha', html: '<html>a</html>' });

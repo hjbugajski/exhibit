@@ -121,7 +121,7 @@ function renderHome(initialEntry = '/', items: Artifact[] = []) {
  */
 async function mountHome(initialEntry?: string, items?: Artifact[]) {
   const harness = renderHome(initialEntry, items);
-  const input = await screen.findByLabelText<HTMLInputElement>('Search by title');
+  const input = await screen.findByLabelText<HTMLInputElement>('Search artifacts');
 
   vi.useFakeTimers();
 

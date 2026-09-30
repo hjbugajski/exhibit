@@ -460,8 +460,8 @@ export function listVersions(db: Db, artifactId: string): { version: number; cre
 }
 
 /**
- * Excludes soft-deleted artifacts unless `deleted` is set. `query` substring-matches the title;
- * `tags` matches ANY listed tag (OR).
+ * Excludes soft-deleted artifacts unless `deleted` is set. `query` substring-matches the title or
+ * the description; `tags` matches ANY listed tag (OR).
  */
 export function listArtifacts(db: Db, input: ListArtifactsInput = {}): ListArtifactsResult {
   const limit = input.limit ?? 20;
@@ -479,7 +479,10 @@ export function listArtifacts(db: Db, input: ListArtifactsInput = {}): ListArtif
   }
 
   if (input.query) {
-    conditions.push(sql`${artifacts.title} like ${`%${escapeLike(input.query)}%`} escape '\\'`);
+    const pattern = `%${escapeLike(input.query)}%`;
+    conditions.push(
+      sql`(${artifacts.title} like ${pattern} escape '\\' or ${artifacts.description} like ${pattern} escape '\\')`,
+    );
   }
 
   if (input.type) {

@@ -328,6 +328,51 @@ describe('listArtifacts', () => {
     expect(result.items.map((item) => item.title)).toEqual(['100% Done']);
   });
 
+  it('matches a query that appears only in the description', () => {
+    createArtifact(db, {
+      title: 'Notes',
+      description: 'Weekend trip to Kyoto',
+      type: 'markdown',
+      body: '# hi',
+    });
+    createArtifact(db, { title: 'Other', description: 'Budget', type: 'spec', body: 'v1' });
+
+    const result = listArtifacts(db, { query: 'kyoto' });
+
+    expect(result.items.map((item) => item.title)).toEqual(['Notes']);
+  });
+
+  it('excludes a null-description row whose title misses, and keeps a title match', () => {
+    createArtifact(db, { title: 'Kyoto plan', type: 'spec', body: 'v1' });
+    createArtifact(db, { title: 'Unrelated', type: 'spec', body: 'v1' });
+
+    const result = listArtifacts(db, { query: 'kyoto' });
+
+    expect(result.items.map((item) => item.title)).toEqual(['Kyoto plan']);
+  });
+
+  it('treats a literal % in a description query as a literal character', () => {
+    createArtifact(db, { title: 'A', description: '100% done', type: 'spec', body: 'v1' });
+    createArtifact(db, { title: 'B', description: '100X done', type: 'spec', body: 'v1' });
+
+    const result = listArtifacts(db, { query: '100%' });
+
+    expect(result.items.map((item) => item.title)).toEqual(['A']);
+  });
+
+  it('keeps a soft-deleted description match out of the live listing', () => {
+    const { artifact } = createArtifact(db, {
+      title: 'Gone',
+      description: 'Kyoto',
+      type: 'spec',
+      body: 'v1',
+    });
+    softDeleteArtifact(db, artifact.id);
+
+    expect(listArtifacts(db, { query: 'kyoto' }).items).toEqual([]);
+    expect(listArtifacts(db, { query: 'kyoto', deleted: true }).items).toHaveLength(1);
+  });
+
   it('treats a literal % in a tag filter as a literal character, not a wildcard', () => {
     createArtifact(db, { title: 'Percent', type: 'spec', tags: ['100%'], body: 'v1' });
     createArtifact(db, { title: 'NotPercent', type: 'spec', tags: ['100X'], body: 'v1' });

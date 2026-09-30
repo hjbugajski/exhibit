@@ -119,3 +119,135 @@ Adapt and keep going when the change still serves the intent, respects the locke
 
 - Phase 2: should results rank by relevance (FTS5 `bm25`) instead of the chosen sort? Default: no. Ranking breaks the sort-keyed cursor (`repository.ts:194-218`); keep the sort order and treat ranking as a separate decision.
 - Phase 2: index every version or only the latest? Default: latest only. Older versions stay browsable but are not what "find that artifact" means.
+
+---
+
+## Phase 2 findings
+
+Measured 2026-09-29 on the working tree after plans 23 and 31 (SQLite 3.53.4 bundled with better-sqlite3 13, macOS, Node 26.10). Harness: a throwaway `src/database/search-spike.int.test.ts` (deleted), on-disk databases under `os.tmpdir()` opened with `openDatabase`, seeded through `createArtifact` + two `updateArtifact` calls (3 versions each). Type mix 40% spec / 40% markdown / 20% html. Bodies built from `src/catalog/fixtures` and `scripts/examples`; 2% of artifacts (20 at 1k, 100 at 5k, spread across all three types) carry a latest body of about 0.98 MB. Every body carries a unique marker word; 40% carry the word `lighthouse`. HTML bodies carry `<style>`, `<script>`, and a comment that contains `lighthouse`, so markup false positives show up. Query timings are p50 / p95 / max over 50 runs after one warm-up, in milliseconds, for the full `listArtifacts`-shaped statement (live, unarchived, `artifact_states` left join, `updated_at desc, id desc`, `limit + 1`).
+
+Queries: hit = `lighthouse` (40% of bodies, no titles), rare = one marker (1 body), miss = `xylophonequartz` (full-scan worst case), short = `zq` (2 characters, in every body).
+
+### Options
+
+- 1: Phase 1 title or description LIKE (baseline, shipped).
+- 2: 1 OR the latest body via the `artifact_versions` subquery LIKE.
+- 3: 1 OR a plain side table `(artifact_id, extracted text)` LIKE.
+- 4a: FTS5 `trigram` over title, description, extracted text; one MATCH.
+- 4b: 1 OR `id IN` an FTS5 `trigram` MATCH over extracted body text only (external content on the side table).
+
+### Query latency (p50 / p95, ms)
+
+| Option                  | N   | hit, 20     | hit, 100    | rare, 100     | miss, 20      | miss, 100     | short, 100           |
+| ----------------------- | --- | ----------- | ----------- | ------------- | ------------- | ------------- | -------------------- |
+| 1 raw SQL               | 1k  | 0.22 / 0.26 | 0.21 / 0.28 | 0.21 / 0.25   | 0.21 / 0.25   | 0.21 / 0.23   | 0.21 / 0.22          |
+| 1 via `listArtifacts()` | 1k  | 0.35 / 0.45 | 0.35 / 0.44 | 0.33 / 0.43   | 0.34 / 0.45   | 0.33 / 0.40   | 0.33 / 0.40          |
+| 2 raw body LIKE         | 1k  | 0.12 / 0.17 | 2.07 / 2.38 | 17.6 / 18.6   | 17.8 / 18.6   | 17.7 / 18.3   | 0.66 / 0.92          |
+| 3 side table LIKE       | 1k  | 0.27 / 0.40 | 2.91 / 3.10 | 13.6 / 14.3   | 13.2 / 13.4   | 13.3 / 13.5   | 0.47 / 0.63          |
+| 4a FTS all columns      | 1k  | 1.87 / 2.18 | 2.03 / 2.23 | 0.31 / 0.50   | 0.08 / 0.15   | 0.08 / 0.20   | 0.07 / 0.07 (0 rows) |
+| 4b FTS body + meta LIKE | 1k  | 0.54 / 0.71 | 0.64 / 0.77 | 0.64 / 0.77   | 0.27 / 0.32   | 0.27 / 0.34   | 0.24 / 0.26 (0 rows) |
+| 1 raw SQL               | 5k  | 1.02 / 1.10 | 0.99 / 1.09 | 0.96 / 1.07   | 0.97 / 1.03   | 0.99 / 1.08   | 0.95 / 1.04          |
+| 1 via `listArtifacts()` | 5k  | 1.21 / 1.37 | 1.18 / 1.30 | 1.09 / 1.35   | 1.13 / 1.48   | 1.14 / 1.43   | 1.13 / 1.35          |
+| 2 raw body LIKE         | 5k  | 0.12 / 0.17 | 2.10 / 2.32 | 100.8 / 176.4 | 93.2 / 157.1  | 92.0 / 122.6  | 0.63 / 0.78          |
+| 3 side table LIKE       | 5k  | 0.85 / 0.99 | 3.79 / 7.78 | 138.2 / 173.6 | 124.5 / 193.3 | 112.8 / 168.1 | 0.53 / 0.80          |
+| 4a FTS all columns      | 5k  | 11.1 / 13.4 | 10.2 / 10.6 | 0.60 / 0.73   | 0.28 / 0.34   | 0.27 / 0.32   | 0.26 / 0.33 (0 rows) |
+| 4b FTS body + meta LIKE | 5k  | 1.94 / 2.23 | 2.19 / 2.38 | 1.61 / 1.75   | 1.18 / 1.29   | 1.15 / 1.27   | 1.14 / 1.23 (0 rows) |
+
+Budget (miss, limit 100, 5k, p95 ≤ 50 ms): 2 fails (122.6), 3 fails (168.1), 4a passes (0.32), 4b passes (1.27). Options 2 and 3 are fast only when matches are common enough to fill the page early; a rare hit or a miss scans every body. Rows returned matched expectations in every case (21 / 101 for hit, 1 for rare, 0 for miss).
+
+Queries under 3 characters: a trigram MATCH returns no rows (4a and 4b return 0 rows for `zq`, which is in every body). A LIKE on the FTS table falls back to a full scan and does match. Option 4b still applies the title or description LIKE, so a 1 to 2 character query keeps exactly the Phase 1 behaviour; 4a loses it.
+
+### Markup false positives (latest bodies containing the word)
+
+| Word         | N   | Raw body LIKE (option 2) | Extracted text (options 3, 4)                                  |
+| ------------ | --- | ------------------------ | -------------------------------------------------------------- |
+| `props`      | 5k  | 5000                     | 1000 (the word is in fixture prose)                            |
+| `div`        | 5k  | 2361                     | 0                                                              |
+| `script`     | 5k  | 2965                     | 1307 (prose)                                                   |
+| `statePath`  | 5k  | 1724                     | 0                                                              |
+| `lighthouse` | 5k  | 3000                     | 2000 (the correct count; the other 1000 were in HTML comments) |
+
+Raw body LIKE matches every spec body for `props`, and every HTML body for words inside comments, scripts, and styles. It is not a usable search even at a size where it would be fast.
+
+### Extraction
+
+Prototype contract (kept for the design): spec → string values under each element's `props`, skipping `type`, `statePath`, `href`, `src`, `url`, `id` and values starting with `http:`, `https:`, `mailto:`, `data:` or `/`; markdown → `parseMarkdown` with `markdownParseOptions` and `commentComponentsExtension`, collecting `text` and `inlineCode` values, string values under `exhibit` fence `props`, and directive attribute strings (the last is a deviation from the plan's list; directive attributes such as a Card `title` are rendered content); html → regular expressions only: drop comments, then `script`, `style`, `template`, `noscript` elements (an unclosed one runs to end of input), replace every tag with a space, decode named, decimal and hex entities, collapse whitespace. The HTML path uses no parser, no DOM, and no dependency. Its output is only a match target, never rendered or returned, so leaked fragments from malformed markup cost precision, not safety.
+
+| Body                     | Extraction p50 / p95 / max (ms) |
+| ------------------------ | ------------------------------- |
+| All latest bodies, 5k    | 0.03 / 0.20 / 66.8              |
+| Spec ≈ 1 MB (5k set)     | 5.1 / 16.6 / 20.1               |
+| Markdown ≈ 1 MB (5k set) | 35.1 / 63.1 / 66.8              |
+| HTML ≈ 1 MB (5k set)     | 12.9 / 33.4 / 38.4              |
+
+### Write overhead per publish (1k database, index populated)
+
+Overhead = extraction + the index write, each write in its own transaction. Baseline = the existing `updateArtifact` body append, for scale.
+
+| Bodies                 | Baseline `updateArtifact` p50 / p95 | Extract p95 | Option 3 overhead p50 / p95 / max | Option 4b overhead p50 / p95 / max |
+| ---------------------- | ----------------------------------- | ----------- | --------------------------------- | ---------------------------------- |
+| ≤ 200 KB (300 samples) | 0.26 / 0.45                         | 0.20        | 0.07 / 0.23 / 6.3                 | 0.36 / 1.75 / 13.4                 |
+| ≈ 1 MB (20 samples)    | 4.62 / 12.07                        | 26.2        | 13.4 / 35.7 / 40.4                | 77.3 / 116.9 / 124.4               |
+
+Budgets: ≤ 20 ms p95 at ≤ 200 KB (4b: 1.75, passes); ≤ 250 ms at 1 MB (4b: max 124.4 including extraction; the cold 1 MB markdown extraction max was 66.8, so the worst case stays under 170, passes). The FTS upsert of a 1 MB text dominates (p95 94.5 ms).
+
+### Size
+
+| N   | DB before | Latest bodies | Extracted text | Side table delta | Body FTS delta (4b) | All-column FTS delta (4a) |
+| --- | --------- | ------------- | -------------- | ---------------- | ------------------- | ------------------------- |
+| 1k  | 30.4 MB   | 22.3 MB       | 17.1 MB        | +17.5 MB         | +52.6 MB            | +56.9 MB                  |
+| 5k  | 151.2 MB  | 111.3 MB      | 83.2 MB        | +85.1 MB         | +253.4 MB           | +258.7 MB                 |
+
+The trigram index is about 3x the extracted text, and 4b adds the side table (1x) on top, so 4b costs about 4x the extracted latest-body text. The synthetic set is a worst case: the 2% of artifacts near 1 MB hold about 90% of the text. For typical 3 to 20 KB artifacts the absolute cost is small (about 60 KB of index per 15 KB artifact). Initial FTS backfill insert time: 1.35 s at 1k, 12.2 s at 5k.
+
+### Drizzle-kit and the drift gate (verified on a scratch copy of the schemas and migrations)
+
+`drizzle-kit generate --custom --name artifact_search` (0.31.11) writes an empty `0005_artifact_search.sql`, a journal entry, and a `0005_snapshot.json` whose body equals `0004_snapshot.json` (only `id` / `prevId` and key order differ). With the DDL below pasted into that file, the drizzle migrator applies it (statements split by `--> statement-breakpoint`; a trigger's `BEGIN … END` is one statement), and a following `drizzle-kit generate` reports "No schema changes, nothing to migrate", so the CI drift gate stays clean. drizzle-kit reads only `src/database/schemas`, so tables that are not declared there are invisible to it. The same scratch check confirmed that deleting an `artifacts` row cascades into the side table and fires the delete trigger (FTS `integrity-check` passes, the text no longer matches).
+
+### Design (locked for the follow-up plan)
+
+- Shape: option 4b. A side table holds the extracted text of the latest version; an external-content FTS5 `trigram` table indexes it; triggers on the side table keep the index in sync. Title and description stay on the Phase 1 LIKE. Reasons over 4a: metadata updates never touch the index, 1 to 2 character queries keep their Phase 1 results, the common-hit query is about 4x faster at 5k (2.4 vs 10.6 ms p95, limit 100), and deletes key on an integer rowid instead of scanning an `UNINDEXED` text column.
+- DDL, in one custom migration (`pnpm db:generate --custom --name artifact_search`, hand-written SQL, snapshot unchanged):
+
+```sql
+CREATE TABLE `artifact_search_text` (
+	`rowid` integer PRIMARY KEY,
+	`artifact_id` text NOT NULL UNIQUE REFERENCES `artifacts`(`id`) ON DELETE cascade,
+	`body` text NOT NULL
+);
+--> statement-breakpoint
+CREATE VIRTUAL TABLE `artifact_search` USING fts5(body, content='artifact_search_text', content_rowid='rowid', tokenize='trigram');
+--> statement-breakpoint
+CREATE TRIGGER `artifact_search_text_ai` AFTER INSERT ON `artifact_search_text` BEGIN
+  INSERT INTO artifact_search(rowid, body) VALUES (new.rowid, new.body);
+END;
+--> statement-breakpoint
+CREATE TRIGGER `artifact_search_text_ad` AFTER DELETE ON `artifact_search_text` BEGIN
+  INSERT INTO artifact_search(artifact_search, rowid, body) VALUES ('delete', old.rowid, old.body);
+END;
+--> statement-breakpoint
+CREATE TRIGGER `artifact_search_text_au` AFTER UPDATE ON `artifact_search_text` BEGIN
+  INSERT INTO artifact_search(artifact_search, rowid, body) VALUES ('delete', old.rowid, old.body);
+  INSERT INTO artifact_search(rowid, body) VALUES (new.rowid, new.body);
+END;
+```
+
+- The side table is not declared in `src/database/schemas`. If drizzle-kit owned it, a future table-recreate migration would drop it with its triggers. Declare the drizzle table object for queries in the search module instead, outside the schemas folder.
+- Tokenizer: `trigram` with defaults (`case_sensitive 0`, no diacritic removal). It keeps substring semantics; case folding becomes Unicode-aware for body matches, which is a widening of today's ASCII-only LIKE, not a narrowing.
+- Extraction: one server-only module, `src/database/search-text.ts`, implementing the contract in "Extraction" above, latest version only. It uses relative imports (see the backfill below), and `src/lib/markdown-parse-options.ts` is already dependency-free.
+- Write paths, inside their existing transactions: `createArtifact` inserts the row; `insertNextVersion` (shared by `updateArtifact` with a body and by `revertToVersion`) upserts with `INSERT … ON CONFLICT(artifact_id) DO UPDATE SET body = excluded.body`. Never `INSERT OR REPLACE`: the REPLACE deletion does not fire delete triggers unless `recursive_triggers` is on, which would orphan index entries. `updateArtifact` without a body writes nothing to the index. `purgeArtifact` needs no code: the FK cascade deletes the side row and its delete trigger updates the FTS index (verified).
+- Not touched: `softDeleteArtifact`, `restoreArtifact`, `setArtifactArchived`, `setArtifactState`, tag writes. `listArtifacts` keeps filtering liveness and archive on `artifacts`, so a soft-deleted or archived row's index entry is harmless.
+- Backfill: SQL cannot run the extractor, so the migration only creates the schema. A boot step `backfillSearchText(sqlite)` in `src/database/search-text.ts`, called from `src/database/index.ts` right after `openDatabase`, inserts rows for every artifact that has none (`WHERE NOT EXISTS`). It is idempotent and a no-op after the first boot. `index.ts` is on the plain-`node` seed chain, which is why the module must use relative imports. Re-indexing after an extractor change is a later custom migration with `DELETE FROM artifact_search_text;`, which the next boot refills.
+- Query: exposed only through the existing `query` param; no new input, same sort, same cursor. For a query of 3 or more characters, the condition becomes `(title LIKE p OR description LIKE p OR artifacts.id IN (SELECT t.artifact_id FROM artifact_search f JOIN artifact_search_text t ON t.rowid = f.rowid WHERE artifact_search MATCH ?))`, with the MATCH argument the query wrapped as one FTS5 phrase (`"` + query with `"` doubled + `"`), so `%`, `_`, `*`, `-`, `AND` stay literal. Under 3 characters, the body branch is omitted (a trigram MATCH cannot match it). No `bm25` ranking.
+- Copy: the MCP `query` describe and the gallery placeholder then say title, description, or content. The `list_artifacts` description keeps "metadata only, no bodies" (bodies are searched, never returned).
+- Test seams: extractor unit tests per type (spec skipped keys and URLs, markdown text plus fence and directive strings, HTML script, style, comment, entity, unclosed-tag cases); repository tests that a body-only word finds the artifact after create, after update, after revert, and not after purge; that a metadata-only update leaves the index unchanged; that a 2-character query still matches titles; a migration test that the triggers and the virtual table exist and that `INSERT INTO artifact_search(artifact_search) VALUES ('integrity-check')` passes after a write sequence; a backfill test on a database seeded without index rows.
+
+Verdict: go. Build the FTS5 `trigram` body index (option 4b) in a follow-up plan: extraction meets both write budgets without a parser dependency, and the only LIKE-based body option (3) misses the 5k query budget by more than 3x.
+
+What would change the verdict: a real-corpus measurement where the extracted text is much larger than this synthetic set (index size about 4x the text becomes the binding cost; a `unicode61` word index is about a third of the size but drops substring matching); a requirement to return snippets or rank by relevance (needs `bm25` and a different cursor); or a publish-latency requirement under 120 ms for 1 MB bodies (move extraction and the FTS write out of the publish transaction into a deferred job).
+
+Owner decisions for the follow-up plan:
+
+- Accept an index of about 4x the extracted latest-body text on disk.
+- Accept that 1 to 2 character queries search title and description only.
+- Accept Unicode case folding for body matches while titles and descriptions stay ASCII-only LIKE.
