@@ -169,4 +169,8 @@ Code facts re-confirmed at better-auth 1.7.6 and @better-fetch/fetch 1.3.2:
 - The server returns `{ redirect: true, url }` to a fetch request when it resumes an authorize flow.
 - `handleSubmit` in `src/components/account/sign-in-view.tsx` ignores `data` and always calls `navigate`, so a client navigation to `/` follows the cross-document redirect and reaches the `/_authed` `beforeLoad` and `loader`.
 
-Verdict: pending the browser observation. From code alone the efficiency branch is near certain; whether any browser loses the continuation is unknown until observed. Pre-decided fix: return early in `handleSubmit` when `data?.redirect && data.url`.
+Browser observation (2026-09-29, Chromium, dev server on `http://localhost:3100`, fresh client registered by DCR): signing in from `/sign-in?...&sig=...` lands on `/consent` with the authorize parameters intact. The continuation is not lost. Safari and Firefox were not run.
+
+Verdict: fix as an efficiency change. `handleSubmit` now returns early when the sign-in response carries `redirect` and `url`, so no client navigation to `/` runs behind the cross-document redirect. Covered by two cases in `src/components/account/sign-in-view.unit.test.tsx`.
+
+Would change if: Safari or Firefox end on `/` in the same scenario; that would make it a correctness bug in the auth client's redirect plugin rather than in this view.

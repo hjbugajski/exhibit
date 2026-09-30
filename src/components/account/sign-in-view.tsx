@@ -79,10 +79,17 @@ export function SignInView({
     forgotPassword.setStatus(null);
 
     void signIn.run(async () => {
-      const { error } = await authClient.signIn.email({ email, password });
+      const { data, error } = await authClient.signIn.email({ email, password });
 
       if (error) {
         signIn.setStatus({ kind: 'error', message: error.message ?? 'Invalid email or password.' });
+        return;
+      }
+
+      // Signing in from an OAuth authorize request: the server answers with the next URL and the
+      // auth client is already loading it, so a client navigation would only load the gallery
+      // behind a page that is about to be replaced.
+      if (data.redirect && data.url) {
         return;
       }
 

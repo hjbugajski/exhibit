@@ -61,4 +61,45 @@ describe('SignInView', () => {
     expect(await screen.findByText('Invalid email or password.')).toBeTruthy();
     expect(screen.queryByText(RESET_MESSAGE)).toBeNull();
   });
+
+  async function submitCredentials() {
+    fireEvent.change(await screen.findByLabelText('Email'), {
+      target: { value: 'owner@example.com' },
+    });
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'a-password' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
+  }
+
+  it('navigates to the gallery after a plain sign-in', async () => {
+    vi.mocked(authClient.signIn.email).mockResolvedValue({
+      data: { redirect: false },
+      error: null,
+    } as never);
+
+    renderWithRouter(<SignInView resetAvailable={false} />, {
+      mountPath: '/sign-in',
+      extraPaths: ['/'],
+    });
+    await submitCredentials();
+
+    await vi.waitFor(() => expect(screen.queryByRole('button', { name: 'Sign in' })).toBeNull());
+  });
+
+  it('leaves navigation to the server redirect when sign-in resumes an authorize flow', async () => {
+    vi.mocked(authClient.signIn.email).mockResolvedValue({
+      data: { redirect: true, url: 'https://exhibit.example/consent?sig=abc' },
+      error: null,
+    } as never);
+
+    renderWithRouter(<SignInView resetAvailable={false} />, {
+      mountPath: '/sign-in',
+      extraPaths: ['/'],
+    });
+    await submitCredentials();
+
+    await vi.waitFor(() => expect(authClient.signIn.email).toHaveBeenCalled());
+    // Proves a negative, so it needs a settle window: a client navigation would unmount the form.
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(screen.getByRole('button', { name: /sign/i })).toBeTruthy();
+  });
 });
