@@ -1073,15 +1073,18 @@ describe('validateArtifactSpec element tree', () => {
   });
 
   /** Each Itinerary's walk used to descend through every Itinerary nested in it. */
-  it('validates nested Itineraries in work linear in their count', () => {
-    const depth = 2_000;
-    const raw: Record<string, unknown> = {};
+  it('validates nested Itineraries in work linear in their size', () => {
+    const depth = 60;
+    const leaves = Array.from({ length: 20_000 }, (_, i) => `divider-${i}`);
+    const raw: Record<string, unknown> = Object.fromEntries(
+      leaves.map((key) => [key, { type: 'Divider' }]),
+    );
 
     for (let i = 0; i < depth; i += 1) {
       raw[`trip-${i}`] = {
         type: 'Itinerary',
         props: {},
-        children: i + 1 < depth ? [`trip-${i + 1}`] : [],
+        children: i + 1 < depth ? [`trip-${i + 1}`] : leaves,
       };
     }
 
@@ -1095,7 +1098,7 @@ describe('validateArtifactSpec element tree', () => {
     });
 
     expect(errorsOf({ root: 'trip-0', elements })).toEqual([]);
-    expect(reads).toBeLessThan(20 * 2 * depth);
+    expect(reads).toBeLessThan(40 * (depth + leaves.length));
   });
 });
 
@@ -1147,5 +1150,99 @@ describe('validateArtifactSpec live Weather cap', () => {
           '21 Weather blocks use source "live", and an artifact holds at most 20. Each live block fetches a forecast every time the artifact is viewed.',
       },
     ]);
+  });
+});
+
+describe('validateArtifactSpec nesting depth', () => {
+  /** A chain of `depth` Sections, `section-0` outermost, linked through `link`. */
+  function chain(depth: number, link: 'children' | 'slots' = 'children') {
+    const elements: Record<string, unknown> = {};
+
+    for (let i = 0; i < depth; i += 1) {
+      const next = i + 1 < depth ? [`section-${i + 1}`] : [];
+      elements[`section-${i}`] = {
+        type: 'Section',
+        props: {},
+        ...(link === 'children' ? { children: next } : { slots: { default: next } }),
+      };
+    }
+
+    return { root: 'section-0', elements };
+  }
+
+  function errorsOf(spec: unknown) {
+    const result = validateArtifactSpec(spec);
+
+    return result.valid ? [] : result.errors;
+  }
+
+  it('accepts a spec nested 64 levels deep', () => {
+    expect(errorsOf(chain(64))).toEqual([]);
+  });
+
+  it('rejects a spec nested 65 levels deep at its deepest element', () => {
+    expect(errorsOf(chain(65))).toEqual([
+      {
+        element: 'section-64',
+        component: 'Section',
+        path: 'elements.section-64',
+        message: 'Element "section-64" is nested 65 levels deep; a spec nests at most 64 levels.',
+      },
+    ]);
+  });
+
+  /** The recursive structural validator in @json-render/core overflowed the stack at this depth. */
+  it('returns an error for a 5,000-deep chain instead of throwing', () => {
+    let result: ReturnType<typeof validateArtifactSpec> | undefined;
+
+    expect(() => {
+      result = validateArtifactSpec(chain(5_000));
+    }).not.toThrow();
+    expect(result?.valid ? [] : result?.errors).toContainEqual(
+      expect.objectContaining({
+        path: 'elements.section-4999',
+        message: expect.stringContaining('nested 5000 levels deep'),
+      }),
+    );
+  });
+
+  it('counts slot references as nesting', () => {
+    let result: ReturnType<typeof validateArtifactSpec> | undefined;
+
+    expect(() => {
+      result = validateArtifactSpec(chain(5_000, 'slots'));
+    }).not.toThrow();
+    expect(result?.valid ? [] : result?.errors).toContainEqual(
+      expect.objectContaining({ path: 'elements.section-4999' }),
+    );
+  });
+
+  it('accepts a wide, shallow spec', () => {
+    const leaves = Array.from({ length: 20_000 }, (_, i) => `divider-${i}`);
+
+    expect(
+      errorsOf({
+        root: 'root',
+        elements: {
+          root: { type: 'Section', props: {}, children: leaves },
+          ...Object.fromEntries(leaves.map((key) => [key, { type: 'Divider' }])),
+        },
+      }),
+    ).toEqual([]);
+  });
+
+  it('returns a result for props nested 100,000 levels deep instead of throwing', () => {
+    let nested: unknown = { statePath: '/deep' };
+
+    for (let i = 0; i < 100_000; i += 1) {
+      nested = { nested };
+    }
+
+    expect(() =>
+      validateArtifactSpec({
+        root: 'root',
+        elements: { root: { type: 'Section', props: { nested } } },
+      }),
+    ).not.toThrow();
   });
 });

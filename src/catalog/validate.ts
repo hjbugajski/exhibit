@@ -66,30 +66,36 @@ function formatPath(path: ReadonlyArray<PropertyKey>): string {
 }
 
 /**
- * Recursively collects every string value found under a key literally named "statePath" inside an
- * element's props (including nested arrays, e.g. Checklist items), tagged with the owning element
- * key. Walking by key name rather than hardcoding component types catches every current and future
- * statePath-bearing field in one place.
+ * Collects every string value found under a key literally named "statePath" inside an element's
+ * props (including nested arrays, e.g. Checklist items) in document order, tagged with the owning
+ * element key. Walking by key name rather than hardcoding component types catches every current and
+ * future statePath-bearing field in one place. The walk is iterative because hostile props can nest
+ * deeper than the call stack.
  */
-export function collectStatePaths(
-  elementKey: string,
-  value: unknown,
-): { key: string; path: string }[] {
-  if (Array.isArray(value)) {
-    return value.flatMap((item) => collectStatePaths(elementKey, item));
-  }
+export function collectStatePaths(elementKey: string, value: unknown): StatePathEntry[] {
+  const found: StatePathEntry[] = [];
+  const stack: ({ path: string } | { value: unknown })[] = [{ value }];
 
-  if (!isRecord(value)) {
-    return [];
-  }
-
-  return Object.entries(value).flatMap(([key, nested]) => {
-    if (key === 'statePath' && typeof nested === 'string') {
-      return [{ key: elementKey, path: nested }];
+  for (let item = stack.pop(); item; item = stack.pop()) {
+    if ('path' in item) {
+      found.push({ key: elementKey, path: item.path });
+      continue;
     }
 
-    return collectStatePaths(elementKey, nested);
-  });
+    const nested: ({ path: string } | { value: unknown })[] = Array.isArray(item.value)
+      ? item.value.map((entry: unknown) => ({ value: entry }))
+      : isRecord(item.value)
+        ? Object.entries(item.value).map(([key, entry]) =>
+            key === 'statePath' && typeof entry === 'string' ? { path: entry } : { value: entry },
+          )
+        : [];
+
+    for (const next of nested.toReversed()) {
+      stack.push(next);
+    }
+  }
+
+  return found;
 }
 
 /** One statePath occurrence and the key of the element or component that owns it. */
@@ -194,6 +200,39 @@ function findStatePathConflictErrors(elements: Record<string, unknown>): Artifac
 }
 
 /**
+ * The existing elements an element lists, in `children` and in named `slots` (both render as its
+ * descendants), with the field path of each reference.
+ */
+function childReferences(
+  elements: Record<string, unknown>,
+  element: unknown,
+): { child: string; field: string }[] {
+  if (!isRecord(element)) {
+    return [];
+  }
+
+  const lists: [string, unknown][] = [
+    ['children', element.children],
+    ...(isRecord(element.slots)
+      ? Object.entries(element.slots).map(([name, keys]): [string, unknown] => [
+          `slots.${name}`,
+          keys,
+        ])
+      : []),
+  ];
+
+  return lists.flatMap(([field, keys]) =>
+    Array.isArray(keys)
+      ? keys.flatMap((child: unknown, index) =>
+          typeof child === 'string' && Object.hasOwn(elements, child)
+            ? [{ child, field: `${field}.${index}` }]
+            : [],
+        )
+      : [],
+  );
+}
+
+/**
  * A spec is a tree: every element has at most one parent, appears once in its parent's children,
  * and never contains itself. Shared children would make every walk over descendants (the marker
  * lints below, the renderer) repeat the shared subtree once per parent, so one small spec could
@@ -201,29 +240,21 @@ function findStatePathConflictErrors(elements: Record<string, unknown>): Artifac
  */
 function findElementTreeErrors(elements: Record<string, unknown>): ArtifactSpecError[] {
   const errors: ArtifactSpecError[] = [];
-  const parents = new Map<string, { parent: string; index: number }>();
+  const parents = new Map<string, { parent: string; field: string }>();
 
   for (const [parent, element] of Object.entries(elements)) {
-    if (!isRecord(element) || !Array.isArray(element.children)) {
-      continue;
-    }
-
-    for (const [index, child] of element.children.entries()) {
-      if (typeof child !== 'string' || !Object.hasOwn(elements, child)) {
-        continue;
-      }
-
+    for (const { child, field } of childReferences(elements, element)) {
       const first = parents.get(child);
 
       if (!first) {
-        parents.set(child, { parent, index });
+        parents.set(child, { parent, field });
         continue;
       }
 
       errors.push({
         element: parent,
         component: elementType(elements, parent),
-        path: `elements.${parent}.children.${index}`,
+        path: `elements.${parent}.${field}`,
         message:
           first.parent === parent
             ? `Element "${child}" is listed more than once in the children of "${parent}".`
@@ -251,7 +282,7 @@ function findElementTreeErrors(elements: Record<string, unknown>): ArtifactSpecE
       errors.push({
         element: link.parent,
         component: elementType(elements, link.parent),
-        path: `elements.${link.parent}.children.${link.index}`,
+        path: `elements.${link.parent}.${link.field}`,
         message: `Element "${key}" is its own descendant through the children of "${link.parent}".`,
       });
     }
@@ -262,6 +293,57 @@ function findElementTreeErrors(elements: Record<string, unknown>): ArtifactSpecE
   }
 
   return errors;
+}
+
+/**
+ * Specs a person or an agent writes nest a handful of levels (every fixture and example nests 5 or
+ * fewer). 64 leaves an order of magnitude of headroom while keeping the recursive walks of
+ * @json-render/core's validator and renderer, a few stack frames per level, far from the stack
+ * limit.
+ */
+const ELEMENT_DEPTH_MAX = 64;
+
+/**
+ * Rejects a spec whose deepest element sits more than ELEMENT_DEPTH_MAX levels below a top-level
+ * element (the root, or an orphan). Assumes the tree `findElementTreeErrors` enforces, so the
+ * iterative walk visits each element once.
+ */
+function findElementDepthErrors(elements: Record<string, unknown>): ArtifactSpecError[] {
+  const children = new Set<string>();
+
+  for (const element of Object.values(elements)) {
+    for (const { child } of childReferences(elements, element)) {
+      children.add(child);
+    }
+  }
+
+  const stack = Object.keys(elements)
+    .filter((key) => !children.has(key))
+    .map((key) => ({ key, depth: 1 }));
+  let deepest = { key: '', depth: 0 };
+
+  for (let item = stack.pop(); item; item = stack.pop()) {
+    if (item.depth > deepest.depth) {
+      deepest = item;
+    }
+
+    for (const { child } of childReferences(elements, elements[item.key])) {
+      stack.push({ key: child, depth: item.depth + 1 });
+    }
+  }
+
+  if (deepest.depth <= ELEMENT_DEPTH_MAX) {
+    return [];
+  }
+
+  return [
+    {
+      element: deepest.key,
+      component: elementType(elements, deepest.key),
+      path: `elements.${deepest.key}`,
+      message: `Element "${deepest.key}" is nested ${deepest.depth} levels deep; a spec nests at most ${ELEMENT_DEPTH_MAX} levels.`,
+    },
+  ];
 }
 
 /**
@@ -461,6 +543,12 @@ export function validateArtifactSpec(spec: unknown): ArtifactValidationResult {
   const elements = readElements(spec);
   const padded = withElementPadding(spec);
 
+  // Structure first: the marker lints and @json-render/core's recursive validateSpec below repeat
+  // shared subtrees and recurse once per level, so they only see a shallow tree.
+  const treeErrors = elements ? findElementTreeErrors(elements) : [];
+  const structureErrors =
+    elements && treeErrors.length === 0 ? findElementDepthErrors(elements) : treeErrors;
+
   const catalogResult = catalog.validate(padded);
 
   if (!catalogResult.success && catalogResult.error) {
@@ -496,21 +584,18 @@ export function validateArtifactSpec(spec: unknown): ArtifactValidationResult {
     // Per-prop uniqueness rules (tab labels, Choice option ids/labels, list item ids, Table column
     // keys) are zod `.check()`s on the catalog prop schemas, surfaced by the per-element parse
     // above. Only lints spanning more than one prop or element live here.
-    const treeErrors = findElementTreeErrors(elements);
-
-    // The marker lints walk descendants, so they run on a tree only.
     errors.push(
       ...findStatePathConflictErrors(elements),
       ...findTabsChildCountMismatchErrors(elements),
       ...findLiveWeatherCapErrors(Object.values(elements).filter(isRecord)),
-      ...treeErrors,
-      ...(treeErrors.length === 0
+      ...structureErrors,
+      ...(structureErrors.length === 0
         ? [...findDayMapMarkerCapErrors(elements), ...findItineraryMapMarkerCapErrors(elements)]
         : []),
     );
   }
 
-  if (isRecord(spec)) {
+  if (isRecord(spec) && structureErrors.length === 0) {
     const structural = validateSpec(spec as unknown as Spec, { checkOrphans: true });
 
     for (const issue of structural.issues) {
