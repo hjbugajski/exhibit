@@ -11,8 +11,7 @@ export type ArtifactVersionResolution =
 /**
  * Shared session-check -> version-validate -> lookup pipeline for the raw /render and /download
  * routes, which are otherwise identical up to this point. Each route builds its own response
- * body/headers from the resolved artifact - callers own the `ok: false` response verbatim
- * (status/shape is the same 401/400/404 both routes already returned before this was extracted).
+ * body/headers from the resolved artifact - callers own the `ok: false` response verbatim.
  */
 export async function resolveArtifactVersion(
   request: Request,

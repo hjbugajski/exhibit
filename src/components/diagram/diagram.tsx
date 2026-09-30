@@ -177,8 +177,6 @@ function useTypeAssertion(
   }, [target, metrics, measurer]);
 }
 
-// --------------------------------------------------------------------------------------- root
-
 export interface DiagramRootProps
   extends Omit<useRender.ComponentProps<'figure'>, 'title'>, UseDiagramOptions {
   /**
@@ -296,8 +294,6 @@ function Root({
   });
 }
 
-// ---------------------------------------------------------------------------------------- svg
-
 export type DiagramSvgProps = ComponentProps<'svg'>;
 
 const VIEW_BY_KIND: Readonly<Record<Scene['kind'], ComponentType<{ scene: Scene }>>> = {
@@ -347,8 +343,6 @@ function Svg({ className, children, ...props }: DiagramSvgProps) {
   );
 }
 
-// -------------------------------------------------------------------------------------- title
-
 export type DiagramTitleProps = useRender.ComponentProps<'figcaption'>;
 
 function Title({ className, render, ...props }: DiagramTitleProps) {
@@ -365,8 +359,6 @@ function Title({ className, render, ...props }: DiagramTitleProps) {
     },
   });
 }
-
-// -------------------------------------------------------------------------------- description
 
 export type DiagramDescriptionProps = useRender.ComponentProps<'div'>;
 
@@ -406,8 +398,6 @@ function Description({ className, render, children, ...props }: DiagramDescripti
     },
   });
 }
-
-// ------------------------------------------------------------------------------------- issues
 
 export type DiagramIssuesProps = useRender.ComponentProps<'ul'>;
 
@@ -497,8 +487,6 @@ function Issues({ className, render, children, ...props }: DiagramIssuesProps) {
     },
   });
 }
-
-// ------------------------------------------------------------------------------------- legend
 
 export interface DiagramLegendProps extends useRender.ComponentProps<'ul'> {
   /** Prints the raw slice value alongside the share. Defaults to the source's `pie showData`. */

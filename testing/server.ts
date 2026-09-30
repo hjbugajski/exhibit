@@ -30,10 +30,8 @@ export async function bootTestServer(configFileUrl: URL): Promise<TestServer> {
     // (createWebSocketServer, gated on `config.server.ws`, not `config.server.hmr`) on a *fixed*
     // default port (24678) regardless of middlewareMode or `hmr: false` - so with multiple
     // *.int.test.ts files each booting their own dev server instance (this one, plus
-    // account.int.test.ts's), running more than one at a time (concurrent vitest workers, or two
-    // `pnpm test` runs at once) collided on that port. (This turned out to be a red herring for the
-    // flake below - see the comment on waitUntilNitroReady - but it's a real, avoidable collision
-    // in its own right, so it stays fixed.)
+    // account.int.test.ts's), instances running at the same time (concurrent vitest workers, or
+    // two `pnpm test` runs at once) collide on that port.
     server: { middlewareMode: true, hmr: false, ws: false },
     appType: 'custom',
   });
@@ -54,11 +52,10 @@ export async function bootTestServer(configFileUrl: URL): Promise<TestServer> {
  * budget and this is invisible; under CPU contention (e.g. several `*.int.test.ts` files each
  * booting their own dev server concurrently) initialization can take longer than nitro's fixed 30s
  * window, and every request this harness makes - including sign-in - gets that 503
- * instead. Uncaught, that turned an empty session cookie into every subsequent authenticated call
- * reading as a plain "Unauthorized", which looked exactly like a real auth bug. Fixed at the
- * source: block here, with our own much larger and backoff-based retry budget, until a real
- * (non-Nitro-runner-503) response comes back from a side-effect-free route, before handing the
- * server back to the caller.
+ * instead. Without this wait, sign-in yields an empty session cookie and every later authenticated
+ * call reads as a plain "Unauthorized". So block here, with a much larger backoff-based retry
+ * budget, until a real (non-Nitro-runner-503) response comes back from a side-effect-free route,
+ * before handing the server back to the caller.
  */
 async function waitUntilNitroReady(devServer: DevServerHandle, timeoutMs = 90_000): Promise<void> {
   const deadline = Date.now() + timeoutMs;

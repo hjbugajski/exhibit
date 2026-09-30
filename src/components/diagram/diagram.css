@@ -207,8 +207,6 @@
     letter-spacing: var(--diagram-cluster-label-letter-spacing);
   }
 
-  /* ---------------------------------------------------------------------------------- nodes */
-
   [data-part='node-shape'] {
     fill: var(--diagram-node-fill);
     stroke: var(--diagram-node-stroke);
@@ -248,8 +246,6 @@
   [data-shape='state-note'] [data-part='node-label'] {
     fill: var(--diagram-note-text);
   }
-
-  /* ---------------------------------------------------------------------------------- edges */
 
   [data-part='edge-path'] {
     fill: none;
@@ -292,8 +288,6 @@
     stroke-linecap: round;
   }
 
-  /* ------------------------------------------------------------------------------ label layer */
-
   /* Titles and edge labels are drawn last so nothing can be painted over them; nothing in the layer
      is a hit target, so the shape under a plate still takes the pointer. */
   [data-part='labels'] {
@@ -315,8 +309,6 @@
   [data-part='edge-label-text'] {
     fill: var(--diagram-edge-text);
   }
-
-  /* -------------------------------------------------------------------------------- clusters */
 
   [data-part='cluster-box'] {
     fill: var(--diagram-cluster-fill);
@@ -344,8 +336,6 @@
   [data-part='cluster-label-text'] {
     fill: var(--diagram-cluster-text);
   }
-
-  /* ------------------------------------------------------------------------------- sequence */
 
   /* Header and footer are the same box drawn twice, so one rule covers both; `data-position`
      exists so a consumer can drop the repeated footer without touching the layout. */
@@ -443,8 +433,6 @@
     fill: var(--diagram-frame-text);
   }
 
-  /* ------------------------------------------------------------------------------------ pie */
-
   [data-part='slice'] {
     fill: var(--diagram-slice-fill, transparent);
     stroke: var(--diagram-slice-stroke);
@@ -506,8 +494,6 @@
     --diagram-slice-fill: var(--diagram-series-8);
   }
 
-  /* --------------------------------------------------------------------------------- legend */
-
   [data-part='legend'] {
     display: flex;
     flex-wrap: wrap;
@@ -539,8 +525,6 @@
     color: var(--diagram-legend-value-text);
     font-variant-numeric: tabular-nums;
   }
-
-  /* ---------------------------------------------------------------------------------- gantt */
 
   [data-part='gantt-section-band'] {
     fill: var(--diagram-gantt-section-fill);
@@ -618,8 +602,6 @@
     fill: var(--diagram-gantt-active-text);
   }
 
-  /* --------------------------------------------------------------------------------- issues */
-
   [data-part='issues'] {
     margin: 0;
     padding: 0;
@@ -682,8 +664,6 @@
     font-size: 0.9166em;
     text-indent: 0;
   }
-
-  /* --------------------------------------------------------------------------------- canvas */
 
   /* Canvas mode: a clipped viewport, a dotted grid locked to the scene, and one transformed
      wrapper. The transform string exists only here — `Diagram.Canvas` writes `--diagram-canvas-pan-*`

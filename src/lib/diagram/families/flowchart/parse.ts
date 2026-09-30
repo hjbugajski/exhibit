@@ -90,8 +90,6 @@ const SHAPE_OPENERS = new Set(['[', '(', '{', '>']);
  */
 const FLOW_IDENT = /[\p{L}\p{N}_](?:[\p{L}\p{N}_.]|-(?![-.>]))*/u;
 
-// ------------------------------------------------------------------------------------- links
-
 interface LinkToken {
   line: LineKind;
   arrow: ArrowKind;
@@ -232,8 +230,6 @@ export function readLink(scanner: Scanner): LinkToken | null {
 
   return null;
 }
-
-// -------------------------------------------------------------------------------- statements
 
 const HEADER = /^(flowchart|graph)(?:-([A-Za-z]+))?\s*(.*)$/;
 const SUBGRAPH_TITLED = /^([\p{L}\p{N}_][\p{L}\p{N}_.-]*)\s*([[({].*[\])}])$/u;
@@ -516,8 +512,6 @@ class FlowchartParser {
     );
   }
 
-  // --------------------------------------------------------------------------- subgraphs
-
   private openSubgraph(line: LogicalLine): void {
     const scanner = new Scanner(line.text, line.span);
 
@@ -573,8 +567,6 @@ class FlowchartParser {
 
     this.report.warn('unexpected-end', "'end' does not close any open subgraph.", line.span);
   }
-
-  // ---------------------------------------------------------------- nodes, edges, chains
 
   private flowStatement(line: LogicalLine): void {
     const scanner = new Scanner(line.text, line.span);

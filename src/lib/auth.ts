@@ -134,10 +134,10 @@ export function createAuth(options: { disableSignUp?: boolean } = {}) {
         consentPage: '/consent',
         allowDynamicClientRegistration: true,
         allowUnauthenticatedClientRegistration: true,
-        // 1.7 replaced `validAudiences` with first-class resource rows seeded from this list.
+        // Seeds the provider's resource rows.
         resources: [env.BASE_URL, `${env.BASE_URL}/mcp`],
-        // Pre-1.7 behavior: any registered client may request any enabled resource. The default
-        // (true) would 403 existing clients, which have no oauthClientResource link rows.
+        // Any registered client may request any enabled resource. Clients registered before 1.7
+        // have no oauthClientResource link rows, so the default (true) would 403 them.
         enforcePerClientResources: false,
         // Both discovery documents are served from the issuer root by the routes in
         // src/routes/[.]well-known, so the "please ensure ... exists" warnings are satisfied.

@@ -37,8 +37,6 @@ function vars(entries: Record<string, string>): CSSProperties {
   return entries as CSSProperties;
 }
 
-// -------------------------------------------------------------------------------------- sources
-
 const sources = {
   directionTd: `flowchart TD
   Request[Request] --> Auth{Session?}
@@ -192,8 +190,6 @@ const sources = {
   Render --> Report[Report the error]`,
 } as const;
 
-// ------------------------------------------------------------------------------------- scaffold
-
 function Story({ title, note, children }: { title: string; note: string; children: ReactNode }) {
   return (
     <section className="flex flex-col gap-4">
@@ -249,8 +245,6 @@ function Figure({ className, ...props }: DiagramRootProps) {
   );
 }
 
-// -------------------------------------------------------------------------------- composability
-
 /** Paints inside the box the layout already reserved (C29) and delegates everything else. */
 const badgeComponents: DiagramComponents = {
   NodeShape: ({ datum, Default }) =>
@@ -305,8 +299,6 @@ const reskinClassNames: DiagramClassNames = {
   edgeArrow: '[--diagram-arrow-fill:var(--color-accent)]',
 };
 
-// -------------------------------------------------------------------------------------- theming
-
 /** Tier 0: every paint role back to `currentColor`/`transparent` — the unstyled honesty check. */
 const tier0 = vars({
   '--diagram-node-fill': 'transparent',
@@ -355,8 +347,6 @@ const blueprint = vars({
   '--diagram-arrow-stroke': 'var(--color-info)',
   '--diagram-marker-fill': 'var(--color-info)',
 });
-
-// ---------------------------------------------------------------------- font-metrics generator
 
 const GLYPH_FIRST = 0x20;
 const GLYPH_LAST = 0x7e;
@@ -476,8 +466,6 @@ function FontMetricsPanel() {
     </div>
   );
 }
-
-// -------------------------------------------------------------------------- measurement audit
 
 interface AuditRow {
   text: string;
@@ -612,8 +600,6 @@ function AuditPanel() {
     </div>
   );
 }
-
-// ------------------------------------------------------------------------------------ the page
 
 function DiagramDemo() {
   return (

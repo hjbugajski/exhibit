@@ -2,11 +2,11 @@
  * One-dimensional separation, shared by every pass that has to keep parallel geometry apart: ports
  * on a side, lanes in a gutter, legs in a rank gap.
  *
- * All three want the same thing — keep the order, honour a minimum gap, move as little as possible —
- * and all three used to sweep once from the low end, which is not that. A sweep pushes the whole set
- * off the first element's ideal: three ports that all want the middle come out at 0, +gap, +2*gap and
- * the clamp at the far end drags them back only far enough to fit, so the group ends up lopsided and
- * an edge whose ends already lined up picks up a jog for nothing.
+ * All three want the same thing — keep the order, honour a minimum gap, move as little as
+ * possible. The obvious alternative, one sweep from the low end, fails at that: a sweep pushes the
+ * whole set off the first element's ideal. Three ports that all want the middle come out at 0,
+ * +gap, +2*gap and the clamp at the far end drags them back only far enough to fit, so the group
+ * ends up lopsided and an edge whose ends already lined up picks up a jog for nothing.
  */
 
 import type { DiagramMetrics } from '../../metrics.ts';

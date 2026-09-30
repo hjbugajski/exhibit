@@ -58,12 +58,14 @@ const listArtifactsInput = z.object({
   limit: z.number().int().min(1).max(100).optional(),
 });
 
+/**
+ * Always includes answered counts, at a body fetch and a parse per row. The gallery is the only
+ * surface that renders them, so it is the only caller that pays for them.
+ */
 export const listArtifactsFn = createServerFn({ method: 'GET' })
   .middleware([sessionMiddleware])
   .validator(listArtifactsInput)
   .handler(async ({ data }) => {
-    // The gallery is the only surface that renders answered counts, so it is the only caller that
-    // pays for them (a body fetch and a parse per row).
     return listArtifacts(db, { ...data, withAnswers: true });
   });
 
@@ -124,6 +126,7 @@ const artifactDetailInput = z.object({
   version: z.number().int().positive().optional(),
 });
 
+/** Null for an unknown or deleted artifact or a missing version, rather than throwing. */
 export const getArtifactDetailFn = createServerFn({ method: 'GET' })
   .middleware([sessionMiddleware])
   .validator(artifactDetailInput)

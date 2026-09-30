@@ -193,15 +193,17 @@ export const getConsentClientFn = createServerFn({ method: 'GET' })
 
 const revokeInput = z.object({ clientId: z.string() });
 
+/**
+ * Deletes the client registration, which cascades to its refresh tokens, access-token rows, and
+ * consent (FKs with ON DELETE CASCADE). The client re-registers dynamically if it ever reconnects.
+ * Outstanding access-token JWTs die with the row too: /mcp checks that the `azp` client still
+ * exists on every request (see verifyMcpBearer), so revocation takes effect on the revoked
+ * client's next call.
+ */
 export const revokeMcpConnectionFn = createServerFn({ method: 'POST' })
   .middleware([sessionMiddleware])
   .validator(revokeInput)
   .handler(async ({ data }) => {
-    // Deleting the client registration cascades to its refresh tokens, access-token rows, and
-    // consent (FKs with ON DELETE CASCADE). The client re-registers dynamically if it ever
-    // reconnects. Outstanding access-token JWTs die with the row too: /mcp checks that the `azp`
-    // client still exists on every request (see verifyMcpBearer), so revocation takes effect on the
-    // revoked client's next call.
     db.delete(oauthClient).where(eq(oauthClient.clientId, data.clientId)).run();
 
     return { revoked: true };

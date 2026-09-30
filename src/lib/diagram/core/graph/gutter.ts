@@ -142,12 +142,12 @@ function surrounds(outer: Rect, inner: Rect): boolean {
 /**
  * Does the route the engine draws without a detour already miss everything inside the cluster?
  *
- * This used to be a model of that route — border point to endpoint, elbowed the way `routeEdge`
- * elbows. It cannot be: `routeEdge` orthogonalizes the whole trail at once, lands on the endpoint's
- * outline rather than its centre, and applies ports and parallel offsets, so the modelled elbow sat
- * up to half a node away from the drawn one. That error went both ways — detours invented for
- * routes that were already clear, and missed for routes that were not — so the caller hands over
- * the real polyline instead.
+ * The obvious alternative, a model of that route — border point to endpoint, elbowed the way
+ * `routeEdge` elbows — fails: `routeEdge` orthogonalizes the whole trail at once, lands on the
+ * endpoint's outline rather than its centre, and applies ports and parallel offsets, so a modelled
+ * elbow sits up to half a node away from the drawn one. That error goes both ways — detours
+ * invented for routes that are already clear, and missed for routes that are not — so the caller
+ * hands over the real polyline instead.
  */
 function drawnIsClear(drawn: readonly Point[], obstacles: readonly Rect[]): boolean {
   for (let i = 1; i < drawn.length; i += 1) {

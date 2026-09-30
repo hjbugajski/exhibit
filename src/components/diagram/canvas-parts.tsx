@@ -29,8 +29,6 @@ import { useCanvas } from './use-canvas';
 const DEFAULT_LABEL =
   'Diagram canvas. Drag to pan. Hold Ctrl or Command and scroll to zoom. Arrow keys pan, plus and minus zoom, zero fits the diagram.';
 
-// -------------------------------------------------------------------------------------- glyphs
-
 /** 16-unit box, 1.5 stroke, all of it declared in CSS — an icon here owns geometry only. */
 function Glyph({ children }: { children: ReactNode }) {
   return (
@@ -57,8 +55,6 @@ const FitIcon = () => (
     <path d="M3 6.5V3h3.5M9.5 3H13v3.5M13 9.5V13H9.5M6.5 13H3V9.5" />
   </Glyph>
 );
-
-// ------------------------------------------------------------------------------------ controls
 
 interface ControlProps extends ComponentProps<'button'> {
   action: string;
@@ -123,8 +119,6 @@ export function CanvasControls({ className, children, ...props }: DiagramCanvasC
     </div>
   );
 }
-
-// -------------------------------------------------------------------------------------- canvas
 
 export interface DiagramCanvasProps extends useRender.ComponentProps<'div'> {
   /** Replaces the control cluster, or removes it with `false`. Rendered outside the transform. */

@@ -106,8 +106,6 @@ function daysInMonth(year: number, month: number): number {
   return month === 4 || month === 6 || month === 9 || month === 11 ? 30 : 31;
 }
 
-// -------------------------------------------------------------------------------- date formats
-
 /** A `dateFormat` token, or a literal separator that must match the input exactly. */
 type FormatPart =
   | { token: 'YYYY' | 'YY' | 'MM' | 'M' | 'DD' | 'D' | 'HH' | 'H' | 'mm' | 'ss' }
@@ -242,8 +240,6 @@ export function parseDate(text: string, format: DateFormat): number | null {
   );
 }
 
-// --------------------------------------------------------------------------------- axis format
-
 const MONTHS_SHORT = [
   'Jan',
   'Feb',
@@ -350,8 +346,6 @@ export function formatInstant(at: number, spec: string): string {
     }
   });
 }
-
-// ----------------------------------------------------------------------------------- durations
 
 /** Midnight of the day `at` falls in. */
 export function startOfDay(at: number): number {

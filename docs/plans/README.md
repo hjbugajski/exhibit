@@ -24,7 +24,7 @@ Produced by a deep audit at commit `ffee99b` (2026-09-26): 15 opus auditors (9 p
 | 14   | Shift artifact content headings one rank below the page title                                        | M                     | —          | TODO                                                     |
 | 15   | Sandbox CSP on /download responses                                                                   | S                     | —          | DONE                                                     |
 | 16   | Correct docs and comments that contradict the code                                                   | S                     | —          | TODO                                                     |
-| 17   | Comment cruft sweep (banners, journal tense, misplaced docs)                                         | S                     | 24         | TODO                                                     |
+| 17   | Comment cruft sweep (banners, journal tense, misplaced docs)                                         | S                     | 24         | DONE                                                     |
 | 18   | Writing sweep (MCP tool descriptions, catalog copy, errors, README)                                  | M                     | 36         | TODO                                                     |
 | 19   | Test hygiene                                                                                         | M                     | —          | TODO                                                     |
 | 20   | Memoize markdown parsing and syntax highlighting                                                     | S                     | —          | DONE                                                     |

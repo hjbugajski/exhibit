@@ -57,8 +57,6 @@ import { assignRanks } from './rank.ts';
 import type { Axis, RouteEndpoint, RouteInput, RouteObstacle, RoutedEdge } from './route.ts';
 import { borderPoint, loopSide, rankAxis, routeEdge, routeSelfLoop } from './route.ts';
 
-// ------------------------------------------------------------------ direction transform
-
 function toFinalPoint(direction: Direction, p: Point): Point {
   if (direction === 'TB') {
     return { x: p.x, y: p.y };
@@ -91,8 +89,6 @@ function alignToCross(direction: Direction, size: Size): Size {
     : { width: short, height: long };
 }
 
-// ------------------------------------------------------------------------------ bounds
-
 interface Bounds {
   minX: number;
   minY: number;
@@ -121,8 +117,6 @@ function addBox(bounds: Bounds, centre: Point, size: Size): void {
   addPoint(bounds, { x: centre.x + size.width / 2, y: centre.y + size.height / 2 });
 }
 
-// -------------------------------------------------------------------------- placement
-
 interface PlacedBox {
   centre: Point;
   size: Size;
@@ -145,8 +139,6 @@ interface Placed {
 function shiftPoint(p: Point, dx: number, dy: number): Point {
   return { x: p.x + dx, y: p.y + dy };
 }
-
-// ---------------------------------------------------------------------------- measure
 
 interface Measured {
   label: LabelBox;
@@ -567,8 +559,6 @@ function layoutLevels(model: GraphModel, context: LayoutContext): Placed {
 
   return layoutLevel(null);
 }
-
-// ------------------------------------------------------------------------------ assemble
 
 interface AssembleContext {
   m: DiagramMetrics;

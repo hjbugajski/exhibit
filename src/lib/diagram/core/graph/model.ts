@@ -62,8 +62,6 @@ export interface GraphModel {
   description?: string;
 }
 
-// --------------------------------------------------------------------------- internal graph
-
 export type LayoutNodeKind = 'real' | 'composite' | 'virtual' | 'label';
 
 export interface LayoutNode {

@@ -591,8 +591,6 @@ export function assertNoEdgeThroughNode(scene: GraphScene, context: OutlineConte
   }
 }
 
-// ------------------------------------------------------------------------------ elbow routes
-
 type Axis = 'x' | 'y';
 
 function extentOf(box: Size, axis: Axis): number {
@@ -871,8 +869,6 @@ export function assertFiniteCoordinates(scene: Scene): void {
   }
 }
 
-// ------------------------------------------------------------------------------ path quality
-
 /** Every number an emitter is allowed to print: finite, and no finer than the emission grid. */
 const NUMBER = /^-?\d+(?:\.\d{1,2})?$/;
 
@@ -1047,8 +1043,6 @@ export function assertPathQuality(scene: Scene): void {
   }
 }
 
-// ----------------------------------------------------------------------------------- sequence
-
 function contains(box: { x: number; y: number; width: number; height: number }, p: Point): boolean {
   return (
     p.x >= box.x - 0.01 &&
@@ -1161,8 +1155,6 @@ export function assertLayoutInvariants(scene: GraphScene, options: InvariantOpti
   assertNoRankBacktrack(scene, options);
   assertClustersHold(scene);
 }
-
-// -------------------------------------------------------------------------------------- gantt
 
 /**
  * The five properties a gantt layout cannot get wrong: every number is finite, every bar lies inside

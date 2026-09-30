@@ -78,13 +78,13 @@ export function applyStoredTheme(): void {
   applyTheme(getStoredThemePreference());
 }
 
+const themeListeners = new Set<() => void>();
+
 /**
  * Change feed for `useSyncExternalStore(subscribeThemePreference, getStoredThemePreference)`
  * consumers. Same-tab changes arrive via setThemePreference; cross-tab writes arrive via the
  * `storage` event, which also re-stamps <html> so the whole tab follows, not just the subscriber.
  */
-const themeListeners = new Set<() => void>();
-
 export function subscribeThemePreference(onChange: () => void): () => void {
   const onStorage = (event: StorageEvent) => {
     if (event.key === null || event.key === THEME_STORAGE_KEY) {
@@ -102,6 +102,10 @@ export function subscribeThemePreference(onChange: () => void): () => void {
   };
 }
 
+/**
+ * Persists the preference ('system' as absence), stamps <html> from it, and notifies same-tab
+ * subscribers. A storage failure is swallowed: the choice then applies to this tab only.
+ */
 export function setThemePreference(preference: ThemePreference): void {
   try {
     // 'system' is the default, so it is stored as absence — a fresh browser and an explicit

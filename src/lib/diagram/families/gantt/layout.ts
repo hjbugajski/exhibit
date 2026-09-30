@@ -247,8 +247,6 @@ export function layoutGantt(ir: GanttIR, options: LayoutOptions): LayoutResult<G
     );
   }
 
-  // ------------------------------------------------------------------------- the plan
-
   const planned = schedule(ir, report, origin ?? 0);
   const first = Math.min(...planned.map((entry) => entry.start));
   const last = Math.max(...planned.map((entry) => entry.end));
@@ -256,8 +254,6 @@ export function layoutGantt(ir: GanttIR, options: LayoutOptions): LayoutResult<G
   const domainStart = alignDown(first, step);
   const domainEnd = Math.max(domainStart + step, Math.ceil(last / step) * step);
   const domain = domainEnd - domainStart;
-
-  // ------------------------------------------------------------------------ the frame
 
   const ticks: { at: number; label: LabelBox }[] = [];
 
@@ -282,8 +278,6 @@ export function layoutGantt(ir: GanttIR, options: LayoutOptions): LayoutResult<G
   const right = left + chartWidth;
 
   scene.chart = { x: left, y: top, width: chartWidth, height: planned.length * rowHeight };
-
-  // ------------------------------------------------------------------------- the rows
 
   let maxX = right;
   const tasks: SceneGanttTask[] = planned.map((entry, index) => {
@@ -338,8 +332,6 @@ export function layoutGantt(ir: GanttIR, options: LayoutOptions): LayoutResult<G
 
     return built;
   });
-
-  // --------------------------------------------------------------------- the sections
 
   const sections: SceneGanttSection[] = ir.sections.map((_section, index) => {
     const rows = planned
