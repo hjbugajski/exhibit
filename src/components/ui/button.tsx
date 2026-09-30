@@ -30,8 +30,8 @@ export type ButtonProps = ButtonPrimitive.Props & VariantProps<typeof buttonVari
 
 /**
  * One 32px size; an icon-only button tags its icon `data-icon="only"` to become the 32px square.
- * When `render` swaps in a non-<button> element (e.g. an <a>), pass `nativeButton={false}`; the
- * element still gets `role="button"`, so tests query it by text rather than role.
+ * Navigation is a `<Link>`/`<a>` styled with `buttonVariants()`, never `Button` with `render`: Base
+ * UI's non-native mode forces `role="button"`, which hides the link from assistive technology.
  */
 function Button({ className, variant = 'default', ...props }: ButtonProps) {
   return (

@@ -132,7 +132,12 @@ describe('ArtifactDetailView', () => {
     expect(
       await screen.findByText('Kyoto in Three Days', undefined, { timeout: 10_000 }),
     ).toBeTruthy();
-    expect(screen.getByText('Day 1 — Saturday')).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Day 1 — Saturday' })).toBeTruthy();
+
+    const panel = screen.getByRole('tabpanel');
+    expect(screen.getByRole('tab', { name: 'Rendered' }).getAttribute('aria-controls')).toBe(
+      panel.id,
+    );
   }, 15_000);
 
   it('lists all versions in the version dropdown, newest first, marking the latest and showing when each was created', async () => {
@@ -250,13 +255,11 @@ describe('ArtifactDetailView', () => {
       initialEntry: '/a/fixture-id',
     });
 
-    // Base UI's Button with nativeButton={false} renders the anchor with role="button", so query by
-    // its text instead of the link role.
-    const open = (await screen.findByText('Open')).closest('a');
+    const open = await screen.findByRole('link', { name: 'Open' });
 
-    expect(open?.getAttribute('href')).toBe('/render/fixture-id/1');
-    expect(open?.getAttribute('target')).toBe('_blank');
-    expect(open?.getAttribute('rel')).toBe('noopener noreferrer');
+    expect(open.getAttribute('href')).toBe('/render/fixture-id/1');
+    expect(open.getAttribute('target')).toBe('_blank');
+    expect(open.getAttribute('rel')).toBe('noopener noreferrer');
     expect(document.querySelector('iframe')).toBeNull();
     expect(document.querySelector('code')?.textContent).toBe('<html><body>hi</body></html>');
   });

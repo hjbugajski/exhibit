@@ -4,7 +4,7 @@ import { Link, useNavigate } from '@tanstack/react-router';
 
 import { AuthScreen } from '@/components/account/auth-screen';
 import { FormStatus } from '@/components/blocks/form-status';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
 import { Form } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -62,7 +62,9 @@ export function ResetPasswordView({ token }: { token?: string }) {
           <p className="text-foreground-muted text-sm">
             This reset link is missing its token. Request a new one from the sign-in page.
           </p>
-          <Button nativeButton={false} render={<Link to="/sign-in">Back to sign in</Link>} />
+          <Link to="/sign-in" className={buttonVariants()}>
+            Back to sign in
+          </Link>
         </div>
       )}
     </AuthScreen>

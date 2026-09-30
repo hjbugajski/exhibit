@@ -60,7 +60,7 @@ export function ConsentView({ client, clientId, scope }: ConsentViewProps) {
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-2">
           <p className="text-sm">
-            <strong className="font-semibold">
+            <strong className="font-semibold wrap-anywhere">
               {client?.name ?? clientId ?? 'This application'}
             </strong>{' '}
             is requesting access to your account.
@@ -69,7 +69,7 @@ export function ConsentView({ client, clientId, scope }: ConsentViewProps) {
             {hosts.length > 0 ? (
               <>
                 It receives the authorization code at{' '}
-                <strong className="font-semibold">{hosts.join(', ')}</strong>.
+                <strong className="font-semibold wrap-anywhere">{hosts.join(', ')}</strong>.
               </>
             ) : (
               'No redirect host is on record for this client.'

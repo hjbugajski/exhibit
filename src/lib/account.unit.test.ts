@@ -87,6 +87,13 @@ describe('redirectHosts', () => {
     ]);
   });
 
+  it('shows the scheme and path for a private-use redirect that has no host', () => {
+    expect(redirectHosts(['com.example.app:/cb', 'https://claude.ai/cb'])).toEqual([
+      'com.example.app:/cb',
+      'claude.ai',
+    ]);
+  });
+
   it('drops entries that are not parseable URLs rather than showing them as hosts', () => {
     expect(redirectHosts(['not a url', 42, null, 'https://claude.ai/cb'])).toEqual(['claude.ai']);
   });

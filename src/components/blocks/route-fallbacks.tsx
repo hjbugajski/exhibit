@@ -4,7 +4,7 @@ import type { ErrorComponentProps } from '@tanstack/react-router';
 import { Link, useLocation, useNavigate } from '@tanstack/react-router';
 import { FileQuestion, TriangleAlert } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
 import { Empty } from '@/components/ui/empty';
 import { Spinner } from '@/components/ui/spinner';
 import { isUnauthorizedError } from '@/lib/unauthorized';
@@ -15,9 +15,10 @@ import { isUnauthorizedError } from '@/lib/unauthorized';
  */
 export function RoutePending() {
   return (
-    <div className="flex min-h-96 w-full items-center justify-center p-6">
+    <output className="flex min-h-96 w-full items-center justify-center p-6">
       <Spinner className="text-foreground-muted size-5" />
-    </div>
+      <span className="sr-only">Loading…</span>
+    </output>
   );
 }
 
@@ -34,7 +35,9 @@ export function RouteNotFound() {
         </Empty.Description>
       </Empty.Header>
       <Empty.Content>
-        <Button nativeButton={false} render={<Link to="/">Back to artifacts</Link>} />
+        <Link to="/" className={buttonVariants()}>
+          Back to artifacts
+        </Link>
       </Empty.Content>
     </Empty.Root>
   );
@@ -72,7 +75,9 @@ export function RouteError({ error }: ErrorComponentProps) {
         </Empty.Description>
       </Empty.Header>
       <Empty.Content>
-        <Button nativeButton={false} render={<Link to="/">Back to artifacts</Link>} />
+        <Link to="/" className={buttonVariants()}>
+          Back to artifacts
+        </Link>
       </Empty.Content>
     </Empty.Root>
   );

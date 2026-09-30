@@ -51,7 +51,15 @@ describe('route fallbacks', () => {
     });
 
     expect(await screen.findByText('Page not found')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Back to artifacts' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Back to artifacts' }).getAttribute('href')).toBe('/');
+  });
+
+  it('announces the pending screen as a status with a decorative spinner', () => {
+    render(<RoutePending />);
+
+    const status = screen.getByRole('status');
+    expect(status.textContent).toBe('Loading…');
+    expect(status.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
   });
 
   it('renders the error page when a loader throws', async () => {

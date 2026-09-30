@@ -1,11 +1,9 @@
 import { Link } from '@tanstack/react-router';
-import { Check, Copy, X } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
+import { CopyButton } from '@/components/blocks/copy-button';
 import { Table } from '@/components/ui/table';
 import type { McpToolName } from '@/lib/mcp/tool-names';
 import { MCP_TOOL_NAMES } from '@/lib/mcp/tool-names';
-import { useCopyToClipboard } from '@/lib/use-copy-to-clipboard';
 
 /**
  * Human-facing summaries of the MCP surface. Deliberately not the LLM-facing description strings —
@@ -35,27 +33,10 @@ const MCP_TOOLS: Record<McpToolName, string> = {
 };
 
 function CopyField({ label, value }: { label: string; value: string }) {
-  const { copyStatus, copy } = useCopyToClipboard();
-
   return (
     <div className="flex max-w-2xl items-center justify-between gap-2 rounded-lg border">
       <code className="overflow-x-auto px-3 py-2 font-mono text-sm whitespace-nowrap">{value}</code>
-      <Button
-        aria-label={label}
-        className="m-1 shrink-0"
-        onClick={() => {
-          void copy(value);
-        }}
-        variant="ghost"
-      >
-        {copyStatus === 'copied' ? (
-          <Check data-icon="only" />
-        ) : copyStatus === 'failed' ? (
-          <X data-icon="only" />
-        ) : (
-          <Copy data-icon="only" />
-        )}
-      </Button>
+      <CopyButton className="m-1 shrink-0" label={label} text={value} />
     </div>
   );
 }

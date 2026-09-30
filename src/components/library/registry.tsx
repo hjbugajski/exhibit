@@ -56,6 +56,7 @@ import { specSandboxDemo } from '@/components/library/demos/spec-sandbox';
 import { spinnerDemo } from '@/components/library/demos/spinner';
 import { tableDemo } from '@/components/library/demos/table';
 import { tabsDemo } from '@/components/library/demos/tabs';
+import { toggleGroupDemo } from '@/components/library/demos/toggle-group';
 
 export const libraryGroupOrder: readonly LibraryGroup[] = ['Components', 'Catalog', 'Examples'];
 
@@ -84,6 +85,7 @@ export const libraryDemos: LibraryDemo[] = [
   spinnerDemo,
   tableDemo,
   tabsDemo,
+  toggleGroupDemo,
   // Catalog — every component Claude composes specs with, alphabetical.
   catalogBadgeDemo,
   catalogCalloutDemo,

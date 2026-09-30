@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { cleanup, fireEvent, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { McpConnection } from '@/lib/account';
@@ -234,6 +234,55 @@ describe('SettingsView', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
       expect(renameTagFn).toHaveBeenCalledWith({ data: { from: 'trips', to: 'travel' } });
+    });
+
+    it('moves focus into the rename field, and back to the Rename button on cancel', async () => {
+      renderTags([{ tag: 'trips', count: 2 }]);
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Rename' }));
+
+      await waitFor(() => expect(document.activeElement).toBe(screen.getByLabelText('New name')));
+
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+      await waitFor(() =>
+        expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Rename' })),
+      );
+    });
+
+    it('keeps focus in the rename form when the save fails', async () => {
+      vi.mocked(renameTagFn).mockRejectedValue(new Error('Rename failed.'));
+
+      renderTags([{ tag: 'trips', count: 2 }]);
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Rename' }));
+      fireEvent.change(screen.getByLabelText('New name'), { target: { value: 'travel' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+      expect(await screen.findByText('Rename failed.')).toBeTruthy();
+      expect(document.activeElement).toBe(screen.getByLabelText('New name'));
+    });
+
+    it('focuses the merge target’s Rename button after renaming into an existing tag', async () => {
+      vi.mocked(renameTagFn).mockResolvedValue({ affected: 2 } as never);
+
+      renderTags([
+        { tag: 'trips', count: 2 },
+        { tag: 'travel', count: 3 },
+      ]);
+
+      const [tripsRename] = await screen.findAllByRole('button', { name: 'Rename' });
+      fireEvent.click(tripsRename as HTMLElement);
+      fireEvent.change(screen.getByLabelText('New name'), { target: { value: ' travel ' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+      const travelRow = screen.getByText('travel').closest('li') as HTMLElement;
+
+      await waitFor(() =>
+        expect(document.activeElement).toBe(
+          within(travelRow).getByRole('button', { name: 'Rename' }),
+        ),
+      );
     });
 
     it('blocks a rename to an empty name with a field error', async () => {
