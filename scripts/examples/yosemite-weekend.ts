@@ -11,7 +11,7 @@ const spec: Spec = {
   elements: {
     root: {
       type: 'Section',
-      props: { title: 'Yosemite Valley Weekend', subtitle: 'Two days, two hikes' },
+      props: { title: 'Two days, two hikes', subtitle: 'Forecast, plan and packing list' },
       children: ['forecast-live', 'forecast-typical', 'itinerary', 'packing'],
     },
     'forecast-live': {
@@ -103,7 +103,7 @@ const spec: Spec = {
           { id: 'vernal', lat: 37.7273, lng: -119.5437, label: 'Vernal Fall' },
           { id: 'nevada', lat: 37.725, lng: -119.5331, label: 'Nevada Fall' },
         ],
-        elevationProfile: [4035, 4300, 4600, 5050, 5100, 5400, 5700, 5970],
+        elevationProfile: [4035, 4400, 5050, 5100, 5500, 5970, 5500, 5100, 5050, 4400, 4035],
         markdown:
           'The granite steps below Vernal Fall are wet and slick in spring. No permit is needed for a day hike to Nevada Fall.',
       },
