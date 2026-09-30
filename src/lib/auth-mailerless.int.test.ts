@@ -3,8 +3,9 @@
  * configured — the deployment shape that runs without RESEND_API_KEY/EMAIL_FROM.
  *
  * Which of Better Auth's three change-email flows is reachable is decided by config AND by the
- * owner row's `emailVerified` (better-auth 1.6.25, dist/api/routes/update-user.mjs:449-455):
- * `updateEmailWithoutVerification` applies only to an UNVERIFIED user. So marking the owner
+ * owner row's `emailVerified` (`canUpdateWithoutVerification` in better-auth's
+ * `dist/api/routes/update-user.mjs`): `updateEmailWithoutVerification` applies only to an
+ * UNVERIFIED user. So marking the owner
  * verified — which is right when a mailer exists, since it buys the confirm-to-the-old-address flow
  * — would 400 every email change here instead. src/lib/seed.ts gates the flag on the mailer for
  * exactly that reason, and this suite is the pin on it.

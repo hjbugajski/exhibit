@@ -13,7 +13,7 @@
  * used, and the default renderer itself, so "special-case one node, delegate the rest" is
  * `datum.id === 'x' ? <mine/> : <Default/>`.
  *
- * Override safety (C29): anything that changes a node's size is a shape or a metric, never a
+ * Override safety: anything that changes a node's size is a shape or a metric, never a
  * component. Layout is already finished by the time an override runs — edges are clipped to the
  * outline the shape produced and arrows are trimmed against it — so a renderer that draws outside
  * its reserved box gets edges pointing at nothing. Paint inside the box; resize through `shapes`.

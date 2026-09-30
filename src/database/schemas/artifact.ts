@@ -16,8 +16,9 @@ export const artifacts = sqliteTable(
   },
   (table) => [
     check('type_check', sql`${table.type} in ('spec', 'html', 'markdown')`),
-    // Covers listArtifacts' default/updated/created sorts; the lower(title) sort runs unindexed
-    // by decision (docs/plans/README.md, "Considered and rejected").
+    // Covers listArtifacts' default/updated/created sorts. The lower(title) sort runs unindexed: a
+    // single-owner gallery holds few enough rows that the scan is trivial. If that changes, add the
+    // expression index through `pnpm db:generate`.
     index('artifact_deletedAt_updatedAt_id_idx').on(table.deletedAt, table.updatedAt, table.id),
     index('artifact_deletedAt_createdAt_id_idx').on(table.deletedAt, table.createdAt, table.id),
   ],

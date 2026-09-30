@@ -2,12 +2,12 @@
  * The `Diagram` namespace. `Root` owns the pipeline and the context; every other part is a thin,
  * overridable renderer.
  *
- * Typography flows outward (C14): the resolved `DiagramMetrics` — the same numbers layout measured
+ * Typography flows outward: the resolved `DiagramMetrics` — the same numbers layout measured
  * with — are written on the figure as `--diagram-font-*` custom properties, and `diagram.css`
  * consumes them. Nothing reads type back off the DOM, so the server and the client compute the same
  * geometry. In dev a rendered label is compared against the metric once and logs if they diverge.
  *
- * Accessibility is static (C31): `role="img"` named by the generated summary, `aria-describedby`
+ * Accessibility is static: `role="img"` named by the generated summary, `aria-describedby`
  * pointing at the sr-only structure beside the drawing — the hidden table that accompanies
  * `catalog/chart`, in list form. The summary is the name and the list is the description, so
  * nothing is announced twice.

@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 /*
- * The font refinement (C27). The rendered-text measurer is stubbed because happy-dom reports no
+ * The font refinement. The rendered-text measurer is stubbed because happy-dom reports no
  * text metrics — what matters is the control flow: measure with the deterministic table first,
  * audit once after the fonts settle, re-lay-out at most once, and never oscillate.
  */

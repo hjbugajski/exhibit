@@ -8,7 +8,7 @@ TanStack Start (React 19) · SQLite via Drizzle + better-sqlite3 · Better Auth 
 
 ## Commands
 
-Node/pnpm via mise (`mise.toml`).
+Node 26 (`.node-version`) and pnpm 12.8.1 (`packageManager`) via mise (`mise.toml`).
 
 - `pnpm check` — read-only CI mirror: fmt:check && lint:check && typecheck && test at CI fuzz depth; run before claiming done
 - `pnpm gate` — the fixer: typecheck && lint --fix && fmt && test

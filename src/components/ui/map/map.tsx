@@ -456,7 +456,11 @@ export function Map({
     <MapContext value={contextValue}>
       <div ref={containerRef} className={cn('relative h-full w-full', className)}>
         {(!isLoaded || loading) && <DefaultLoader />}
-        {/* SSR-safe: children render only when map is loaded on client */}
+        {/*
+         * SSR-safe: the MapLibre instance exists only on the client. Children mount once it exists,
+         * before its style loads, so children that touch sources or layers gate on `isLoaded` from
+         * `useMap`.
+         */}
         {mapInstance && children}
       </div>
     </MapContext>

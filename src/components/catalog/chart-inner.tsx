@@ -80,7 +80,7 @@ function CartesianChart({
       case 'bar':
         return defineChart({
           marks: [
-            // Uniform radius: per-corner rounding is not expressible yet (TanStack/charts#28).
+            // Rounds all four corners alike; `BarRadius` also takes per-corner or value-end radii.
             barY(data, { x: byIndex, y: 'value', radius: 2 }),
           ],
           scales: { x: { scale: () => scaleBand<number>().padding(0.18), axis }, y },

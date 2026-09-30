@@ -421,12 +421,12 @@ export interface DiagnosticSink {
 }
 
 export interface ParseResult<T extends DiagramIR = DiagramIR> {
-  /** Null only when no header matched or every statement failed. */
+  /** Null is the fatal signal; at least one `error` diagnostic then carries the reason. */
   ir: T | null;
   diagnostics: readonly Diagnostic[];
 }
 
-/** Fully resolved layout inputs — `buildDiagram` fills every field before a family sees it. */
+/** Fully resolved layout inputs: `resolveLayoutOptions` fills every field before a family sees it. */
 export interface LayoutOptions {
   measurer: TextMeasurer;
   metrics: DiagramMetrics;

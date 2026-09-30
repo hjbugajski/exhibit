@@ -2,9 +2,8 @@
  * Markdown artifact exercising every surface of the markdown renderer at once: GFM constructs, a
  * highlighted code fence, the URL policy (an allowed https link next to a dropped javascript: one),
  * raw HTML that must show as literal text, a mermaid fence, a comment directive wrapping markdown
- * in a Card, and
- * exhibit fences for a chart and a stateful checklist. Doubles as the live verification fixture for
- * plan 07.
+ * in a Card, and exhibit fences for a chart and a stateful checklist. scripts/dev-publish.ts
+ * publishes it as the end-to-end markdown fixture.
  */
 export const markdownNotesExample = {
   title: 'Markdown Renderer Notes',

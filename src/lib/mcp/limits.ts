@@ -1,4 +1,4 @@
-/** Shared 1 MB cap on spec/html body payloads submitted through MCP tools. */
+/** Shared 1 MB cap on every artifact body (spec, HTML, markdown) submitted through MCP tools. */
 export const MAX_BODY_BYTES = 1_000_000;
 
 /**

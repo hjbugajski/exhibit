@@ -213,11 +213,12 @@ describe('with a mailer configured', () => {
 
   /**
    * Which of Better Auth's three change-email flows runs is decided by config
-   * (better-auth 1.6.25, dist/api/routes/update-user.mjs:449-455), and two of the three are wrong
-   * for this app: without `emailVerification.sendVerificationEmail` the endpoint 400s outright,
-   * and with it but an unverified owner row it verifies the NEW address - which, for someone who
-   * has stolen the session, is an address they chose. Only the seeded-verified owner reaches the
-   * flow asserted here. That makes this test the pin on both halves of the fix.
+   * (`canUpdateWithoutVerification` in better-auth's `dist/api/routes/update-user.mjs`), and two of
+   * the three are wrong for this app: without `emailVerification.sendVerificationEmail` the
+   * endpoint 400s outright, and with it but an unverified owner row it verifies the NEW address -
+   * which, for someone who has stolen the session, is an address they chose. Only the
+   * seeded-verified owner reaches the flow asserted here. That makes this test the pin on both
+   * halves of the fix.
    */
   it('sends the change-email confirmation to the OLD address and applies nothing until it is followed', async () => {
     const { db } = await import('@/database');

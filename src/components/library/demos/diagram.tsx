@@ -245,7 +245,7 @@ function Figure({ className, ...props }: DiagramRootProps) {
   );
 }
 
-/** Paints inside the box the layout already reserved (C29) and delegates everything else. */
+/** Paints inside the box the layout already reserved and delegates everything else. */
 const badgeComponents: DiagramComponents = {
   NodeShape: ({ datum, Default }) =>
     datum.classes.includes('hot') ? (

@@ -1,6 +1,6 @@
 /*
  * The layout invariants, as reusable asserts. Every one of these is a property the engine must hold
- * for any input, so they run over synthetic models now and over parsed family fixtures later.
+ * for any input, so they run over synthetic models and over parsed family fixtures.
  */
 
 import { expect } from 'vitest';
