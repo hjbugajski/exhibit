@@ -9,12 +9,13 @@
  * somebody else's block and every frame after it would nest wrong.
  */
 
-import { StatementError, reportStatementError } from '../../core/diagnostics.ts';
-import { ACC_DESCR_BLOCK, readDescriptionBlock } from '../../core/lex/acc.ts';
+import { StatementError } from '../../core/diagnostics.ts';
+import { readAccText } from '../../core/lex/acc.ts';
 import type { LogicalLine } from '../../core/lex/lines.ts';
 import { readLines, splitHeader } from '../../core/lex/lines.ts';
 import { Scanner } from '../../core/lex/scanner.ts';
-import { readRestOfLine } from '../../core/lex/tokens.ts';
+import { readStatements } from '../../core/lex/statements.ts';
+import { normalizeSpace, readRestOfLine } from '../../core/lex/tokens.ts';
 import { labelLines } from '../../core/text/label.ts';
 import type {
   DiagnosticSink,
@@ -87,10 +88,6 @@ interface Draft {
   accDescr?: string;
 }
 
-function text(raw: string): string {
-  return raw.trim().replace(/\s+/g, ' ');
-}
-
 /**
  * Participants appear in first-mention order, declared or not. A later `participant A as Alias`
  * refines the entry a message already created rather than adding a second lifeline.
@@ -135,7 +132,7 @@ function declare(
 
 function readActor(scanner: Scanner, span: Span, what: string): string {
   const raw = scanner.match(ACTOR)?.[0];
-  const name = raw ? text(raw) : '';
+  const name = raw ? normalizeSpace(raw) : '';
 
   if (!name) {
     throw new StatementError('expected-participant', `Expected ${what}.`, span, [
@@ -149,7 +146,7 @@ function readActor(scanner: Scanner, span: Span, what: string): string {
 function participantStatement(draft: Draft, scanner: Scanner, span: Span, actor: boolean): void {
   const rest = readRestOfLine(scanner);
   const aliased = ALIAS.exec(rest);
-  const id = text(aliased ? (aliased[1] as string) : rest);
+  const id = normalizeSpace(aliased ? (aliased[1] as string) : rest);
 
   if (!id) {
     throw new StatementError('expected-participant', 'Expected a participant name.', span, [
@@ -168,7 +165,7 @@ function activationStatement(
   span: Span,
   type: 'activate' | 'deactivate',
 ): void {
-  const target = text(readRestOfLine(scanner));
+  const target = normalizeSpace(readRestOfLine(scanner));
 
   if (!target) {
     throw new StatementError('expected-participant', `Expected the participant to ${type}.`, span, [
@@ -205,7 +202,7 @@ function noteStatement(draft: Draft, scanner: Scanner, span: Span): void {
   const named = targets
     .slice(0, colon)
     .split(',')
-    .map((entry) => text(entry))
+    .map((entry) => normalizeSpace(entry))
     .filter((entry) => entry.length > 0);
 
   if (named.length === 0) {
@@ -314,23 +311,10 @@ function closeBlock(draft: Draft, span: Span): void {
   }
 }
 
-function accStatement(draft: Draft, scanner: Scanner, keyword: string): void {
-  scanner.skipSpace();
-  scanner.eat(':');
-
-  const value = text(readRestOfLine(scanner));
-
-  if (keyword === 'acctitle') {
-    draft.accTitle = value;
-  } else {
-    draft.accDescr = value;
-  }
-}
-
 function messageStatement(draft: Draft, scanner: Scanner, span: Span): void {
   const sender = readActor(scanner, span, 'the sending participant');
   const bidirectional = BIDIRECTIONAL.test(sender);
-  const from = bidirectional ? text(sender.replace(BIDIRECTIONAL, '')) : sender;
+  const from = bidirectional ? normalizeSpace(sender.replace(BIDIRECTIONAL, '')) : sender;
 
   if (bidirectional) {
     draft.report.info(
@@ -458,12 +442,15 @@ function statement(draft: Draft, line: LogicalLine): void {
     case 'title':
       scanner.skipSpace();
       scanner.eat(':');
-      draft.title = text(readRestOfLine(scanner));
+      draft.title = normalizeSpace(readRestOfLine(scanner));
 
       return;
     case 'acctitle':
+      draft.accTitle = readAccText(scanner);
+
+      return;
     case 'accdescr':
-      accStatement(draft, scanner, keyword);
+      draft.accDescr = readAccText(scanner);
 
       return;
   }
@@ -492,34 +479,28 @@ export function parseSequence(source: string, ctx: ParseContext): ParseResult<Se
   };
   const before = report.count;
 
-  for (let index = 0; index < statements.length; index += 1) {
-    const line = statements[index] as LogicalLine;
-    const block = ACC_DESCR_BLOCK.exec(line.text);
+  const { stopped } = readStatements(statements, report, {
+    statement: (line) => statement(draft, line),
+    description: (text) => {
+      draft.accDescr = text;
+    },
+    stop: (line) => {
+      if (draft.participants.size <= ctx.limits.nodes) {
+        return false;
+      }
 
-    if (block) {
-      const read = readDescriptionBlock(statements, index, block[1] ?? '', report);
-
-      draft.accDescr = read.description;
-      index = read.end;
-
-      continue;
-    }
-
-    try {
-      statement(draft, line);
-    } catch (cause) {
-      reportStatementError(report, cause, line.span);
-    }
-
-    if (draft.participants.size > ctx.limits.nodes) {
       report.error(
         'too-many-nodes',
         `Sequence diagram has more than ${ctx.limits.nodes} participants.`,
         line.span,
       );
 
-      return { ir: null, diagnostics: report.diagnostics };
-    }
+      return true;
+    },
+  });
+
+  if (stopped) {
+    return { ir: null, diagnostics: report.diagnostics };
   }
 
   for (const open of draft.stack.reverse()) {

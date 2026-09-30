@@ -351,6 +351,15 @@ describe('parseFlowchart', () => {
     ]);
   });
 
+  it('collapses whitespace in one-line accTitle and accDescr values', () => {
+    const { ir } = parse(
+      'flowchart TD\n accTitle:  Publish   flow \n accDescr: How   it ships\n A --> B',
+    );
+
+    expect(ir?.accTitle).toBe('Publish flow');
+    expect(ir?.accDescr).toBe('How it ships');
+  });
+
   it('keeps declaration order for nodes and edges', () => {
     const ir = parse('flowchart TD\n C --> A\n A --> B\n B --> C').ir;
 

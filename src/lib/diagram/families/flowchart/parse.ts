@@ -1,6 +1,6 @@
 /*
- * The flowchart parser: a line-oriented outer loop over `readLines`, recursive descent inside a
- * line over a shared `Scanner`.
+ * The flowchart parser: a line-oriented outer loop driven by `readStatements`, recursive descent
+ * inside a line over a shared `Scanner`.
  *
  * Recovery granularity is the logical line. A statement builds into a staging buffer and only
  * commits when it parses cleanly, so a half-parsed `A --> ` leaves no orphan node behind; the
@@ -11,12 +11,12 @@
  * as `info` so the author is told what to change rather than silently ignored.
  */
 
-import { StatementError, reportStatementError } from '../../core/diagnostics.ts';
-import { ACC_DESCR_BLOCK, readDescriptionBlock } from '../../core/lex/acc.ts';
+import { StatementError } from '../../core/diagnostics.ts';
 import type { LogicalLine } from '../../core/lex/lines.ts';
 import { readLines, splitHeader } from '../../core/lex/lines.ts';
 import { Scanner } from '../../core/lex/scanner.ts';
-import { readDelimited, readRestOfLine } from '../../core/lex/tokens.ts';
+import { readStatements } from '../../core/lex/statements.ts';
+import { normalizeSpace, readDelimited, readRestOfLine } from '../../core/lex/tokens.ts';
 import type {
   ArrowKind,
   DiagnosticSink,
@@ -280,7 +280,6 @@ class FlowchartParser {
   private accDescr: string | undefined;
   private ordinal = 0;
   private autoCluster = 0;
-  private failures = 0;
   /** Set when a statement exceeds a `DiagramLimits` cap; the parse stops and yields no IR. */
   private aborted = false;
 
@@ -301,23 +300,16 @@ class FlowchartParser {
 
     this.readHeader(header);
 
-    for (let index = 0; index < statements.length; index += 1) {
-      const line = statements[index] as LogicalLine;
-      const block = ACC_DESCR_BLOCK.exec(line.text);
+    const { failures, stopped } = readStatements(statements, this.report, {
+      statement: (line) => this.statement(line),
+      description: (text) => {
+        this.accDescr = text;
+      },
+      stop: () => this.aborted,
+    });
 
-      if (block) {
-        const read = readDescriptionBlock(statements, index, block[1] ?? '', this.report);
-
-        this.accDescr = read.description;
-        index = read.end;
-        continue;
-      }
-
-      this.statement(line);
-
-      if (this.aborted) {
-        return null;
-      }
+    if (stopped) {
+      return null;
     }
 
     for (const open of this.stack) {
@@ -330,7 +322,7 @@ class FlowchartParser {
 
     this.stack.length = 0;
 
-    if (this.nodes.size === 0 && this.clusters.length === 0 && this.failures > 0) {
+    if (this.nodes.size === 0 && this.clusters.length === 0 && failures > 0) {
       return null;
     }
 
@@ -421,16 +413,11 @@ class FlowchartParser {
       return;
     }
 
-    try {
-      if (this.keyword(line, text)) {
-        return;
-      }
-
-      this.flowStatement(line);
-    } catch (cause) {
-      this.failures += 1;
-      reportStatementError(this.report, cause, line.span);
+    if (this.keyword(line, text)) {
+      return;
     }
+
+    this.flowStatement(line);
   }
 
   /** Returns true when the line was a keyword statement rather than a node/edge statement. */
@@ -486,7 +473,7 @@ class FlowchartParser {
     const accTitle = ACC_TITLE.exec(text);
 
     if (accTitle) {
-      this.accTitle = (accTitle[1] ?? '').trim();
+      this.accTitle = normalizeSpace(accTitle[1] ?? '');
 
       return true;
     }
@@ -494,7 +481,7 @@ class FlowchartParser {
     const accDescr = ACC_DESCR_LINE.exec(text);
 
     if (accDescr) {
-      this.accDescr = (accDescr[1] ?? '').trim();
+      this.accDescr = normalizeSpace(accDescr[1] ?? '');
 
       return true;
     }

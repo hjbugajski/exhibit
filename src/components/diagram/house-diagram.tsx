@@ -5,13 +5,10 @@
  *
  * A diagram that cannot be drawn degrades the same way an invalid exhibit fence does: the source
  * stays on screen with one line saying why, because that feedback is what gets the next version
- * right. It is the last resort, though, not the first: a caller with another engine behind it
- * passes `fallback`, and a source this engine claimed from its header but could not draw is handed
- * back rather than dumped — the drawing a second engine can still produce beats a precise reason
- * for the one that failed. Paint still comes entirely from `@layer diagram.house` in styles.css.
+ * right. Paint comes entirely from `@layer diagram.house` in styles.css.
  */
 
-import { Suspense, lazy, type ReactNode } from 'react';
+import { Suspense, lazy } from 'react';
 
 import { flowBlock } from '@/components/catalog/flow';
 import type { DiagramDensity } from '@/lib/diagram/metrics';
@@ -70,8 +67,6 @@ export interface HouseDiagramProps {
   density?: DiagramDensity;
   fit?: DiagramFit;
   className?: string;
-  /** Rendered bare in place of the whole figure when this engine drew nothing. */
-  fallback?: ReactNode;
 }
 
 /**
@@ -80,24 +75,11 @@ export interface HouseDiagramProps {
  * hairline scaled, and only the engine knows which one it produced. An explicit `fit` always wins —
  * this picks a default, it does not override a caller.
  */
-export function HouseDiagram({
-  source,
-  title,
-  density,
-  fit,
-  className,
-  fallback,
-}: HouseDiagramProps) {
+export function HouseDiagram({ source, title, density, fit, className }: HouseDiagramProps) {
   const diagram = useDiagram(source, { density });
   const unreadable = diagram.diagnostics.some((diagnostic) => diagnostic.code === 'extreme-extent');
   // A `title` line in the source is a caption its author asked to see; the prop still wins.
   const caption = title ?? diagram.scene?.caption;
-
-  // Bare, and above `Diagram.Root`: the caller's engine brings its own flow rhythm wrapper, and two
-  // nested ones would double the block's margins.
-  if (fallback && !diagram.scene) {
-    return fallback;
-  }
 
   return (
     <Diagram.Root

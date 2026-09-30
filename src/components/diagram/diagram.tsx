@@ -21,7 +21,7 @@
  */
 
 import { createElement, useEffect, useEffectEvent, useId, useMemo, useRef } from 'react';
-import type { CSSProperties, ComponentProps, RefObject } from 'react';
+import type { CSSProperties, ComponentProps, ComponentType, RefObject } from 'react';
 
 import { useRender } from '@base-ui/react/use-render';
 
@@ -29,7 +29,7 @@ import { round2 } from '@/lib/diagram/core/geometry/path';
 import { interMetrics } from '@/lib/diagram/core/text/font-metrics-inter';
 import { metricsMeasurer } from '@/lib/diagram/core/text/measurers';
 import type { DiagramMetrics } from '@/lib/diagram/metrics';
-import type { Diagnostic, PieScene, TextMeasurer } from '@/lib/diagram/types';
+import type { Diagnostic, PieScene, Scene, TextMeasurer } from '@/lib/diagram/types';
 import { cn } from '@/lib/utils';
 
 import { useOptionalDiagramCanvas } from './canvas-context';
@@ -43,8 +43,10 @@ import type {
   DiagramSceneValue,
 } from './diagram-context';
 import { DiagramConfigProvider, useDiagramConfig, useDiagramScene } from './diagram-context';
-import type { DiagramFamilyView } from './family-views';
-import { resolveFamilyView } from './family-views';
+import { GanttView } from './gantt-parts';
+import { GraphView } from './graph-parts';
+import { PieView } from './pie-parts';
+import { SequenceView } from './sequence-parts';
 import type { UseDiagramOptions, UseDiagramResult } from './use-diagram';
 import { useDiagram, useStableValue } from './use-diagram';
 
@@ -296,16 +298,20 @@ function Root({
 
 // ---------------------------------------------------------------------------------------- svg
 
-export interface DiagramSvgProps extends ComponentProps<'svg'> {
-  /** Family id -> view override; falls back to the builtin map, then to the scene kind. */
-  views?: Readonly<Record<string, DiagramFamilyView>>;
-}
+export type DiagramSvgProps = ComponentProps<'svg'>;
+
+const VIEW_BY_KIND: Readonly<Record<Scene['kind'], ComponentType<{ scene: Scene }>>> = {
+  graph: GraphView,
+  pie: PieView,
+  sequence: SequenceView,
+  gantt: GanttView,
+};
 
 /**
  * Childless renders the detected family's view. Passing children replaces it wholesale, which is
  * how a consumer draws parts in a different order or adds a decoration layer.
  */
-function Svg({ views, className, children, ...props }: DiagramSvgProps) {
+function Svg({ className, children, ...props }: DiagramSvgProps) {
   const { classNames, id, fit } = useDiagramConfig();
   const { scene, accessibleName, description } = useDiagramScene();
   // Inside a canvas the drawing is always natural size — the canvas transform, not `fit`, decides
@@ -334,9 +340,9 @@ function Svg({ views, className, children, ...props }: DiagramSvgProps) {
       className={cn(classNames.svg, className)}
       {...props}
     >
-      {/* The resolved view is a stable registry entry per family, not a component created during
-          render, so this never remounts the subtree. */}
-      {children ?? createElement(resolveFamilyView(scene, views), { scene })}
+      {/* The view is a module constant per scene kind, not a component created during render, so
+          this never remounts the subtree. */}
+      {children ?? createElement(VIEW_BY_KIND[scene.kind], { scene })}
     </svg>
   );
 }

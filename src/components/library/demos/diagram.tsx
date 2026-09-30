@@ -11,6 +11,7 @@
 import { useRef, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 
+import { ALLOWED_FAMILIES } from '@/catalog/mermaid-schema';
 import { HighlightedCode } from '@/components/blocks/highlighted-code';
 import { Diagram } from '@/components/diagram/diagram';
 import type { DiagramRootProps } from '@/components/diagram/diagram';
@@ -772,8 +773,7 @@ function DiagramDemo() {
 export const diagramDemo: LibraryDemo = {
   slug: 'diagram',
   title: 'Diagram',
-  description:
-    'The mermaid-syntax diagram library: flowchart, sequence, state, class, ER, pie and gantt, drawn by the in-repo layout engine with every paint decision left to the design system.',
+  description: `The mermaid-syntax diagram library: ${ALLOWED_FAMILIES}, drawn by the in-repo layout engine with every paint decision left to the design system.`,
   group: 'Examples',
   render: () => <DiagramDemo />,
 };

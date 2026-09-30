@@ -5,12 +5,18 @@
  * expected rather than a silent drop.
  */
 
-import { StatementError, reportStatementError } from '../../core/diagnostics.ts';
-import { ACC_DESCR_BLOCK, readDescriptionBlock } from '../../core/lex/acc.ts';
+import { StatementError } from '../../core/diagnostics.ts';
+import { readAccText } from '../../core/lex/acc.ts';
 import type { LogicalLine } from '../../core/lex/lines.ts';
 import { readLines, splitHeader } from '../../core/lex/lines.ts';
 import { Scanner } from '../../core/lex/scanner.ts';
-import { readNumber, readQuotedString, readRestOfLine } from '../../core/lex/tokens.ts';
+import { readStatements } from '../../core/lex/statements.ts';
+import {
+  normalizeSpace,
+  readNumber,
+  readQuotedString,
+  readRestOfLine,
+} from '../../core/lex/tokens.ts';
 import type { DiagnosticSink, ParseContext, ParseResult } from '../../types.ts';
 import type { PieIR, PieSlice } from './ir.ts';
 
@@ -29,10 +35,6 @@ interface Draft {
   slices: PieSlice[];
 }
 
-function text(raw: string): string {
-  return raw.trim().replace(/\s+/g, ' ');
-}
-
 /** `pie`, then `showData` and `title …` in either order — mermaid accepts both on the header. */
 function header(draft: Draft, line: LogicalLine): void {
   const scanner = new Scanner(line.text, line.span);
@@ -46,7 +48,7 @@ function header(draft: Draft, line: LogicalLine): void {
   }
 
   if (scanner.match(TITLE)) {
-    draft.title = text(readRestOfLine(scanner));
+    draft.title = normalizeSpace(readRestOfLine(scanner));
     return;
   }
 
@@ -74,7 +76,7 @@ function statement(draft: Draft, line: LogicalLine): void {
   const scanner = new Scanner(line.text, line.span);
 
   if (scanner.match(TITLE)) {
-    draft.title = text(readRestOfLine(scanner));
+    draft.title = normalizeSpace(readRestOfLine(scanner));
     return;
   }
 
@@ -84,17 +86,13 @@ function statement(draft: Draft, line: LogicalLine): void {
   }
 
   if (scanner.match(ACC_TITLE)) {
-    scanner.skipSpace();
-    scanner.eat(':');
-    draft.accTitle = text(readRestOfLine(scanner));
+    draft.accTitle = readAccText(scanner);
 
     return;
   }
 
   if (scanner.match(ACC_DESCR)) {
-    scanner.skipSpace();
-    scanner.eat(':');
-    draft.accDescr = text(readRestOfLine(scanner));
+    draft.accDescr = readAccText(scanner);
 
     return;
   }
@@ -132,7 +130,7 @@ function slice(draft: Draft, scanner: Scanner, line: LogicalLine): void {
   if (rest) {
     draft.report.warn(
       'trailing-text',
-      `Ignored '${rest}' after the value of slice '${text(label)}'.`,
+      `Ignored '${rest}' after the value of slice '${normalizeSpace(label)}'.`,
       line.span,
     );
   }
@@ -140,14 +138,14 @@ function slice(draft: Draft, scanner: Scanner, line: LogicalLine): void {
   if (value < 0) {
     draft.report.warn(
       'negative-value',
-      `Slice '${text(label)}' has a negative value and was dropped.`,
+      `Slice '${normalizeSpace(label)}' has a negative value and was dropped.`,
       line.span,
     );
 
     return;
   }
 
-  draft.slices.push({ label: text(label), value, span: line.span });
+  draft.slices.push({ label: normalizeSpace(label), value, span: line.span });
 }
 
 export function parsePie(source: string, ctx: ParseContext): ParseResult<PieIR> {
@@ -165,25 +163,12 @@ export function parsePie(source: string, ctx: ParseContext): ParseResult<PieIR> 
 
   header(draft, first);
 
-  for (let index = 0; index < statements.length; index += 1) {
-    const line = statements[index] as LogicalLine;
-    const block = ACC_DESCR_BLOCK.exec(line.text);
-
-    if (block) {
-      const read = readDescriptionBlock(statements, index, block[1] ?? '', report);
-
-      draft.accDescr = read.description;
-      index = read.end;
-
-      continue;
-    }
-
-    try {
-      statement(draft, line);
-    } catch (cause) {
-      reportStatementError(report, cause, line.span);
-    }
-  }
+  readStatements(statements, report, {
+    statement: (line) => statement(draft, line),
+    description: (text) => {
+      draft.accDescr = text;
+    },
+  });
 
   const failed = report.diagnostics
     .slice(before)

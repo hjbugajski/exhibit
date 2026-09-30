@@ -11,12 +11,13 @@
  * the first `dateFormat` is read in mermaid's default.
  */
 
-import { StatementError, reportStatementError } from '../../core/diagnostics.ts';
-import { ACC_DESCR_BLOCK, readDescriptionBlock } from '../../core/lex/acc.ts';
+import { StatementError } from '../../core/diagnostics.ts';
+import { readAccText } from '../../core/lex/acc.ts';
 import type { LogicalLine } from '../../core/lex/lines.ts';
 import { readLines, splitHeader } from '../../core/lex/lines.ts';
 import { Scanner } from '../../core/lex/scanner.ts';
-import { readRestOfLine } from '../../core/lex/tokens.ts';
+import { readStatements } from '../../core/lex/statements.ts';
+import { normalizeSpace, readRestOfLine } from '../../core/lex/tokens.ts';
 import { labelLines } from '../../core/text/label.ts';
 import type { DiagnosticSink, ParseContext, ParseResult, Span } from '../../types.ts';
 import type {
@@ -93,10 +94,6 @@ interface Draft {
   accDescr?: string;
 }
 
-function text(raw: string): string {
-  return raw.trim().replace(/\s+/g, ' ');
-}
-
 /** The section a task belongs to, creating the implicit one when the chart declared none yet. */
 function currentSection(draft: Draft, span: Span): number {
   if (draft.sections.length === 0) {
@@ -107,7 +104,7 @@ function currentSection(draft: Draft, span: Span): number {
 }
 
 function sectionStatement(draft: Draft, scanner: Scanner, span: Span): void {
-  const name = text(readRestOfLine(scanner));
+  const name = normalizeSpace(readRestOfLine(scanner));
 
   if (!name) {
     throw new StatementError('expected-section-name', 'Expected a section name.', span, ['a name']);
@@ -117,7 +114,7 @@ function sectionStatement(draft: Draft, scanner: Scanner, span: Span): void {
 }
 
 function dateFormatStatement(draft: Draft, scanner: Scanner, span: Span): void {
-  const raw = text(readRestOfLine(scanner));
+  const raw = normalizeSpace(readRestOfLine(scanner));
 
   if (!raw) {
     throw new StatementError('expected-date-format', 'Expected a date format.', span, [
@@ -142,7 +139,7 @@ function dateFormatStatement(draft: Draft, scanner: Scanner, span: Span): void {
 }
 
 function axisFormatStatement(draft: Draft, scanner: Scanner, span: Span): void {
-  const raw = text(readRestOfLine(scanner));
+  const raw = normalizeSpace(readRestOfLine(scanner));
 
   if (!raw) {
     throw new StatementError('expected-axis-format', 'Expected an axis format.', span, [
@@ -166,7 +163,7 @@ function axisFormatStatement(draft: Draft, scanner: Scanner, span: Span): void {
 }
 
 function excludesStatement(draft: Draft, scanner: Scanner, span: Span): void {
-  const rest = text(readRestOfLine(scanner)).toLowerCase();
+  const rest = normalizeSpace(readRestOfLine(scanner)).toLowerCase();
   const entries = rest
     .split(/[\s,]+/)
     .map((entry) => entry.trim())
@@ -187,7 +184,7 @@ function excludesStatement(draft: Draft, scanner: Scanner, span: Span): void {
 }
 
 function todayMarkerStatement(draft: Draft, scanner: Scanner, span: Span): void {
-  const rest = text(readRestOfLine(scanner)).toLowerCase();
+  const rest = normalizeSpace(readRestOfLine(scanner)).toLowerCase();
 
   if (rest === 'off') {
     draft.todayMarker = false;
@@ -201,19 +198,6 @@ function todayMarkerStatement(draft: Draft, scanner: Scanner, span: Span): void 
     'The today marker is not drawn: a layout may not read a clock, so "today" would depend on when the drawing was built.',
     span,
   );
-}
-
-function accStatement(draft: Draft, scanner: Scanner, keyword: string): void {
-  scanner.skipSpace();
-  scanner.eat(':');
-
-  const value = text(readRestOfLine(scanner));
-
-  if (keyword === 'acctitle') {
-    draft.accTitle = value;
-  } else {
-    draft.accDescr = value;
-  }
 }
 
 function durationOf(field: string): GanttDuration | null {
@@ -348,7 +332,7 @@ function taskStatement(draft: Draft, line: LogicalLine): void {
   const fields = line.text
     .slice(colon + 1)
     .split(',')
-    .map((field) => text(field))
+    .map((field) => normalizeSpace(field))
     .filter((field) => field.length > 0);
   const tags: GanttTag[] = [];
 
@@ -502,12 +486,15 @@ function statement(draft: Draft, line: LogicalLine): void {
     case 'title':
       scanner.skipSpace();
       scanner.eat(':');
-      draft.title = text(readRestOfLine(scanner));
+      draft.title = normalizeSpace(readRestOfLine(scanner));
 
       return;
     case 'acctitle':
+      draft.accTitle = readAccText(scanner);
+
+      return;
     case 'accdescr':
-      accStatement(draft, scanner, keyword);
+      draft.accDescr = readAccText(scanner);
 
       return;
   }
@@ -536,34 +523,28 @@ export function parseGantt(source: string, ctx: ParseContext): ParseResult<Gantt
   };
   const before = report.count;
 
-  for (let index = 0; index < statements.length; index += 1) {
-    const line = statements[index] as LogicalLine;
-    const block = ACC_DESCR_BLOCK.exec(line.text);
+  const { stopped } = readStatements(statements, report, {
+    statement: (line) => statement(draft, line),
+    description: (text) => {
+      draft.accDescr = text;
+    },
+    stop: (line) => {
+      if (draft.tasks.length <= ctx.limits.nodes) {
+        return false;
+      }
 
-    if (block) {
-      const read = readDescriptionBlock(statements, index, block[1] ?? '', report);
-
-      draft.accDescr = read.description;
-      index = read.end;
-
-      continue;
-    }
-
-    try {
-      statement(draft, line);
-    } catch (cause) {
-      reportStatementError(report, cause, line.span);
-    }
-
-    if (draft.tasks.length > ctx.limits.nodes) {
       report.error(
         'too-many-nodes',
         `Gantt chart has more than ${ctx.limits.nodes} tasks.`,
         line.span,
       );
 
-      return { ir: null, diagnostics: report.diagnostics };
-    }
+      return true;
+    },
+  });
+
+  if (stopped) {
+    return { ir: null, diagnostics: report.diagnostics };
   }
 
   const failed = report.diagnostics
