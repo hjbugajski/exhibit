@@ -240,6 +240,20 @@ describe('Diagram.Root', () => {
     expect(reported.map((entry) => entry.code)).toContain('unsupported-construct');
   });
 
+  it('does not run a function returned by onDiagnostics as effect cleanup', () => {
+    const returned = vi.fn();
+    const onDiagnostics = vi.fn(() => returned);
+
+    const { rerender, unmount } = render(
+      <Diagram.Root source={FLOW} onDiagnostics={onDiagnostics} />,
+    );
+    rerender(<Diagram.Root source={PIE} onDiagnostics={onDiagnostics} />);
+    unmount();
+
+    expect(onDiagnostics).toHaveBeenCalledTimes(2);
+    expect(returned).not.toHaveBeenCalled();
+  });
+
   it('throws a useful error when a part is used outside a root', () => {
     expect(() => render(<Diagram.Svg />)).toThrow(/inside <Diagram.Root>/);
   });

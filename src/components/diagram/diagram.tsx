@@ -255,7 +255,9 @@ function Root({
   // The consumer hears each diagnostics value once, whatever the callback's identity.
   const notifyDiagnostics = useEffectEvent((next: typeof diagnostics) => onDiagnostics?.(next));
 
-  useEffect(() => notifyDiagnostics(diagnostics), [diagnostics]);
+  useEffect(() => {
+    notifyDiagnostics(diagnostics);
+  }, [diagnostics]);
 
   const config = useMemo<DiagramConfigValue>(
     () => ({ metrics, components, classNames, id, fit }),
