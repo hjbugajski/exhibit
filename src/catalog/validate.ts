@@ -15,6 +15,7 @@ import { validateSpec } from '@json-render/core';
 import type { z } from 'zod';
 
 import { catalog, MAP_MARKERS_MAX } from '@/catalog/catalog';
+import { collectItineraryDays, collectStopMarkers } from '@/catalog/stop-markers';
 
 /**
  * Catalog components are typed as a fixed-key object; widen to an index signature so we can look up
@@ -178,10 +179,10 @@ function findStatePathConflictErrors(elements: Record<string, unknown>): Artifac
 }
 
 /**
- * A Day auto-renders one map from every descendant Stop with coordinates (day.tsx), which never
- * passes through Map's own markers cap — enforce the same cap per Day here so an oversized day
- * fails at publish time instead of silently truncating pins at render. Nested Days are skipped:
- * their stops register with their own map.
+ * A Day renders one map from every descendant Stop with coordinates (day.tsx), which never passes
+ * through Map's own markers cap. The same cap applies per Day here, so an oversized day fails at
+ * publish time instead of losing pins at render. The count uses the render path's walk
+ * (stop-markers.ts), so a nested Day's stops count toward that Day only.
  */
 function findDayMapMarkerCapErrors(elements: Record<string, unknown>): ArtifactSpecError[] {
   const errors: ArtifactSpecError[] = [];
@@ -191,38 +192,9 @@ function findDayMapMarkerCapErrors(elements: Record<string, unknown>): ArtifactS
       continue;
     }
 
-    let count = 0;
-    const visited = new Set<string>([key]);
-    const queue = Array.isArray(element.children) ? [...element.children] : [];
-
-    while (queue.length > 0) {
-      const childKey = queue.pop();
-
-      if (typeof childKey !== 'string' || visited.has(childKey)) {
-        continue;
-      }
-
-      visited.add(childKey);
-      const childType = elementType(elements, childKey);
-
-      if (childType === 'Day') {
-        continue;
-      }
-
-      const child = elements[childKey];
-
-      if (!isRecord(child)) {
-        continue;
-      }
-
-      if (childType === 'Stop' && isRecord(child.props) && isRecord(child.props.coordinates)) {
-        count += 1;
-      }
-
-      if (Array.isArray(child.children)) {
-        queue.push(...child.children);
-      }
-    }
+    const count = Array.isArray(element.children)
+      ? collectStopMarkers(elements, element.children).length
+      : 0;
 
     if (count > MAP_MARKERS_MAX) {
       errors.push({
@@ -230,6 +202,38 @@ function findDayMapMarkerCapErrors(elements: Record<string, unknown>): ArtifactS
         component: 'Day',
         path: `elements.${key}.children`,
         message: `Day "${key}" has ${count} stops with coordinates; its auto-rendered map shows at most ${MAP_MARKERS_MAX}. Split the day or omit coordinates on some stops.`,
+      });
+    }
+  }
+
+  return errors;
+}
+
+/**
+ * An Itinerary renders one trip map from the stops of all its Days (itinerary.tsx), so the Day cap
+ * applies again to their sum.
+ */
+function findItineraryMapMarkerCapErrors(elements: Record<string, unknown>): ArtifactSpecError[] {
+  const errors: ArtifactSpecError[] = [];
+
+  for (const [key, element] of Object.entries(elements)) {
+    if (elementType(elements, key) !== 'Itinerary' || !isRecord(element)) {
+      continue;
+    }
+
+    const count = Array.isArray(element.children)
+      ? collectItineraryDays(elements, element.children).reduce(
+          (sum, day) => sum + day.markers.length,
+          0,
+        )
+      : 0;
+
+    if (count > MAP_MARKERS_MAX) {
+      errors.push({
+        element: key,
+        component: 'Itinerary',
+        path: `elements.${key}.children`,
+        message: `Itinerary "${key}" has ${count} stops with coordinates across its days; its trip map shows at most ${MAP_MARKERS_MAX}. Split the trip or omit coordinates on some stops.`,
       });
     }
   }
@@ -384,6 +388,7 @@ export function validateArtifactSpec(spec: unknown): ArtifactValidationResult {
       ...findStatePathConflictErrors(elements),
       ...findTabsChildCountMismatchErrors(elements),
       ...findDayMapMarkerCapErrors(elements),
+      ...findItineraryMapMarkerCapErrors(elements),
     );
   }
 

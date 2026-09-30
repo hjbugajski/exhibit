@@ -1,60 +1,95 @@
+import { renderToString } from 'react-dom/server';
+
 // @vitest-environment happy-dom
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { CatalogComponentProps } from '@/catalog/catalog';
+import { itineraryFixture } from '@/catalog/fixtures/itinerary';
+import { SpecView } from '@/catalog/registry';
+import type { StopMarker } from '@/catalog/stop-markers';
 import { Day } from '@/components/catalog/day';
-import { Stop } from '@/components/catalog/stop';
 
-/** Stub the Map chunk (maplibre-gl needs WebGL); render marker labels so order is assertable. */
+/** Stub the Map chunk (maplibre-gl needs WebGL); render labels and paths so both are assertable. */
 vi.mock('@/components/catalog/map', () => ({
   Map: ({ props }: { props: CatalogComponentProps<'Map'> }) => (
-    <div data-testid="day-map">{props.markers?.map((marker) => marker.label).join(', ')}</div>
+    <div data-testid="map">
+      <span data-testid="map-labels">
+        {props.markers?.map((marker) => marker.label).join(' | ')}
+      </span>
+      {props.paths?.map((path) => (
+        <span
+          data-dashed={path.dashed ? '' : undefined}
+          data-points={path.points.length}
+          data-testid="map-path"
+          key={path.id}
+        />
+      ))}
+    </div>
   ),
 }));
 
 afterEach(() => {
   cleanup();
-  vi.restoreAllMocks();
 });
 
+function marker(id: string, label: string): StopMarker {
+  return { id, lat: 1, lng: 2, label };
+}
+
 describe('Day', () => {
-  it('auto-renders a map of child stops with coordinates, in mount order', () => {
+  it('renders the given markers as a numbered, dashed route', () => {
     render(
-      <Day props={{ label: 'Day 1' }}>
-        <Stop props={{ title: 'Shrine', coordinates: { lat: 34.9671, lng: 135.7727 } }} />
-        <Stop props={{ title: 'Lunch' }} />
-        <Stop props={{ title: 'Hotel', coordinates: { lat: 35.0031, lng: 135.7726 } }} />
-      </Day>,
+      <Day
+        markers={[marker('a', 'Shrine'), marker('b', 'Lunch'), marker('c', 'Hotel')]}
+        props={{ label: 'Day 1' }}
+      />,
     );
 
-    expect(screen.getByTestId('day-map').textContent).toBe('Shrine, Hotel');
+    expect(screen.getByTestId('map-labels').textContent).toBe('1. Shrine | 2. Lunch | 3. Hotel');
+    const paths = screen.getAllByTestId('map-path');
+
+    expect(paths).toHaveLength(1);
+    expect(paths[0]?.dataset.points).toBe('3');
+    expect(paths[0]?.hasAttribute('data-dashed')).toBe(true);
   });
 
-  it('renders no map when no child stop has coordinates', () => {
-    render(
-      <Day props={{ label: 'Day 2' }}>
-        <Stop props={{ title: 'Lunch' }} />
-      </Day>,
-    );
+  it('draws no route for a single marker', () => {
+    render(<Day markers={[marker('a', 'Shrine')]} props={{ label: 'Day 1' }} />);
 
-    expect(screen.queryByTestId('day-map')).toBeNull();
+    expect(screen.getByTestId('map-labels').textContent).toBe('1. Shrine');
+    expect(screen.queryByTestId('map-path')).toBeNull();
   });
 
-  it('drops a stop from the map when it unmounts', () => {
-    const { rerender } = render(
-      <Day props={{ label: 'Day 1' }}>
-        <Stop key="shrine" props={{ title: 'Shrine', coordinates: { lat: 1, lng: 2 } }} />
-        <Stop key="hotel" props={{ title: 'Hotel', coordinates: { lat: 3, lng: 4 } }} />
-      </Day>,
-    );
+  it('renders no map without markers', () => {
+    render(<Day props={{ label: 'Day 2' }} />);
 
-    rerender(
-      <Day props={{ label: 'Day 1' }}>
-        <Stop key="hotel" props={{ title: 'Hotel', coordinates: { lat: 3, lng: 4 } }} />
-      </Day>,
-    );
+    expect(screen.queryByTestId('map')).toBeNull();
+  });
 
-    expect(screen.getByTestId('day-map').textContent).toBe('Hotel');
+  it("uses the label's slug as the section id", () => {
+    const { container } = render(<Day props={{ label: 'Day 1: Kyoto & Nara' }} />);
+
+    expect(container.querySelector('section')?.id).toBe('day-1-kyoto-nara');
+  });
+
+  it('renders no id for a label with no slug', () => {
+    const { container } = render(<Day props={{ label: '— ✈ —' }} />);
+
+    expect(container.querySelector('section')?.hasAttribute('id')).toBe(false);
+  });
+
+  /** The map must exist before any effect runs, or it appears a commit late and shifts the stops. */
+  it("server-renders the fixture's day map with its stop labels", () => {
+    const html = renderToString(<SpecView spec={itineraryFixture} />);
+    const { elements } = itineraryFixture;
+    const day1Stops = (elements['day-1']?.children ?? [])
+      .filter((key) => elements[key]?.type === 'Stop')
+      .map((key) => elements[key]?.props.title as string);
+
+    expect(day1Stops.length).toBeGreaterThan(0);
+    for (const [index, title] of day1Stops.entries()) {
+      expect(html).toContain(`${index + 1}. ${title}`);
+    }
   });
 });

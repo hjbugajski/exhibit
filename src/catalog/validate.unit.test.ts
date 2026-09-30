@@ -194,6 +194,74 @@ describe('validateArtifactSpec', () => {
     );
   });
 
+  /** Two Days of coordinate Stops, each under the per-Day cap, totalling `total`. */
+  function tripOf(total: number) {
+    const firstDay = Math.ceil(total / 2);
+    const stops = Object.fromEntries(
+      Array.from({ length: total }, (_, i) => [
+        `stop-${i}`,
+        {
+          type: 'Stop',
+          props: { title: `Stop ${i}`, coordinates: { lat: 0, lng: 0 } },
+          children: [],
+        },
+      ]),
+    );
+    const keys = Object.keys(stops);
+
+    return validateArtifactSpec({
+      root: 'trip',
+      elements: {
+        trip: { type: 'Itinerary', props: {}, children: ['day-1', 'day-2'] },
+        'day-1': { type: 'Day', props: { label: 'Day 1' }, children: keys.slice(0, firstDay) },
+        'day-2': { type: 'Day', props: { label: 'Day 2' }, children: keys.slice(firstDay) },
+        ...stops,
+      },
+    });
+  }
+
+  it('rejects an Itinerary whose days together exceed the trip map marker cap', () => {
+    const result = tripOf(501);
+
+    expect(result.valid).toBe(false);
+    if (result.valid) {
+      throw new Error('expected invalid result');
+    }
+
+    expect(result.errors).toEqual([
+      expect.objectContaining({
+        element: 'trip',
+        component: 'Itinerary',
+        path: 'elements.trip.children',
+        message: expect.stringContaining('at most 500'),
+      }),
+    ]);
+  });
+
+  it('accepts an Itinerary whose days together reach the trip map marker cap', () => {
+    const result = tripOf(500);
+
+    expect(result.valid ? [] : result.errors).toEqual([]);
+  });
+
+  it('rejects a Stop with a non-http(s) url', () => {
+    const result = validateArtifactSpec({
+      root: 'stop',
+      elements: {
+        stop: { type: 'Stop', props: { title: 'Omen', url: 'ftp://x' }, children: [] },
+      },
+    });
+
+    expect(result.valid).toBe(false);
+    if (result.valid) {
+      throw new Error('expected invalid result');
+    }
+
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({ element: 'stop', path: 'elements.stop.props.url' }),
+    );
+  });
+
   it('rejects a Table link cell with a non-http(s) href', () => {
     const result = validateArtifactSpec({
       root: 'table',

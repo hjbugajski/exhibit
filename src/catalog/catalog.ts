@@ -38,8 +38,9 @@ const latLng = z.object({
 });
 
 /**
- * Marker cap for a single map. Shared by Map's own schema, Trail's waypoints, the per-Day lint in
- * validate.ts, and the Day auto-map's render guard (day.tsx) so they can't drift.
+ * Marker cap for a single map. Shared by Map's own schema, Trail's waypoints, the per-Day and
+ * per-Itinerary lints in validate.ts, and the render guards of the day map (day.tsx) and the trip
+ * map (itinerary.tsx) so they can't drift.
  */
 export const MAP_MARKERS_MAX = 500;
 const listItemId = z
@@ -619,7 +620,7 @@ export const catalog = defineCatalog(schema, {
     Itinerary: {
       slots: ['default'],
       description:
-        'Top-level container for a multi-day trip; children must be Day elements. Use once per itinerary document.',
+        'Top-level container for a trip; children are Day elements. Adds a trip map and links to each day automatically.',
       props: z.object({
         title: z
           .string()
@@ -636,7 +637,7 @@ export const catalog = defineCatalog(schema, {
     Day: {
       slots: ['default'],
       description:
-        'One day within an Itinerary; children are typically Stop elements, optionally mixed with other blocks (e.g. a Figure between stops). When any child Stop has coordinates, the day automatically renders a map of those stops — do not add a separate Map element for them.',
+        'One day in an Itinerary; children are Stops, optionally mixed with other blocks (Weather, Trail, Figure). Stops with coordinates appear on an automatic day map, numbered in order; do not add a Map for them.',
       props: z.object({
         label: z.string().max(SHORT_MAX).describe('Day label, e.g. "Day 1 — Saturday".'),
         date: z
@@ -652,8 +653,7 @@ export const catalog = defineCatalog(schema, {
       }),
     },
     Stop: {
-      description:
-        'A single stop within a Day: a meal, activity, place to stay, or leg of travel. The most granular unit of an itinerary.',
+      description: 'One stop in a Day: a meal, activity, stay, or travel leg.',
       props: z.object({
         time: z
           .string()
@@ -667,22 +667,32 @@ export const catalog = defineCatalog(schema, {
           .describe('How long this stop takes, e.g. "1.5 hours".'),
         title: z.string().max(SHORT_MAX).describe('Name of the stop, e.g. "Fushimi Inari Shrine".'),
         location: z.string().max(SHORT_MAX).optional().describe('Neighborhood, address, or area.'),
-        coordinates: latLng
-          .optional()
-          .describe(
-            'Geographic coordinates of the stop. When any stop in a Day has coordinates, the day renders a map of its stops automatically.',
-          ),
+        coordinates: latLng.optional().describe('Pins the stop on the day and trip maps.'),
         markdown: z
           .string()
           .max(LONG_MAX)
           .optional()
           .describe('Markdown detail: what to do, tips, booking info.'),
         kind: z
-          .enum(['food', 'activity', 'lodging', 'travel', 'other'])
+          .enum(['food', 'activity', 'lodging', 'travel', 'hike', 'shopping', 'other'])
           .optional()
-          .describe(
-            'Category driving the stop icon: food (fork/knife), activity (compass), lodging (bed), travel (plane), other (pin). Defaults to other.',
-          ),
+          .describe('Sets the icon. Defaults to other.'),
+        url: z
+          .string()
+          .max(2_000)
+          // Same rule as Table links: http(s) only.
+          .regex(/^https?:\/\//i, 'must be an http(s) URL')
+          .optional()
+          .describe('Booking or info link; the title links to it.'),
+        cost: z.string().max(SHORT_MAX).optional().describe('Price as shown, e.g. "¥500".'),
+        status: z.enum(['booked', 'planned', 'optional']).optional(),
+        transit: z
+          .object({
+            mode: z.enum(['walk', 'transit', 'drive', 'bike', 'flight', 'boat']),
+            duration: z.string().max(SHORT_MAX).optional(),
+          })
+          .optional()
+          .describe('Travel from the previous stop to this one.'),
       }),
     },
     Trail: {

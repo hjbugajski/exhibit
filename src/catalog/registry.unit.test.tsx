@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import type { Spec } from '@json-render/core';
 import { createStateStore } from '@json-render/react';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -36,9 +36,15 @@ describe('Renderer with the catalog registry', () => {
 
     render(<SpecView spec={itineraryFixture} />);
 
+    const dayKeys = itineraryFixture.elements.itinerary?.children ?? [];
+    const firstDayLabel = itineraryFixture.elements[dayKeys[0] ?? '']?.props.label as string;
+
     expect(screen.getByText('Kyoto in Three Days')).toBeTruthy();
-    expect(screen.getByText('Day 1 — Saturday')).toBeTruthy();
+    expect(screen.getByRole('heading', { name: firstDayLabel })).toBeTruthy();
     expect(screen.getByText('Fushimi Inari Shrine')).toBeTruthy();
+    expect(
+      within(screen.getByRole('navigation', { name: 'Days' })).getAllByRole('link'),
+    ).toHaveLength(dayKeys.length);
     expect(consoleError).not.toHaveBeenCalled();
   });
 
