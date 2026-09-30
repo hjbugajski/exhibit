@@ -51,7 +51,7 @@ describe('MarkdownBody', () => {
     );
 
     expect(container.querySelector('[role="separator"]')).toBeNull();
-    expect(container.querySelector('h2')).toBeNull();
+    expect(container.querySelector('h1, h2, h3, h4, h5, h6')).toBeNull();
     expect(container.querySelector('pre')?.textContent).toContain('"type":"Heading"');
   });
 

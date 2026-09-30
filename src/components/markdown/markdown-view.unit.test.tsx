@@ -139,7 +139,32 @@ describe('MarkdownView parse options', () => {
   it('does not put ids on headings', () => {
     const { container } = render(<MarkdownView markdown="# A Heading" />);
 
-    expect(container.querySelector('h1')?.getAttribute('id')).toBeNull();
+    expect(container.querySelector('h2')?.getAttribute('id')).toBeNull();
+  });
+
+  it('renders every heading one rank below its depth, so the page title stays the only h1', () => {
+    const { container } = render(
+      <MarkdownView markdown={'# a\n\n## b\n\n### c\n\n#### d\n\n##### e\n\n###### f'} />,
+    );
+    const headings = [...container.querySelectorAll('h1, h2, h3, h4, h5, h6')];
+
+    expect(container.querySelector('h1')).toBeNull();
+    expect(headings.map((heading) => heading.tagName)).toEqual([
+      'H2',
+      'H3',
+      'H4',
+      'H5',
+      'H6',
+      'H6',
+    ]);
+    expect(headings.map((heading) => heading.getAttribute('data-md-heading'))).toEqual([
+      '1',
+      '2',
+      '3',
+      '4',
+      '5',
+      '6',
+    ]);
   });
 });
 

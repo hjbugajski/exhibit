@@ -291,10 +291,12 @@ describe('ArtifactDetailView', () => {
 
     renderDetail(detail);
 
-    // Same lazy-chunk wait as the spec fixture above, for MarkdownView.
+    // Same lazy-chunk wait as the spec fixture above, for MarkdownView. The body's `#` ranks below
+    // the page title.
     expect((await screen.findByText('Trip notes', undefined, { timeout: 10_000 })).tagName).toBe(
-      'H1',
+      'H2',
     );
+    expect(document.querySelectorAll('h1')).toHaveLength(1);
     expect(screen.getByText('train').closest('a')?.getAttribute('href')).toBe(
       'https://example.com',
     );

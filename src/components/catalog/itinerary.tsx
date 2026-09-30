@@ -59,7 +59,9 @@ export function Itinerary({
       {hasHeader ? (
         <div>
           {props.title ? (
-            <h2 className="text-foreground text-2xl font-semibold tracking-tight">{props.title}</h2>
+            <h2 className="not-prose text-foreground text-2xl font-semibold tracking-tight">
+              {props.title}
+            </h2>
           ) : null}
           {props.dateRange ? (
             <p className="text-foreground-muted mt-2 text-sm">{props.dateRange}</p>

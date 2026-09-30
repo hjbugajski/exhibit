@@ -110,7 +110,9 @@ export function Trail({ props }: { props: Props }) {
   return (
     <UiCard.Root className={flowBlock}>
       <UiCard.Header>
-        <UiCard.Title level={3}>{props.name}</UiCard.Title>
+        <UiCard.Title className="not-prose" level={3}>
+          {props.name}
+        </UiCard.Title>
         <UiCard.Action>
           <Badge variant={difficultyVariants[props.difficulty]}>
             {difficultyLabels[props.difficulty]}

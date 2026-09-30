@@ -15,15 +15,18 @@ const levelClass = {
 } as const;
 
 export function Heading({ props }: { props: Props }) {
-  const Tag = `h${props.level}` as 'h1' | 'h2' | 'h3';
+  // One rank below the level: the artifact title is the page's only h1.
+  const Tag = `h${props.level + 1}` as 'h2' | 'h3' | 'h4';
   // An all-non-Latin heading slugifies to '' — an empty id attribute is invalid, so fall back to
   // no id at all rather than render one.
   const slug = slugify(props.text);
 
   return (
     <Tag
+      // not-prose: inside a markdown embed, typography's rules for the tag would tie with these
+      // utilities and win on emission order; levelClass stays the single source of the scale.
       className={cn(
-        'text-foreground font-semibold tracking-tight first:mt-0 last:mb-0',
+        'not-prose text-foreground font-semibold tracking-tight first:mt-0 last:mb-0',
         levelClass[props.level],
       )}
       id={slug || undefined}

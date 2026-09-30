@@ -180,7 +180,9 @@ export const catalog = defineCatalog(schema, {
       props: z.object({
         level: z
           .union([z.literal(1), z.literal(2), z.literal(3)])
-          .describe('Heading rank: 1 is largest (page title), 3 is smallest.'),
+          .describe(
+            'Size: 1 largest, 3 smallest. The artifact title is already the page heading; do not repeat it.',
+          ),
         text: z.string().min(1).max(SHORT_MAX).describe('The heading text.'),
       }),
     },
