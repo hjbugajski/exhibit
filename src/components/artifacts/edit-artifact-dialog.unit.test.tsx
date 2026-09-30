@@ -114,6 +114,22 @@ describe('EditArtifactDialog', () => {
     expect(screen.getByLabelText('Title')).toBeTruthy();
   });
 
+  it('stays open on Escape while a save is pending, with the close button disabled', async () => {
+    vi.mocked(updateArtifactMetadataFn).mockReturnValue(new Promise(() => {}));
+
+    renderWithRouter(<Harness artifact={makeArtifact()} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Save' }));
+    await screen.findByRole('button', { name: 'Saving…' });
+
+    pressEscape();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(screen.getByLabelText('Title')).toBeTruthy();
+    expect((screen.getByRole('button', { name: 'Close' }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+  });
+
   describe('draft protection', () => {
     it('closes on Escape without confirming when nothing was edited', async () => {
       renderWithRouter(<Harness artifact={makeArtifact()} />);

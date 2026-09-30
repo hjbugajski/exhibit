@@ -1,7 +1,6 @@
 import type { LibraryDemo } from '@/components/library/demo';
 import { Playground } from '@/components/library/playground';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
 
 function CheckboxDemo() {
   return (
@@ -13,16 +12,15 @@ function CheckboxDemo() {
         label: { kind: 'text', label: 'Label', defaultValue: 'Accept terms' },
       }}
       render={(values) => (
-        <div className="flex items-center gap-2">
+        <label className="flex items-center gap-2 text-sm">
           <Checkbox
             defaultChecked={values.checked}
             disabled={values.disabled}
-            id="lib-checkbox-playground"
             indeterminate={values.indeterminate}
             key={String(values.checked)}
           />
-          <Label htmlFor="lib-checkbox-playground">{values.label}</Label>
-        </div>
+          {values.label}
+        </label>
       )}
     />
   );

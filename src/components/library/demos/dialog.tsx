@@ -1,3 +1,5 @@
+import { XIcon } from 'lucide-react';
+
 import type { LibraryDemo } from '@/components/library/demo';
 import { Playground } from '@/components/library/playground';
 import { Button } from '@/components/ui/button';
@@ -15,14 +17,13 @@ function DialogDemo() {
           label: 'Description',
           defaultValue: 'Update your workspace preferences.',
         },
-        showCloseButton: { kind: 'boolean', label: 'Show close button', defaultValue: true },
       }}
       render={(values) => (
         <Dialog.Root>
           <Dialog.Trigger render={<Button variant="outline" />}>Open settings</Dialog.Trigger>
           <Dialog.Portal>
             <Dialog.Overlay />
-            <Dialog.Popup showCloseButton={values.showCloseButton}>
+            <Dialog.Popup>
               <Dialog.Header>
                 <Dialog.Title>{values.title}</Dialog.Title>
                 <Dialog.Description>{values.description}</Dialog.Description>
@@ -35,6 +36,11 @@ function DialogDemo() {
                 <Dialog.Close render={<Button variant="outline" />}>Cancel</Dialog.Close>
                 <Button>Save</Button>
               </Dialog.Footer>
+              <Dialog.Action>
+                <Dialog.Close aria-label="Close" render={<Button variant="ghost" />}>
+                  <XIcon data-icon="only" />
+                </Dialog.Close>
+              </Dialog.Action>
             </Dialog.Popup>
           </Dialog.Portal>
         </Dialog.Root>
@@ -46,7 +52,7 @@ function DialogDemo() {
 export const dialogDemo: LibraryDemo = {
   slug: 'dialog',
   title: 'Dialog',
-  description: 'A modal overlay for focused tasks like forms and settings, dismissible or not.',
+  description: 'A modal overlay for focused tasks like forms and settings, with a composed close.',
   group: 'Components',
   render: () => <DialogDemo />,
 };

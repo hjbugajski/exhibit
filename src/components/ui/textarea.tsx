@@ -4,12 +4,34 @@ import { Field as FieldPrimitive } from '@base-ui/react/field';
 
 import { cn } from '@/lib/utils';
 
-export type TextareaProps = ComponentProps<'textarea'>;
+export type TextareaProps = ComponentProps<'textarea'> &
+  Pick<FieldPrimitive.Control.Props, 'onValueChange'>;
 
-/** Renders through Field.Control so textareas inside Field.Root get validity wiring and auto ids; works standalone too. */
-function Textarea({ className, ...props }: TextareaProps) {
+/**
+ * Renders through Field.Control so textareas inside Field.Root get validity wiring and auto ids;
+ * works standalone too. The props Field.Control consumes go to it, because Base UI merges the render
+ * element's props over the control's and drops the render element's `ref`.
+ */
+function Textarea({
+  className,
+  id,
+  name,
+  value,
+  defaultValue,
+  disabled,
+  ref,
+  onValueChange,
+  ...props
+}: TextareaProps) {
   return (
     <FieldPrimitive.Control
+      id={id}
+      name={name}
+      value={value}
+      defaultValue={defaultValue}
+      disabled={disabled}
+      ref={ref}
+      onValueChange={onValueChange}
       data-slot="textarea"
       render={<textarea {...props} />}
       className={cn(

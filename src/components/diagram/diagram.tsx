@@ -42,7 +42,7 @@ import type {
   DiagramFit,
   DiagramSceneValue,
 } from './diagram-context';
-import { DiagramConfigProvider, useDiagramConfig, useDiagramScene } from './diagram-context';
+import { DiagramConfigContext, useDiagramConfig, useDiagramScene } from './diagram-context';
 import { GanttView } from './gantt-parts';
 import { GraphView } from './graph-parts';
 import { PieView } from './pie-parts';
@@ -285,9 +285,9 @@ function Root({
       className: cn(classNames.root, className),
       style: { ...typographyStyle(metrics, scene?.size.width ?? null, maxHeight), ...style },
       children: (
-        <DiagramConfigProvider value={config}>
+        <DiagramConfigContext value={config}>
           <DiagramBoundary value={drawn}>{children}</DiagramBoundary>
-        </DiagramConfigProvider>
+        </DiagramConfigContext>
       ),
       ...props,
     },
@@ -325,7 +325,6 @@ function Svg({ className, children, ...props }: DiagramSvgProps) {
   return (
     <svg
       data-part="svg"
-      // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
       role="img"
       aria-label={accessibleName || undefined}
       aria-describedby={

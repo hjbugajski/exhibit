@@ -751,6 +751,10 @@
     display: flex;
     align-items: center;
     gap: 0.25rem;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    min-inline-size: 0;
   }
 
   [data-part='canvas-control'] {

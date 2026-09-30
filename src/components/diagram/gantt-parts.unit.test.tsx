@@ -20,7 +20,7 @@ import { parseGantt } from '@/lib/diagram/families/gantt/parse';
 import { resolveMetrics } from '@/lib/diagram/metrics';
 import type { GanttScene } from '@/lib/diagram/types';
 
-import { DiagramConfigProvider } from './diagram-context';
+import { DiagramConfigContext } from './diagram-context';
 import { GanttView } from './gantt-parts';
 
 afterEach(() => {
@@ -49,7 +49,7 @@ function draw(source = GANTT) {
   const scene = scenery(source);
 
   return render(
-    <DiagramConfigProvider
+    <DiagramConfigContext
       value={{
         metrics: resolveMetrics(),
         components: {},
@@ -61,7 +61,7 @@ function draw(source = GANTT) {
       <svg data-part="svg" viewBox={`0 0 ${scene.size.width} ${scene.size.height}`}>
         <GanttView scene={scene} />
       </svg>
-    </DiagramConfigProvider>,
+    </DiagramConfigContext>,
   );
 }
 

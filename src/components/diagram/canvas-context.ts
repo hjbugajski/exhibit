@@ -7,7 +7,7 @@
  * inside a canvas and keep its fitted behaviour everywhere else.
  */
 
-import { createContext, useContext } from 'react';
+import { createContext, use } from 'react';
 
 import type { CanvasTransform } from './canvas-transform';
 
@@ -23,12 +23,10 @@ export interface DiagramCanvasContextValue {
   reset: () => void;
 }
 
-const DiagramCanvasContext = createContext<DiagramCanvasContextValue | null>(null);
-
-export const DiagramCanvasProvider = DiagramCanvasContext.Provider;
+export const DiagramCanvasContext = createContext<DiagramCanvasContextValue | null>(null);
 
 export function useDiagramCanvas(): DiagramCanvasContextValue {
-  const value = useContext(DiagramCanvasContext);
+  const value = use(DiagramCanvasContext);
 
   if (!value) {
     throw new Error('Canvas parts must be rendered inside <Diagram.Canvas>.');
@@ -38,5 +36,5 @@ export function useDiagramCanvas(): DiagramCanvasContextValue {
 }
 
 export function useOptionalDiagramCanvas(): DiagramCanvasContextValue | null {
-  return useContext(DiagramCanvasContext);
+  return use(DiagramCanvasContext);
 }

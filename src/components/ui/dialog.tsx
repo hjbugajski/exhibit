@@ -1,9 +1,7 @@
 import type { ComponentProps } from 'react';
 
 import { Dialog as DialogPrimitive } from '@base-ui/react/dialog';
-import { XIcon } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 export type DialogRootProps = DialogPrimitive.Root.Props;
@@ -45,11 +43,9 @@ function Overlay({ className, ...props }: DialogOverlayProps) {
   );
 }
 
-export type DialogPopupProps = DialogPrimitive.Popup.Props & {
-  showCloseButton?: boolean;
-};
+export type DialogPopupProps = DialogPrimitive.Popup.Props;
 
-function Popup({ className, children, showCloseButton = true, ...props }: DialogPopupProps) {
+function Popup({ className, ...props }: DialogPopupProps) {
   return (
     <DialogPrimitive.Popup
       data-slot="dialog-content"
@@ -58,18 +54,16 @@ function Popup({ className, children, showCloseButton = true, ...props }: Dialog
         className,
       )}
       {...props}
-    >
-      {children}
-      {showCloseButton && (
-        <DialogPrimitive.Close
-          data-slot="dialog-close"
-          render={<Button variant="ghost" className="absolute top-2 right-2" />}
-        >
-          <XIcon data-icon="only" />
-          <span className="sr-only">Close</span>
-        </DialogPrimitive.Close>
-      )}
-    </DialogPrimitive.Popup>
+    />
+  );
+}
+
+export type DialogActionProps = ComponentProps<'div'>;
+
+/** Pins a control, usually a composed `Dialog.Close`, to the popup's top-right corner. */
+function Action({ className, ...props }: DialogActionProps) {
+  return (
+    <div data-slot="dialog-action" className={cn('absolute top-2 right-2', className)} {...props} />
   );
 }
 
@@ -81,22 +75,15 @@ function Header({ className, ...props }: DialogHeaderProps) {
   );
 }
 
-export type DialogFooterProps = ComponentProps<'div'> & {
-  showCloseButton?: boolean;
-};
+export type DialogFooterProps = ComponentProps<'div'>;
 
-function Footer({ className, showCloseButton = false, children, ...props }: DialogFooterProps) {
+function Footer({ className, ...props }: DialogFooterProps) {
   return (
     <div
       data-slot="dialog-footer"
       className={cn('flex flex-col-reverse gap-2 sm:flex-row sm:justify-end', className)}
       {...props}
-    >
-      {children}
-      {showCloseButton && (
-        <DialogPrimitive.Close render={<Button variant="outline" />}>Close</DialogPrimitive.Close>
-      )}
-    </div>
+    />
   );
 }
 
@@ -134,6 +121,7 @@ export const Dialog = {
   Close,
   Overlay,
   Popup,
+  Action,
   Header,
   Footer,
   Title,

@@ -1,6 +1,7 @@
 import { useState, type SubmitEvent } from 'react';
 
 import { useRouter } from '@tanstack/react-router';
+import { XIcon } from 'lucide-react';
 
 import { FormStatus } from '@/components/blocks/form-status';
 import { AlertDialog } from '@/components/ui/alert-dialog';
@@ -86,9 +87,16 @@ export function EditArtifactDialog({ artifact, open, onOpenChange }: EditArtifac
   return (
     <Dialog.Root
       onOpenChange={(next, eventDetails) => {
-        // A dirty draft is only discarded deliberately: an accidental outside press or Escape
-        // routes through the confirm instead of closing. Cancel/X and a successful save close
-        // outright.
+        // Nothing closes the dialog mid-save: a failed save reports inside it. A dirty draft is
+        // only discarded deliberately: an accidental outside press or Escape routes through the
+        // confirm instead of closing. Cancel/X close outright; a successful save calls the
+        // `onOpenChange` prop directly, past this gate.
+        if (!next && pending) {
+          eventDetails.cancel();
+
+          return;
+        }
+
         const isDismissal =
           eventDetails.reason === 'outside-press' || eventDetails.reason === 'escape-key';
 
@@ -181,6 +189,11 @@ export function EditArtifactDialog({ artifact, open, onOpenChange }: EditArtifac
               </AlertDialog.Popup>
             </AlertDialog.Portal>
           </AlertDialog.Root>
+          <Dialog.Action>
+            <Dialog.Close aria-label="Close" render={<Button disabled={pending} variant="ghost" />}>
+              <XIcon data-icon="only" />
+            </Dialog.Close>
+          </Dialog.Action>
         </Dialog.Popup>
       </Dialog.Portal>
     </Dialog.Root>

@@ -11,7 +11,7 @@ type Props = CatalogComponentProps<'Details'>;
 
 export function Details({ props }: { props: Props }) {
   return (
-    <Card.Root className={cn('px-4', flowBlock)}>
+    <Card.Root className={cn('px-card', flowBlock)}>
       <Collapsible.Root>
         <Collapsible.Trigger className="group flex w-full items-center justify-between gap-2 text-left font-semibold">
           {props.summary}

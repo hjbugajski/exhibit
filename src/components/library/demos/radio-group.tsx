@@ -1,6 +1,5 @@
 import type { LibraryDemo } from '@/components/library/demo';
 import { Playground } from '@/components/library/playground';
-import { Label } from '@/components/ui/label';
 import { RadioGroup } from '@/components/ui/radio-group';
 
 function RadioGroupDemo() {
@@ -11,14 +10,14 @@ function RadioGroupDemo() {
       }}
       render={(values) => (
         <RadioGroup.Root className="max-w-sm" defaultValue="a" disabled={values.disabled}>
-          <div className="flex items-center gap-2">
-            <RadioGroup.Item id="lib-radio-a" value="a" />
-            <Label htmlFor="lib-radio-a">Option A</Label>
-          </div>
-          <div className="flex items-center gap-2">
-            <RadioGroup.Item id="lib-radio-b" value="b" />
-            <Label htmlFor="lib-radio-b">Option B</Label>
-          </div>
+          <label className="flex items-center gap-2 text-sm">
+            <RadioGroup.Item value="a" />
+            Option A
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <RadioGroup.Item value="b" />
+            Option B
+          </label>
         </RadioGroup.Root>
       )}
     />

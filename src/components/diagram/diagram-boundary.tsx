@@ -23,7 +23,7 @@ import { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
 
 import type { DiagramSceneValue } from './diagram-context';
-import { DiagramSceneProvider } from './diagram-context';
+import { DiagramSceneContext } from './diagram-context';
 
 interface DiagramBoundaryProps {
   value: DiagramSceneValue;
@@ -98,7 +98,7 @@ export class DiagramBoundary extends Component<DiagramBoundaryProps, DiagramBoun
     const { message } = this.state;
 
     if (message === null) {
-      return <DiagramSceneProvider value={value}>{children}</DiagramSceneProvider>;
+      return <DiagramSceneContext value={value}>{children}</DiagramSceneContext>;
     }
 
     const degraded: DiagramSceneValue = {
@@ -116,11 +116,11 @@ export class DiagramBoundary extends Component<DiagramBoundaryProps, DiagramBoun
     };
 
     return (
-      <DiagramSceneProvider value={degraded}>
+      <DiagramSceneContext value={degraded}>
         {/* Keyed on the message, so a later, different failure gets a boundary that has not yet
             given up rather than the exhausted one. */}
         <LastResort key={message}>{children}</LastResort>
-      </DiagramSceneProvider>
+      </DiagramSceneContext>
     );
   }
 }

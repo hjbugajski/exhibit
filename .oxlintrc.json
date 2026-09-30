@@ -32,7 +32,10 @@
     "eslint/no-var": "error",
     "eslint/prefer-const": "error",
     "import/no-cycle": "error",
-    "jsx-a11y/label-has-associated-control": ["warn", { "controlComponents": ["Checkbox"] }],
+    "jsx-a11y/label-has-associated-control": [
+      "warn",
+      { "controlComponents": ["Checkbox", "RadioGroup.Item"] }
+    ],
     "import/no-duplicates": "error",
     "import/no-self-import": "error",
     "node/no-process-env": "error",
@@ -75,6 +78,10 @@
         "**/*.test.tsx"
       ],
       "rules": { "node/no-process-env": "off" }
+    },
+    {
+      "files": ["src/components/diagram/diagram.tsx"],
+      "rules": { "jsx-a11y/prefer-tag-over-role": "off" }
     }
   ]
 }

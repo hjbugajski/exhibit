@@ -1,4 +1,6 @@
 // @vitest-environment happy-dom
+import { runInThisContext } from 'node:vm';
+
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -72,8 +74,7 @@ describe('preference storage', () => {
 describe('THEME_INIT_SCRIPT', () => {
   function runInitScript(): void {
     // Compiling the script is half the assertion: it proves the inlined pre-paint source parses.
-    // oxlint-disable-next-line typescript/no-implied-eval
-    new Function(THEME_INIT_SCRIPT)();
+    runInThisContext(THEME_INIT_SCRIPT);
   }
 
   it('is executable and stamps the stored scheme', () => {
