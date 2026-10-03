@@ -37,7 +37,9 @@ export function Day({ props, children }: { props: Props; children?: ReactNode })
   return (
     <section className={flowStandout}>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="text-foreground text-xl font-semibold tracking-tight">{props.label}</h3>
+        <h3 className="not-prose text-foreground text-xl font-semibold tracking-tight">
+          {props.label}
+        </h3>
         {props.date ? <span className="text-foreground-muted text-sm">{props.date}</span> : null}
       </div>
       {props.summary ? <p className="text-foreground-muted mt-2">{props.summary}</p> : null}

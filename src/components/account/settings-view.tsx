@@ -1,4 +1,4 @@
-import { useState, type SubmitEvent } from 'react';
+import { useEffect, useRef, useState, type SubmitEvent } from 'react';
 
 import { Link, useRouter } from '@tanstack/react-router';
 
@@ -16,6 +16,7 @@ import type { McpConnection } from '@/lib/account';
 import { revokeMcpConnectionFn } from '@/lib/account';
 import { removeTagFn, renameTagFn } from '@/lib/artifacts';
 import { authClient } from '@/lib/auth-client';
+import { normalizeTags } from '@/lib/normalize-tags';
 import { useFormAction } from '@/lib/use-form-action';
 
 function AvatarCard({ seed }: { seed: string }) {
@@ -29,7 +30,10 @@ function AvatarCard({ seed }: { seed: string }) {
       const { error } = await authClient.updateUser({ image: crypto.randomUUID() });
 
       if (error) {
-        setStatus({ kind: 'error', message: error.message ?? 'Could not update the avatar.' });
+        setStatus({
+          kind: 'error',
+          message: error.message ?? 'Could not update the avatar. Try again.',
+        });
         return;
       }
 
@@ -72,7 +76,10 @@ function EmailCard({ email, mailerAvailable }: { email: string; mailerAvailable:
       const { error } = await authClient.changeEmail({ newEmail: value });
 
       if (error) {
-        setStatus({ kind: 'error', message: error.message ?? 'Could not update the email.' });
+        setStatus({
+          kind: 'error',
+          message: error.message ?? 'Could not update the email. Try again.',
+        });
         return;
       }
 
@@ -144,7 +151,10 @@ function PasswordCard() {
       });
 
       if (error) {
-        setStatus({ kind: 'error', message: error.message ?? 'Could not update the password.' });
+        setStatus({
+          kind: 'error',
+          message: error.message ?? 'Could not update the password. Try again.',
+        });
         return;
       }
 
@@ -233,7 +243,7 @@ function ConnectionRow({ connection }: { connection: McpConnection }) {
       <ConfirmDestructiveAction
         action={action}
         actionLabel="Revoke"
-        description="The client’s registration and tokens are removed and it can no longer publish. Access ends immediately, including for tokens it already holds; the client can reconnect later by authorizing again."
+        description="Revoking deletes the client’s registration and tokens, so its access ends immediately, even for tokens it already holds. The client can reconnect later by authorizing again."
         onConfirm={handleRevoke}
         pendingLabel="Revoking…"
         title={`Revoke “${connection.name ?? connection.clientId}”?`}
@@ -249,8 +259,9 @@ function ConnectionsCard({ connections }: { connections: McpConnection[] }) {
       <Card.Header>
         <Card.Title render={<h2>MCP connections</h2>} />
         <Card.Description>
-          Clients that authorized against this gallery via OAuth (claude.ai connectors, Claude Code,
-          scripts). Revoking removes the registration and all of its tokens. See the{' '}
+          Clients that authorized against this gallery through OAuth, such as claude.ai connectors,
+          Claude Code, and scripts. Revoking deletes the client’s registration and tokens, so its
+          access ends immediately, even for tokens it already holds. See the{' '}
           <Link className="text-foreground underline underline-offset-4" to="/docs">
             docs
           </Link>{' '}
@@ -276,12 +287,35 @@ function artifactCount(count: number) {
   return `${count} artifact${count === 1 ? '' : 's'}`;
 }
 
-function TagRow({ tag, count }: TagUsage) {
+interface TagRowProps extends TagUsage {
+  /** This row's Rename button should take focus once it is mounted. */
+  focusRename: boolean;
+  /** Hands focus to the Rename button of the row for `tag`, which may be another row. */
+  onRequestFocus: (tag: string) => void;
+  onFocusHandled: () => void;
+}
+
+function TagRow({ tag, count, focusRename, onRequestFocus, onFocusHandled }: TagRowProps) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(tag);
   const renameAction = useFormAction();
   const removeAction = useFormAction();
+  const renameButtonRef = useRef<HTMLButtonElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editing) {
+      inputRef.current?.focus();
+    }
+  }, [editing]);
+
+  useEffect(() => {
+    if (focusRename && !editing) {
+      renameButtonRef.current?.focus();
+      onFocusHandled();
+    }
+  }, [focusRename, editing, onFocusHandled]);
 
   function startEditing() {
     setValue(tag);
@@ -289,13 +323,23 @@ function TagRow({ tag, count }: TagUsage) {
     setEditing(true);
   }
 
+  function cancelEditing() {
+    setEditing(false);
+    onRequestFocus(tag);
+  }
+
   function handleRename(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
     void renameAction.run(async () => {
       await renameTagFn({ data: { from: tag, to: value } });
-      setEditing(false);
+      /*
+       * The renamed tag's row may be this one, a remount under the new name after the invalidate,
+       * or an existing row it merged into. The form stays up until then, so focus never drops.
+       */
+      onRequestFocus(normalizeTags([value])[0] ?? tag);
       await router.invalidate();
+      setEditing(false);
     });
   }
 
@@ -307,7 +351,7 @@ function TagRow({ tag, count }: TagUsage) {
   }
 
   return (
-    <div className="flex flex-col gap-2 border-b py-3 last:border-b-0">
+    <li className="flex flex-col gap-2 border-b py-3 last:border-b-0">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate font-medium">{tag}</p>
@@ -315,7 +359,7 @@ function TagRow({ tag, count }: TagUsage) {
         </div>
         {editing ? null : (
           <div className="flex items-center gap-2">
-            <Button onClick={startEditing} variant="outline">
+            <Button onClick={startEditing} ref={renameButtonRef} variant="outline">
               Rename
             </Button>
             <ConfirmDestructiveAction
@@ -343,6 +387,7 @@ function TagRow({ tag, count }: TagUsage) {
               <Input
                 maxLength={50}
                 onChange={(event) => setValue(event.target.value)}
+                ref={inputRef}
                 required
                 value={value}
               />
@@ -351,7 +396,7 @@ function TagRow({ tag, count }: TagUsage) {
               </Button>
               <Button
                 disabled={renameAction.pending}
-                onClick={() => setEditing(false)}
+                onClick={cancelEditing}
                 type="button"
                 variant="outline"
               >
@@ -363,11 +408,13 @@ function TagRow({ tag, count }: TagUsage) {
         </Form>
       ) : null}
       <FormStatus status={renameAction.status} />
-    </div>
+    </li>
   );
 }
 
 function TagsCard({ tags }: { tags: TagUsage[] }) {
+  const [focusTag, setFocusTag] = useState<string | null>(null);
+
   return (
     <Card.Root>
       <Card.Header>
@@ -381,11 +428,18 @@ function TagsCard({ tags }: { tags: TagUsage[] }) {
         {tags.length === 0 ? (
           <p className="text-foreground-muted text-sm">No tags yet.</p>
         ) : (
-          <div className="flex flex-col">
+          <ul className="flex flex-col">
             {tags.map((usage) => (
-              <TagRow count={usage.count} key={usage.tag} tag={usage.tag} />
+              <TagRow
+                count={usage.count}
+                focusRename={usage.tag === focusTag}
+                key={usage.tag}
+                onFocusHandled={() => setFocusTag(null)}
+                onRequestFocus={setFocusTag}
+                tag={usage.tag}
+              />
             ))}
-          </div>
+          </ul>
         )}
       </Card.Content>
     </Card.Root>

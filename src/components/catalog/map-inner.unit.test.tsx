@@ -18,8 +18,12 @@ vi.mock('@/components/ui/map/map', () => ({
 vi.mock('@/components/ui/map/controls', () => ({
   MapControls: () => null,
 }));
+const routeProps = vi.hoisted((): Record<string, unknown>[] => []);
 vi.mock('@/components/ui/map/route', () => ({
-  MapRoute: () => null,
+  MapRoute: (props: Record<string, unknown>) => {
+    routeProps.push(props);
+    return null;
+  },
 }));
 vi.mock('@/components/ui/map/marker', () => ({
   Marker: {
@@ -32,6 +36,7 @@ vi.mock('@/components/ui/map/marker', () => ({
 
 afterEach(() => {
   cleanup();
+  routeProps.length = 0;
   vi.restoreAllMocks();
 });
 
@@ -63,6 +68,25 @@ describe('CatalogMapInner', () => {
     const items = screen.getByRole('list', { name: 'Map markers' }).children;
 
     expect([...items].map((item) => item.textContent)).toEqual(['Shrine: Opens at 9am', 'Hotel']);
+  });
+
+  it('colours routes with the accent token so they follow the theme', () => {
+    const props: CatalogComponentProps<'Map'> = {
+      paths: [
+        {
+          id: 'walk',
+          points: [
+            { lat: 1, lng: 1 },
+            { lat: 2, lng: 2 },
+          ],
+        },
+      ],
+    };
+
+    render(<CatalogMapInner props={props} />);
+
+    expect(routeProps.at(-1)).toMatchObject({ colorToken: '--color-accent' });
+    expect(routeProps.at(-1)).not.toHaveProperty('color');
   });
 
   it('renders no marker list when the map has no markers', () => {

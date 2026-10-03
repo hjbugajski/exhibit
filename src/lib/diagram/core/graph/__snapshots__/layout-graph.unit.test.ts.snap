@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`layoutGraph golden scenes > 'blank labels' matches its golden scene 1`] = `
+exports[`layoutGraph golden scenes > blank labels matches its golden scene 1`] = `
 {
   "clusters": [],
   "edges": [
@@ -72,7 +72,7 @@ exports[`layoutGraph golden scenes > 'blank labels' matches its golden scene 1`]
 }
 `;
 
-exports[`layoutGraph golden scenes > 'branch and merge' matches its golden scene 1`] = `
+exports[`layoutGraph golden scenes > branch and merge matches its golden scene 1`] = `
 {
   "clusters": [],
   "edges": [
@@ -359,7 +359,7 @@ exports[`layoutGraph golden scenes > 'branch and merge' matches its golden scene
 }
 `;
 
-exports[`layoutGraph golden scenes > 'chain BT' matches its golden scene 1`] = `
+exports[`layoutGraph golden scenes > chain BT matches its golden scene 1`] = `
 {
   "clusters": [],
   "edges": [
@@ -517,7 +517,7 @@ exports[`layoutGraph golden scenes > 'chain BT' matches its golden scene 1`] = `
 }
 `;
 
-exports[`layoutGraph golden scenes > 'chain LR' matches its golden scene 1`] = `
+exports[`layoutGraph golden scenes > chain LR matches its golden scene 1`] = `
 {
   "clusters": [],
   "edges": [
@@ -675,7 +675,7 @@ exports[`layoutGraph golden scenes > 'chain LR' matches its golden scene 1`] = `
 }
 `;
 
-exports[`layoutGraph golden scenes > 'chain RL' matches its golden scene 1`] = `
+exports[`layoutGraph golden scenes > chain RL matches its golden scene 1`] = `
 {
   "clusters": [],
   "edges": [
@@ -833,7 +833,7 @@ exports[`layoutGraph golden scenes > 'chain RL' matches its golden scene 1`] = `
 }
 `;
 
-exports[`layoutGraph golden scenes > 'chain TB' matches its golden scene 1`] = `
+exports[`layoutGraph golden scenes > chain TB matches its golden scene 1`] = `
 {
   "clusters": [],
   "edges": [
@@ -991,7 +991,7 @@ exports[`layoutGraph golden scenes > 'chain TB' matches its golden scene 1`] = `
 }
 `;
 
-exports[`layoutGraph golden scenes > 'cycle' matches its golden scene 1`] = `
+exports[`layoutGraph golden scenes > cycle matches its golden scene 1`] = `
 {
   "clusters": [],
   "edges": [
@@ -1158,7 +1158,7 @@ exports[`layoutGraph golden scenes > 'cycle' matches its golden scene 1`] = `
 }
 `;
 
-exports[`layoutGraph golden scenes > 'disconnected components' matches its golden scene 1`] = `
+exports[`layoutGraph golden scenes > disconnected components matches its golden scene 1`] = `
 {
   "clusters": [],
   "edges": [
@@ -1313,7 +1313,7 @@ exports[`layoutGraph golden scenes > 'disconnected components' matches its golde
 }
 `;
 
-exports[`layoutGraph golden scenes > 'empty graph' matches its golden scene 1`] = `
+exports[`layoutGraph golden scenes > empty graph matches its golden scene 1`] = `
 {
   "clusters": [],
   "edges": [],
@@ -1327,7 +1327,7 @@ exports[`layoutGraph golden scenes > 'empty graph' matches its golden scene 1`] 
 }
 `;
 
-exports[`layoutGraph golden scenes > 'long labelled edge' matches its golden scene 1`] = `
+exports[`layoutGraph golden scenes > long labelled edge matches its golden scene 1`] = `
 {
   "clusters": [],
   "edges": [
@@ -1560,7 +1560,7 @@ exports[`layoutGraph golden scenes > 'long labelled edge' matches its golden sce
 }
 `;
 
-exports[`layoutGraph golden scenes > 'mixed shapes' matches its golden scene 1`] = `
+exports[`layoutGraph golden scenes > mixed shapes matches its golden scene 1`] = `
 {
   "clusters": [],
   "edges": [
@@ -1757,7 +1757,7 @@ exports[`layoutGraph golden scenes > 'mixed shapes' matches its golden scene 1`]
 }
 `;
 
-exports[`layoutGraph golden scenes > 'nested clusters' matches its golden scene 1`] = `
+exports[`layoutGraph golden scenes > nested clusters matches its golden scene 1`] = `
 {
   "clusters": [
     {
@@ -2020,7 +2020,7 @@ exports[`layoutGraph golden scenes > 'nested clusters' matches its golden scene 
 }
 `;
 
-exports[`layoutGraph golden scenes > 'parallel edges' matches its golden scene 1`] = `
+exports[`layoutGraph golden scenes > parallel edges matches its golden scene 1`] = `
 {
   "clusters": [],
   "edges": [
@@ -2148,7 +2148,7 @@ exports[`layoutGraph golden scenes > 'parallel edges' matches its golden scene 1
 }
 `;
 
-exports[`layoutGraph golden scenes > 'self loop' matches its golden scene 1`] = `
+exports[`layoutGraph golden scenes > self loop matches its golden scene 1`] = `
 {
   "clusters": [],
   "edges": [
@@ -2267,7 +2267,7 @@ exports[`layoutGraph golden scenes > 'self loop' matches its golden scene 1`] = 
 }
 `;
 
-exports[`layoutGraph golden scenes > 'single node' matches its golden scene 1`] = `
+exports[`layoutGraph golden scenes > single node matches its golden scene 1`] = `
 {
   "clusters": [],
   "edges": [],

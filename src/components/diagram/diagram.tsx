@@ -2,12 +2,12 @@
  * The `Diagram` namespace. `Root` owns the pipeline and the context; every other part is a thin,
  * overridable renderer.
  *
- * Typography flows outward (C14): the resolved `DiagramMetrics` — the same numbers layout measured
+ * Typography flows outward: the resolved `DiagramMetrics` — the same numbers layout measured
  * with — are written on the figure as `--diagram-font-*` custom properties, and `diagram.css`
  * consumes them. Nothing reads type back off the DOM, so the server and the client compute the same
  * geometry. In dev a rendered label is compared against the metric once and logs if they diverge.
  *
- * Accessibility is static (C31): `role="img"` named by the generated summary, `aria-describedby`
+ * Accessibility is static: `role="img"` named by the generated summary, `aria-describedby`
  * pointing at the sr-only structure beside the drawing — the hidden table that accompanies
  * `catalog/chart`, in list form. The summary is the name and the list is the description, so
  * nothing is announced twice.
@@ -20,8 +20,8 @@
  * crash below it degrades to the same error-plus-null-scene shape a parser failure produces.
  */
 
-import { createElement, useEffect, useId, useMemo, useRef } from 'react';
-import type { CSSProperties, ComponentProps, RefObject } from 'react';
+import { createElement, useEffect, useEffectEvent, useId, useMemo, useRef } from 'react';
+import type { CSSProperties, ComponentProps, ComponentType, RefObject } from 'react';
 
 import { useRender } from '@base-ui/react/use-render';
 
@@ -29,7 +29,7 @@ import { round2 } from '@/lib/diagram/core/geometry/path';
 import { interMetrics } from '@/lib/diagram/core/text/font-metrics-inter';
 import { metricsMeasurer } from '@/lib/diagram/core/text/measurers';
 import type { DiagramMetrics } from '@/lib/diagram/metrics';
-import type { Diagnostic, PieScene, TextMeasurer } from '@/lib/diagram/types';
+import type { Diagnostic, PieScene, Scene, TextMeasurer } from '@/lib/diagram/types';
 import { cn } from '@/lib/utils';
 
 import { useOptionalDiagramCanvas } from './canvas-context';
@@ -42,9 +42,11 @@ import type {
   DiagramFit,
   DiagramSceneValue,
 } from './diagram-context';
-import { DiagramConfigProvider, useDiagramConfig, useDiagramScene } from './diagram-context';
-import type { DiagramFamilyView } from './family-views';
-import { resolveFamilyView } from './family-views';
+import { DiagramConfigContext, useDiagramConfig, useDiagramScene } from './diagram-context';
+import { GanttView } from './gantt-parts';
+import { GraphView } from './graph-parts';
+import { PieView } from './pie-parts';
+import { SequenceView } from './sequence-parts';
 import type { UseDiagramOptions, UseDiagramResult } from './use-diagram';
 import { useDiagram, useStableValue } from './use-diagram';
 
@@ -175,8 +177,6 @@ function useTypeAssertion(
   }, [target, metrics, measurer]);
 }
 
-// --------------------------------------------------------------------------------------- root
-
 export interface DiagramRootProps
   extends Omit<useRender.ComponentProps<'figure'>, 'title'>, UseDiagramOptions {
   /**
@@ -252,16 +252,11 @@ function Root({
 
   useTypeAssertion(figure, metrics, inUse);
 
-  // Latched: an inline arrow is a new function every render, and keying the effect on it would
-  // re-invoke the consumer with diagnostics it has already seen on every parent render.
-  const notify = useRef(onDiagnostics);
+  // The consumer hears each diagnostics value once, whatever the callback's identity.
+  const notifyDiagnostics = useEffectEvent((next: typeof diagnostics) => onDiagnostics?.(next));
 
   useEffect(() => {
-    notify.current = onDiagnostics;
-  }, [onDiagnostics]);
-
-  useEffect(() => {
-    notify.current?.(diagnostics);
+    notifyDiagnostics(diagnostics);
   }, [diagnostics]);
 
   const config = useMemo<DiagramConfigValue>(
@@ -292,27 +287,29 @@ function Root({
       className: cn(classNames.root, className),
       style: { ...typographyStyle(metrics, scene?.size.width ?? null, maxHeight), ...style },
       children: (
-        <DiagramConfigProvider value={config}>
+        <DiagramConfigContext value={config}>
           <DiagramBoundary value={drawn}>{children}</DiagramBoundary>
-        </DiagramConfigProvider>
+        </DiagramConfigContext>
       ),
       ...props,
     },
   });
 }
 
-// ---------------------------------------------------------------------------------------- svg
+export type DiagramSvgProps = ComponentProps<'svg'>;
 
-export interface DiagramSvgProps extends ComponentProps<'svg'> {
-  /** Family id -> view override; falls back to the builtin map, then to the scene kind. */
-  views?: Readonly<Record<string, DiagramFamilyView>>;
-}
+const VIEW_BY_KIND: Readonly<Record<Scene['kind'], ComponentType<{ scene: Scene }>>> = {
+  graph: GraphView,
+  pie: PieView,
+  sequence: SequenceView,
+  gantt: GanttView,
+};
 
 /**
  * Childless renders the detected family's view. Passing children replaces it wholesale, which is
  * how a consumer draws parts in a different order or adds a decoration layer.
  */
-function Svg({ views, className, children, ...props }: DiagramSvgProps) {
+function Svg({ className, children, ...props }: DiagramSvgProps) {
   const { classNames, id, fit } = useDiagramConfig();
   const { scene, accessibleName, description } = useDiagramScene();
   // Inside a canvas the drawing is always natural size — the canvas transform, not `fit`, decides
@@ -330,7 +327,6 @@ function Svg({ views, className, children, ...props }: DiagramSvgProps) {
   return (
     <svg
       data-part="svg"
-      // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
       role="img"
       aria-label={accessibleName || undefined}
       aria-describedby={
@@ -341,14 +337,12 @@ function Svg({ views, className, children, ...props }: DiagramSvgProps) {
       className={cn(classNames.svg, className)}
       {...props}
     >
-      {/* The resolved view is a stable registry entry per family, not a component created during
-          render, so this never remounts the subtree. */}
-      {children ?? createElement(resolveFamilyView(scene, views), { scene })}
+      {/* The view is a module constant per scene kind, not a component created during render, so
+          this never remounts the subtree. */}
+      {children ?? createElement(VIEW_BY_KIND[scene.kind], { scene })}
     </svg>
   );
 }
-
-// -------------------------------------------------------------------------------------- title
 
 export type DiagramTitleProps = useRender.ComponentProps<'figcaption'>;
 
@@ -366,8 +360,6 @@ function Title({ className, render, ...props }: DiagramTitleProps) {
     },
   });
 }
-
-// -------------------------------------------------------------------------------- description
 
 export type DiagramDescriptionProps = useRender.ComponentProps<'div'>;
 
@@ -407,8 +399,6 @@ function Description({ className, render, children, ...props }: DiagramDescripti
     },
   });
 }
-
-// ------------------------------------------------------------------------------------- issues
 
 export type DiagramIssuesProps = useRender.ComponentProps<'ul'>;
 
@@ -498,8 +488,6 @@ function Issues({ className, render, children, ...props }: DiagramIssuesProps) {
     },
   });
 }
-
-// ------------------------------------------------------------------------------------- legend
 
 export interface DiagramLegendProps extends useRender.ComponentProps<'ul'> {
   /** Prints the raw slice value alongside the share. Defaults to the source's `pie showData`. */

@@ -138,6 +138,7 @@ describe('structure', () => {
         button.getAttribute('data-action'),
       ),
     ).toEqual(['zoom-out', 'reset', 'zoom-in', 'fit']);
+    expect(screen.getByRole('group', { name: 'Diagram view' }).tagName).toBe('FIELDSET');
   });
 
   it('starts at the identity transform, with no measurement and no NaN', () => {

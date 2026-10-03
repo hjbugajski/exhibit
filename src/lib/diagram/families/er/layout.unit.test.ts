@@ -1,7 +1,7 @@
 /*
  * End to end for the ER family: real sources through the parser, `to-graph.ts` and the shared
- * layered engine. The family is not registered yet, so the pipeline is driven directly rather than
- * through `buildDiagram` — `resolveLayoutOptions` is the same option resolution a build would do.
+ * layered engine. The pipeline is driven directly rather than through `buildDiagram`;
+ * `resolveLayoutOptions` is the same option resolution a build would do.
  */
 
 import { describe, expect, it } from 'vitest';

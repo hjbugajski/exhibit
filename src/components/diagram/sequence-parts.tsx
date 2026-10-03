@@ -42,8 +42,6 @@ function translate(x: number, y: number): { transform: string } {
   return { transform: `translate(${round2(x)}px, ${round2(y)}px)` };
 }
 
-// ------------------------------------------------------------------------------- participants
-
 /** The header, the lifeline it hangs from, and the header repeated at the foot. */
 function Participants({ participants }: { participants: readonly SceneParticipant[] }) {
   const { classNames, metrics } = useDiagramConfig();
@@ -115,8 +113,6 @@ function Lifelines({ participants }: { participants: readonly SceneParticipant[]
   );
 }
 
-// --------------------------------------------------------------------------------- activations
-
 function Activations({ activations }: { activations: readonly SceneActivation[] }) {
   const { classNames } = useDiagramConfig();
 
@@ -140,8 +136,6 @@ function Activations({ activations }: { activations: readonly SceneActivation[] 
     </g>
   );
 }
-
-// --------------------------------------------------------------------------------------- notes
 
 function Notes({ notes }: { notes: readonly SceneNote[] }) {
   const { classNames } = useDiagramConfig();
@@ -169,8 +163,6 @@ function Notes({ notes }: { notes: readonly SceneNote[] }) {
     </g>
   );
 }
-
-// ------------------------------------------------------------------------------------ messages
 
 function Messages({ messages }: { messages: readonly SceneMessage[] }) {
   const { classNames } = useDiagramConfig();
@@ -208,8 +200,6 @@ function Messages({ messages }: { messages: readonly SceneMessage[] }) {
     </g>
   );
 }
-
-// -------------------------------------------------------------------------------------- frames
 
 /** `loop` / `alt` / `opt` … — the box, its corner tab, and the dashed dividers inside it. */
 function Frames({ frames }: { frames: readonly SceneFrame[] }) {
@@ -253,8 +243,6 @@ function Frames({ frames }: { frames: readonly SceneFrame[] }) {
     </g>
   );
 }
-
-// -------------------------------------------------------------------------------------- labels
 
 /**
  * Every plate in one layer, drawn after the last stroke. A message label lies across the lifelines

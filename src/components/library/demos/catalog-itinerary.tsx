@@ -17,7 +17,7 @@ export const catalogItineraryDemo = catalogDemo({
     'day-1': {
       type: 'Day',
       props: {
-        label: 'Day 1 — Saturday',
+        label: 'Day 1: Sunday',
         date: 'May 3, 2026',
         summary: 'Eastern Kyoto temples and a night in Gion.',
       },
@@ -60,7 +60,7 @@ export const catalogItineraryDemo = catalogDemo({
     'day-2': {
       type: 'Day',
       props: {
-        label: 'Day 2 — Sunday',
+        label: 'Day 2: Monday',
         date: 'May 4, 2026',
         summary: 'Northwest Kyoto, then Osaka.',
       },

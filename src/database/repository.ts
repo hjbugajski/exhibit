@@ -1,3 +1,4 @@
+import '@tanstack/react-start/server-only';
 import type { SQL } from 'drizzle-orm';
 import {
   and,
@@ -6,6 +7,7 @@ import {
   eq,
   getTableColumns,
   gt,
+  gte,
   isNotNull,
   isNull,
   lt,
@@ -21,13 +23,12 @@ import { artifactStates } from '@/database/schemas/artifact-state';
 import { artifactVersions } from '@/database/schemas/artifact-version';
 import type { AnswerCount } from '@/lib/answer-count';
 import { countAnswers } from '@/lib/answer-count';
-import { normalizeTags } from '@/lib/artifact-metadata';
-import type { ArtifactSort, artifactTypes } from '@/lib/artifact-sorts';
+import type { ArtifactSort } from '@/lib/artifact-sorts';
 import { artifactSorts } from '@/lib/artifact-sorts';
+import type { ArtifactType } from '@/lib/artifact-types';
+import { normalizeTags } from '@/lib/normalize-tags';
 
 export type Db = BetterSQLite3Database;
-
-export type ArtifactType = (typeof artifactTypes)[number];
 
 /**
  * Timestamps are epoch milliseconds; `deletedAt` is null while live, `archivedAt` is null while
@@ -46,7 +47,7 @@ export interface Artifact {
 }
 
 /**
- * `version` is 1-based and assigned in code (createArtifact/appendVersion), not by the database.
+ * `version` is 1-based and assigned in code (createArtifact/updateArtifact/revertToVersion), not by the database.
  */
 export interface ArtifactVersion {
   id: string;
@@ -65,7 +66,8 @@ export interface CreateArtifactInput {
 }
 
 /** `undefined` leaves a field unchanged; a `null` description explicitly clears it. */
-export interface UpdateMetadataInput {
+export interface UpdateArtifactInput {
+  body?: string;
   title?: string;
   description?: string | null;
   tags?: string[];
@@ -75,7 +77,9 @@ export interface UpdateMetadataInput {
  * `limit` defaults to 20, `sort` to 'updated-desc'. A malformed `cursor`, or one minted under a
  * different `sort`, is ignored (first page). `archived: true` lists only archived artifacts;
  * otherwise archived artifacts are excluded. `deleted: true` lists only soft-deleted artifacts (the
- * trash); otherwise they're excluded.
+ * trash); otherwise they're excluded. `hasState: true` lists only artifacts the owner has interacted
+ * with (a state row exists); `false` lists only untouched ones. `stateSince` (epoch ms, inclusive)
+ * lists only artifacts whose state changed at or after it, so it also excludes untouched ones.
  *
  * `withAnswers` opts into the answered counts, which cost a body fetch and a full markdown/spec
  * parse per row — only the gallery renders them, so every other caller (MCP `list_artifacts`, up to
@@ -87,6 +91,8 @@ export interface ListArtifactsInput {
   type?: ArtifactType;
   archived?: boolean;
   deleted?: boolean;
+  hasState?: boolean;
+  stateSince?: number;
   sort?: ArtifactSort;
   limit?: number;
   cursor?: string;
@@ -158,12 +164,14 @@ function escapeLike(value: string): string {
   return value.replace(/[\\%_]/g, '\\$&');
 }
 
-type SortField = 'updatedAt' | 'createdAt' | 'title';
+type SortField = 'updatedAt' | 'createdAt' | 'title' | 'stateUpdatedAt';
 
 /**
  * Title sort is case-insensitive (cheap via SQLite's `lower()`, which is ASCII-only); the cursor's
  * `k` is the value SQLite itself returned for the sort expression, so the cursor and the ORDER BY
- * can't disagree about collation.
+ * can't disagree about collation. The state sort coalesces an untouched artifact's missing state
+ * time to 0, so untouched artifacts sort last and the keyset comparison never meets a NULL; it relies
+ * on the unconditional `artifact_states` left join in `listArtifacts`.
  */
 const sortSpecs: Record<ArtifactSort, { field: SortField; dir: 'asc' | 'desc' }> = {
   'updated-desc': { field: 'updatedAt', dir: 'desc' },
@@ -172,6 +180,7 @@ const sortSpecs: Record<ArtifactSort, { field: SortField; dir: 'asc' | 'desc' }>
   'created-asc': { field: 'createdAt', dir: 'asc' },
   'title-asc': { field: 'title', dir: 'asc' },
   'title-desc': { field: 'title', dir: 'desc' },
+  'state-updated-desc': { field: 'stateUpdatedAt', dir: 'desc' },
 };
 
 function sortColumnExpr(field: SortField): SQL<number | string> {
@@ -182,6 +191,8 @@ function sortColumnExpr(field: SortField): SQL<number | string> {
       return sql<number | string>`${artifacts.createdAt}`;
     case 'title':
       return sql<number | string>`lower(${artifacts.title})`;
+    case 'stateUpdatedAt':
+      return sql<number | string>`coalesce(${artifactStates.updatedAt}, 0)`;
   }
 }
 
@@ -287,28 +298,89 @@ function insertNextVersion(tx: Tx, artifactId: string, body: string, now: number
   return version;
 }
 
-/** Inserts the next version number and bumps the artifact's `updatedAt`, in one transaction. */
-export function appendVersion(db: Db, artifactId: string, body: string): ArtifactVersion {
+/** The artifact row by id, live only (soft-deleted rows resolve as missing). */
+function getLiveArtifactRow(tx: Tx, artifactId: string) {
+  return tx
+    .select()
+    .from(artifacts)
+    .where(and(eq(artifacts.id, artifactId), isNull(artifacts.deletedAt)))
+    .get();
+}
+
+/**
+ * Appends `body` as the next version when given, then writes the given metadata fields, in one
+ * transaction: a failed metadata write rolls back the appended version. Returns the post-write
+ * artifact and its latest version, or undefined without writing when the artifact is unknown or
+ * soft-deleted. Input with no fields writes nothing and returns the current state.
+ */
+export function updateArtifact(
+  db: Db,
+  artifactId: string,
+  input: UpdateArtifactInput,
+): { artifact: Artifact; version: ArtifactVersion } | undefined {
   const now = Date.now();
 
-  return db.transaction((tx) => insertNextVersion(tx, artifactId, body, now));
+  return db.transaction((tx) => {
+    const row = getLiveArtifactRow(tx, artifactId);
+
+    if (!row) {
+      return undefined;
+    }
+
+    const version =
+      input.body !== undefined
+        ? insertNextVersion(tx, artifactId, input.body, now)
+        : getLatestVersion(tx, artifactId);
+
+    if (!version) {
+      return undefined;
+    }
+
+    if (input.title === undefined && input.description === undefined && input.tags === undefined) {
+      return {
+        artifact: toArtifact(input.body !== undefined ? { ...row, updatedAt: now } : row),
+        version,
+      };
+    }
+
+    const artifact = tx
+      .update(artifacts)
+      .set({
+        ...(input.title !== undefined ? { title: input.title } : {}),
+        ...(input.description !== undefined ? { description: input.description } : {}),
+        ...(input.tags !== undefined ? { tags: input.tags } : {}),
+        updatedAt: now,
+      })
+      .where(eq(artifacts.id, artifactId))
+      .returning()
+      .get();
+
+    return { artifact: toArtifact(artifact), version };
+  });
 }
 
 /**
  * Copies an older version's body forward as a new latest version — history is append-only, so
  * nothing is rewritten or removed. The body is copied verbatim (it was validated when it was
  * stored, and an artifact's type can't change). Read and append share one transaction, so a
- * concurrent append can't land between them. Returns undefined when the artifact or that version
- * doesn't exist; like appendVersion, doesn't check `deletedAt`.
+ * concurrent append can't land between them. Returns the artifact with its bumped `updatedAt` and
+ * the new version, or undefined without writing when the artifact is unknown or soft-deleted or
+ * lacks that version.
  */
 export function revertToVersion(
   db: Db,
   artifactId: string,
   version: number,
-): ArtifactVersion | undefined {
+): { artifact: Artifact; version: ArtifactVersion } | undefined {
   const now = Date.now();
 
   return db.transaction((tx) => {
+    const artifact = getLiveArtifactRow(tx, artifactId);
+
+    if (!artifact) {
+      return undefined;
+    }
+
     const source = tx
       .select({ body: artifactVersions.body })
       .from(artifactVersions)
@@ -321,34 +393,11 @@ export function revertToVersion(
       return undefined;
     }
 
-    return insertNextVersion(tx, artifactId, source.body, now);
+    return {
+      artifact: toArtifact({ ...artifact, updatedAt: now }),
+      version: insertNextVersion(tx, artifactId, source.body, now),
+    };
   });
-}
-
-/**
- * Returns undefined when `artifactId` matches no row. Doesn't check `deletedAt`, so soft-deleted
- * artifacts update too.
- */
-export function updateMetadata(
-  db: Db,
-  artifactId: string,
-  input: UpdateMetadataInput,
-): Artifact | undefined {
-  const now = Date.now();
-
-  const artifact = db
-    .update(artifacts)
-    .set({
-      ...(input.title !== undefined ? { title: input.title } : {}),
-      ...(input.description !== undefined ? { description: input.description } : {}),
-      ...(input.tags !== undefined ? { tags: input.tags } : {}),
-      updatedAt: now,
-    })
-    .where(eq(artifacts.id, artifactId))
-    .returning()
-    .get();
-
-  return artifact ? toArtifact(artifact) : undefined;
 }
 
 /**
@@ -390,7 +439,7 @@ export function getArtifact(
  * Unlike getArtifact, ignores the parent's `deletedAt` — resolves versions of soft-deleted
  * artifacts.
  */
-export function getLatestVersion(db: Db, artifactId: string): ArtifactVersion | undefined {
+export function getLatestVersion(db: Db | Tx, artifactId: string): ArtifactVersion | undefined {
   return db
     .select()
     .from(artifactVersions)
@@ -411,8 +460,8 @@ export function listVersions(db: Db, artifactId: string): { version: number; cre
 }
 
 /**
- * Excludes soft-deleted artifacts unless `deleted` is set. `query` substring-matches the title;
- * `tags` matches ANY listed tag (OR).
+ * Excludes soft-deleted artifacts unless `deleted` is set. `query` substring-matches the title or
+ * the description; `tags` matches ANY listed tag (OR).
  */
 export function listArtifacts(db: Db, input: ListArtifactsInput = {}): ListArtifactsResult {
   const limit = input.limit ?? 20;
@@ -430,11 +479,24 @@ export function listArtifacts(db: Db, input: ListArtifactsInput = {}): ListArtif
   }
 
   if (input.query) {
-    conditions.push(sql`${artifacts.title} like ${`%${escapeLike(input.query)}%`} escape '\\'`);
+    const pattern = `%${escapeLike(input.query)}%`;
+    conditions.push(
+      sql`(${artifacts.title} like ${pattern} escape '\\' or ${artifacts.description} like ${pattern} escape '\\')`,
+    );
   }
 
   if (input.type) {
     conditions.push(eq(artifacts.type, input.type));
+  }
+
+  if (input.hasState !== undefined) {
+    conditions.push(
+      input.hasState ? isNotNull(artifactStates.updatedAt) : isNull(artifactStates.updatedAt),
+    );
+  }
+
+  if (input.stateSince !== undefined) {
+    conditions.push(gte(artifactStates.updatedAt, input.stateSince));
   }
 
   if (input.tags && input.tags.length > 0) {
@@ -605,13 +667,13 @@ export function removeTag(db: Db, tag: string): number {
 
 /**
  * Sets or clears `archivedAt` without touching `updatedAt`, so archiving doesn't reshuffle sort
- * order. Returns undefined when `id` matches no row.
+ * order. Returns undefined without writing when the artifact is unknown or soft-deleted.
  */
 export function setArtifactArchived(db: Db, id: string, archived: boolean): Artifact | undefined {
   const artifact = db
     .update(artifacts)
     .set({ archivedAt: archived ? Date.now() : null })
-    .where(eq(artifacts.id, id))
+    .where(and(eq(artifacts.id, id), isNull(artifacts.deletedAt)))
     .returning()
     .get();
 
@@ -684,15 +746,30 @@ export function getArtifactState(
   return row ? { state: row.state as JsonObject, updatedAt: row.updatedAt } : null;
 }
 
-/** Upsert keyed by artifact; replaces the stored state wholesale (no merge). */
-export function setArtifactState(db: Db, artifactId: string, state: JsonObject): void {
+/**
+ * Upsert keyed by artifact; replaces the stored state wholesale (no merge). Returns undefined
+ * without writing when the artifact is unknown or soft-deleted.
+ */
+export function setArtifactState(
+  db: Db,
+  artifactId: string,
+  state: JsonObject,
+): { updatedAt: number } | undefined {
   const now = Date.now();
 
-  db.insert(artifactStates)
-    .values({ artifactId, state, updatedAt: now })
-    .onConflictDoUpdate({
-      target: artifactStates.artifactId,
-      set: { state, updatedAt: now },
-    })
-    .run();
+  return db.transaction((tx) => {
+    if (!getLiveArtifactRow(tx, artifactId)) {
+      return undefined;
+    }
+
+    tx.insert(artifactStates)
+      .values({ artifactId, state, updatedAt: now })
+      .onConflictDoUpdate({
+        target: artifactStates.artifactId,
+        set: { state, updatedAt: now },
+      })
+      .run();
+
+    return { updatedAt: now };
+  });
 }

@@ -70,8 +70,6 @@ export interface FlowchartIR extends DiagramIR {
   accDescr?: string;
 }
 
-// ------------------------------------------------------------------------------- label text
-
 /** A mermaid markdown string — `A["\`**bold**\`"]`. Recognized so it can be reported, never rendered. */
 export function isMarkdownLabel(raw: string): boolean {
   const text = stripQuotes(raw).trim();

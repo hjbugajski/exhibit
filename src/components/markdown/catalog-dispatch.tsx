@@ -15,12 +15,12 @@
  */
 import type { ReactNode } from 'react';
 
-import type { Spec } from '@json-render/core';
 import { Renderer } from '@json-render/react';
 
 import { resolveCatalogDirective } from '@/catalog/directive';
+import { resolveExhibitFence } from '@/catalog/exhibit-fence';
 import { catalogComponents, registry } from '@/catalog/registry';
-import { validateArtifactSpec, type ArtifactSpecError } from '@/catalog/validate';
+import type { ArtifactSpecError } from '@/catalog/validate';
 import { HighlightedCode } from '@/components/blocks/highlighted-code';
 import { flowBlock } from '@/components/catalog/flow';
 
@@ -113,10 +113,6 @@ function ExhibitError({ json, message }: { json: string; message: string }) {
   );
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
 /**
  * `elements.exhibit.props.kind` is the validator's internal addressing for the one-element spec
  * wrapper; the author wrote `props.kind`, so that is the path they can act on.
@@ -128,29 +124,23 @@ function formatExhibitError(error: ArtifactSpecError): string {
 }
 
 /**
- * An ```exhibit fence: one component as JSON (`{ "type": …, "props": … }`), validated by the same
- * catalog validator the publish tools use, then rendered as a one-element spec. Unlike a directive
+ * An ```exhibit fence: one component as JSON (`{ "type": …, "props": … }`), accepted by
+ * `resolveExhibitFence` (the same test the answered count applies), then rendered as a one-element
+ * spec. Unlike a directive
  * this degrades loudly — the JSON shows as a code block with the reason — because the content is
  * inert either way and the feedback is what gets the next version right.
  */
 export function ExhibitBlock({ json }: { json: string }) {
-  const parsed = parseJson(json);
+  const result = resolveExhibitFence(json);
 
-  if (!isRecord(parsed) || typeof parsed.type !== 'string') {
+  if (!result) {
     return (
       <ExhibitError
         json={json}
-        message='This exhibit block isn’t a JSON object with a `type` — expected { "type": ComponentName, "props": { … } }.'
+        message='This exhibit block is not a JSON object with a "type" field. Write it as { "type": ComponentName, "props": { … } }.'
       />
     );
   }
-
-  const spec: Spec = {
-    root: 'exhibit',
-    elements: { exhibit: { type: parsed.type, props: parsed.props ?? {}, children: [] } },
-  } as unknown as Spec;
-
-  const result = validateArtifactSpec(spec);
 
   if (!result.valid) {
     return (

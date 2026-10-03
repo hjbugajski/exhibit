@@ -12,9 +12,9 @@ import { useDeferredValue, useState } from 'react';
 import { Diagram } from '@/components/diagram/diagram';
 import type { DiagramClassNames } from '@/components/diagram/diagram-context';
 import type { LibraryDemo } from '@/components/library/demo';
-import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
 import { Textarea } from '@/components/ui/textarea';
+import { ToggleGroup } from '@/components/ui/toggle-group';
 
 const presets = [
   {
@@ -154,22 +154,25 @@ function DiagramPlaygroundDemo() {
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
       <div className="flex min-w-0 flex-col gap-3">
-        {/* oxlint-disable-next-line jsx-a11y/prefer-tag-over-role */}
-        <div aria-label="Preset" className="flex flex-wrap gap-2" role="group">
+        <ToggleGroup.Root
+          aria-label="Preset"
+          className="h-auto flex-wrap"
+          onValueChange={([next]) => {
+            const preset = presets.find((candidate) => candidate.id === next);
+
+            if (preset) {
+              setPresetId(preset.id);
+              setSource(preset.source);
+            }
+          }}
+          value={[presetId]}
+        >
           {presets.map((preset) => (
-            <Button
-              key={preset.id}
-              aria-pressed={preset.id === presetId}
-              variant={preset.id === presetId ? 'secondary' : 'ghost'}
-              onClick={() => {
-                setPresetId(preset.id);
-                setSource(preset.source);
-              }}
-            >
+            <ToggleGroup.Item key={preset.id} value={preset.id}>
               {preset.label}
-            </Button>
+            </ToggleGroup.Item>
           ))}
-        </div>
+        </ToggleGroup.Root>
 
         <Field.Root>
           <Field.Label>Source</Field.Label>
@@ -186,23 +189,18 @@ function DiagramPlaygroundDemo() {
       </div>
 
       <div className="flex min-w-0 flex-col gap-3">
-        {/* oxlint-disable-next-line jsx-a11y/prefer-tag-over-role */}
-        <div aria-label="View mode" className="flex gap-2" role="group">
-          <Button
-            aria-pressed={mode === 'canvas'}
-            variant={mode === 'canvas' ? 'secondary' : 'ghost'}
-            onClick={() => setMode('canvas')}
-          >
-            Canvas
-          </Button>
-          <Button
-            aria-pressed={mode === 'static'}
-            variant={mode === 'static' ? 'secondary' : 'ghost'}
-            onClick={() => setMode('static')}
-          >
-            Static
-          </Button>
-        </div>
+        <ToggleGroup.Root<'canvas' | 'static'>
+          aria-label="View mode"
+          onValueChange={([next]) => {
+            if (next) {
+              setMode(next);
+            }
+          }}
+          value={[mode]}
+        >
+          <ToggleGroup.Item value="canvas">Canvas</ToggleGroup.Item>
+          <ToggleGroup.Item value="static">Static</ToggleGroup.Item>
+        </ToggleGroup.Root>
 
         <Diagram.Root classNames={playgroundClassNames} source={deferred}>
           <Diagram.Description />

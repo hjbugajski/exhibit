@@ -5,10 +5,18 @@
  * green — a body published through publish_markdown is arbitrary AI-authored text, and this is the
  * only thing between it and the owner's authenticated origin.
  */
+import { createStateStore } from '@json-render/core';
+import { Markdown } from '@tanstack/markdown/react';
 import { cleanup, render } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { MarkdownView } from '@/components/markdown/markdown-view';
+
+vi.mock(import('@tanstack/markdown/react'), async (importOriginal) => {
+  const actual = await importOriginal();
+
+  return { ...actual, Markdown: vi.fn(actual.Markdown) };
+});
 
 afterEach(() => {
   cleanup();
@@ -130,7 +138,32 @@ describe('MarkdownView parse options', () => {
   it('does not put ids on headings', () => {
     const { container } = render(<MarkdownView markdown="# A Heading" />);
 
-    expect(container.querySelector('h1')?.getAttribute('id')).toBeNull();
+    expect(container.querySelector('h2')?.getAttribute('id')).toBeNull();
+  });
+
+  it('renders every heading one rank below its depth, so the page title stays the only h1', () => {
+    const { container } = render(
+      <MarkdownView markdown={'# a\n\n## b\n\n### c\n\n#### d\n\n##### e\n\n###### f'} />,
+    );
+    const headings = [...container.querySelectorAll('h1, h2, h3, h4, h5, h6')];
+
+    expect(container.querySelector('h1')).toBeNull();
+    expect(headings.map((heading) => heading.tagName)).toEqual([
+      'H2',
+      'H3',
+      'H4',
+      'H5',
+      'H6',
+      'H6',
+    ]);
+    expect(headings.map((heading) => heading.getAttribute('data-md-heading'))).toEqual([
+      '1',
+      '2',
+      '3',
+      '4',
+      '5',
+      '6',
+    ]);
   });
 });
 
@@ -220,5 +253,27 @@ describe('MarkdownView rendering', () => {
     const { container } = render(<MarkdownView markdown={markdown} />);
 
     expect(container.textContent?.length).toBeGreaterThan(0);
+  });
+});
+
+describe('MarkdownView memoization', () => {
+  it('does not re-parse on a re-render with identical markdown and the same store', () => {
+    const store = createStateStore({});
+    const { rerender } = render(<MarkdownView markdown="**a**" store={store} />);
+    const calls = vi.mocked(Markdown).mock.calls.length;
+
+    rerender(<MarkdownView markdown="**a**" store={store} />);
+
+    expect(vi.mocked(Markdown).mock.calls.length).toBe(calls);
+  });
+
+  it('re-parses when the markdown changes', () => {
+    const { container, rerender } = render(<MarkdownView markdown="first" />);
+    const calls = vi.mocked(Markdown).mock.calls.length;
+
+    rerender(<MarkdownView markdown="second" />);
+
+    expect(vi.mocked(Markdown).mock.calls.length).toBe(calls + 1);
+    expect(container.textContent).toBe('second');
   });
 });

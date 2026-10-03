@@ -35,8 +35,6 @@ function box(rect: Rect): { x: number; y: number; width: number; height: number 
   };
 }
 
-// ------------------------------------------------------------------------------------ sections
-
 /** One band per section, plus its name in the left gutter. */
 function Sections({ sections }: { sections: readonly SceneGanttSection[] }) {
   const { classNames } = useDiagramConfig();
@@ -65,8 +63,6 @@ function Sections({ sections }: { sections: readonly SceneGanttSection[] }) {
     </g>
   );
 }
-
-// ---------------------------------------------------------------------------------- axis, grid
 
 function Grid({ chart, ticks }: { chart: Rect; ticks: readonly SceneGanttTick[] }) {
   const { classNames } = useDiagramConfig();
@@ -125,8 +121,6 @@ function Axis({ chart, ticks }: { chart: Rect; ticks: readonly SceneGanttTick[] 
   );
 }
 
-// ---------------------------------------------------------------------------------------- bars
-
 /** A bar, or the diamond a milestone draws instead of one. */
 function Bars({ tasks }: { tasks: readonly SceneGanttTask[] }) {
   const { classNames, metrics } = useDiagramConfig();
@@ -167,8 +161,6 @@ function Bars({ tasks }: { tasks: readonly SceneGanttTask[] }) {
     </g>
   );
 }
-
-// -------------------------------------------------------------------------------------- labels
 
 /** Section names and task names, in one layer over the drawing. */
 function Labels({

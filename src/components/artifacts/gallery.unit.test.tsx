@@ -206,7 +206,7 @@ describe('Gallery', () => {
       state: { tags: ['red'] },
     });
 
-    fireEvent.click(await screen.findByLabelText('Filter'));
+    fireEvent.click(await screen.findByRole('button', { name: /^Filter/ }));
     fireEvent.click(await screen.findByRole('checkbox', { name: 'blue' }));
 
     expect(setTags).toHaveBeenCalledWith(['red', 'blue']);
@@ -219,6 +219,7 @@ describe('Gallery', () => {
     });
 
     expect(await screen.findByText('3')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Filter, 3 active' })).toBeTruthy();
   });
 
   it('renders a table when view is "table"', async () => {
@@ -278,7 +279,7 @@ describe('Gallery', () => {
     const setDeleted = vi.fn();
     renderGallery({ actions: { setDeleted } });
 
-    fireEvent.click(await screen.findByLabelText('Filter'));
+    fireEvent.click(await screen.findByRole('button', { name: /^Filter/ }));
     fireEvent.click(await screen.findByRole('checkbox', { name: 'Deleted only' }));
 
     expect(setDeleted).toHaveBeenCalledWith(true);
@@ -346,12 +347,24 @@ describe('Gallery', () => {
     expect(trash.purge).toHaveBeenCalledWith('a1');
   });
 
-  it('calls setView when a view toggle tab is clicked', async () => {
+  it('calls setView when a view toggle item is pressed', async () => {
     const setView = vi.fn();
     renderGallery({ actions: { setView } });
 
-    fireEvent.click(await screen.findByRole('tab', { name: 'Table view' }));
+    expect(
+      (await screen.findByRole('button', { name: 'Grid view' })).getAttribute('aria-pressed'),
+    ).toBe('true');
+    fireEvent.click(screen.getByRole('button', { name: 'Table view' }));
 
     expect(setView).toHaveBeenCalledWith('table');
+  });
+
+  it('keeps the view when the pressed view toggle item is pressed again', async () => {
+    const setView = vi.fn();
+    renderGallery({ actions: { setView } });
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Grid view' }));
+
+    expect(setView).not.toHaveBeenCalled();
   });
 });

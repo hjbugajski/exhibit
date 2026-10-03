@@ -24,7 +24,7 @@
  * generated, so the two agree by construction.
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useEffectEvent } from 'react';
 
 import { interMetrics } from '@/lib/diagram/core/text/font-metrics-inter';
 import { textStyle } from '@/lib/diagram/core/text/measure';
@@ -185,13 +185,8 @@ export function useRefinedMeasurer(
   enabled: boolean,
   onRefine: (measurer: TextMeasurer) => void,
 ): void {
-  // Whatever is drawn when the fonts settle is a fine sample; the audit effect must not re-run for
-  // it, so the scene rides along in a ref (synced in its own effect, which runs first).
-  const latest = useRef(scene);
-
-  useEffect(() => {
-    latest.current = scene;
-  });
+  // The audit samples whatever is drawn when the fonts settle; it must not re-run per scene.
+  const readSamples = useEffectEvent(() => (scene ? longestLabels(scene) : []));
 
   const drawn = scene !== null;
 
@@ -203,8 +198,7 @@ export function useRefinedMeasurer(
     let cancelled = false;
 
     const audit = () => {
-      const current = latest.current;
-      const samples = current ? longestLabels(current) : [];
+      const samples = readSamples();
       const style = textStyle(metrics);
       const rendered = cancelled || samples.length === 0 ? null : renderedMeasurer(style);
 

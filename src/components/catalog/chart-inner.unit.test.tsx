@@ -51,6 +51,42 @@ describe('CatalogChartInner', () => {
     expect(consoleError).not.toHaveBeenCalled();
   });
 
+  describe('with repeated labels', () => {
+    const data = [
+      { label: 'Q1', value: 1 },
+      { label: 'Q2', value: 2 },
+      { label: 'Q1', value: 3 },
+      { label: 'Q2', value: 4 },
+    ];
+
+    it('draws every bar in its own slot', () => {
+      const { container } = render(<CatalogChartInner props={{ kind: 'bar', data }} />);
+      const bars = [...container.querySelectorAll('svg rect')];
+      const positions = new Set(bars.map((bar) => bar.getAttribute('x')));
+
+      expect(bars).toHaveLength(4);
+      expect(positions.size).toBe(4);
+    });
+
+    it('labels every slot on the axis', () => {
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const { container } = render(<CatalogChartInner props={{ kind: 'line', data }} />);
+      const ticks = [...container.querySelectorAll('svg text')].map((node) => node.textContent);
+
+      expect(ticks.filter((tick) => tick === 'Q1')).toHaveLength(2);
+      expect(consoleError).not.toHaveBeenCalled();
+    });
+
+    it('colors every donut slice on its own', () => {
+      const { container } = render(<CatalogChartInner props={{ kind: 'donut', data }} />);
+      const arcs = [...container.querySelectorAll('svg path')];
+      const fills = new Set(arcs.map((arc) => arc.getAttribute('fill')));
+
+      expect(arcs).toHaveLength(4);
+      expect(fills.size).toBe(4);
+    });
+  });
+
   /** The plotted values are hover-only, so the table is the text alternative. */
   it('names the chart and repeats its data as a table', () => {
     const props: CatalogComponentProps<'Chart'> = {

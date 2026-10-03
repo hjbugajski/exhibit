@@ -1,3 +1,5 @@
+import { useMemo } from 'react';
+
 import type { StateStore } from '@json-render/core';
 import { JSONUIProvider } from '@json-render/react';
 import type { ParseOptions } from '@tanstack/markdown';
@@ -63,13 +65,19 @@ export function MarkdownView({
   store?: StateStore;
   className?: string;
 }) {
+  // Components and options are module constants, so markdown is the only parse input.
+  const body = useMemo(
+    () => (
+      <Markdown components={components} {...options}>
+        {markdown}
+      </Markdown>
+    ),
+    [markdown],
+  );
+
   return (
     <JSONUIProvider registry={registry} store={store}>
-      <div className={cn('prose max-w-none', className)}>
-        <Markdown components={components} {...options}>
-          {markdown}
-        </Markdown>
-      </div>
+      <div className={cn('prose max-w-none', className)}>{body}</div>
     </JSONUIProvider>
   );
 }

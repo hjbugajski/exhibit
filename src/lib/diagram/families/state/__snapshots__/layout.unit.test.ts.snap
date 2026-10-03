@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`state layout > 'state-basic' matches its golden scene 1`] = `
+exports[`state layout > state-basic matches its golden scene 1`] = `
 {
   "clusters": [],
   "edges": [
@@ -290,7 +290,7 @@ exports[`state layout > 'state-basic' matches its golden scene 1`] = `
 }
 `;
 
-exports[`state layout > 'state-composite' matches its golden scene 1`] = `
+exports[`state layout > state-composite matches its golden scene 1`] = `
 {
   "clusters": [
     {
@@ -578,7 +578,7 @@ exports[`state layout > 'state-composite' matches its golden scene 1`] = `
 }
 `;
 
-exports[`state layout > 'state-descriptions' matches its golden scene 1`] = `
+exports[`state layout > state-descriptions matches its golden scene 1`] = `
 {
   "clusters": [],
   "edges": [
@@ -809,7 +809,7 @@ exports[`state layout > 'state-descriptions' matches its golden scene 1`] = `
 }
 `;
 
-exports[`state layout > 'state-forks' matches its golden scene 1`] = `
+exports[`state layout > state-forks matches its golden scene 1`] = `
 {
   "clusters": [],
   "edges": [
@@ -1326,7 +1326,7 @@ exports[`state layout > 'state-forks' matches its golden scene 1`] = `
 }
 `;
 
-exports[`state layout > 'state-note-sides' matches its golden scene 1`] = `
+exports[`state layout > state-note-sides matches its golden scene 1`] = `
 {
   "clusters": [],
   "edges": [
@@ -1677,7 +1677,7 @@ exports[`state layout > 'state-note-sides' matches its golden scene 1`] = `
 }
 `;
 
-exports[`state layout > 'state-notes' matches its golden scene 1`] = `
+exports[`state layout > state-notes matches its golden scene 1`] = `
 {
   "clusters": [],
   "edges": [

@@ -13,7 +13,11 @@ export interface RelativeTimeProps {
  * ambiguous once it reaches "3mo ago".
  *
  * The tooltip is formatted after mount only: Intl resolves against the server's locale and timezone
- * (UTC in the container) during SSR, which would hydrate as a mismatched title on every row.
+ * (UTC in the container) during SSR, which would hydrate as a mismatched title on every row. The
+ * text is computed from `Date.now()` on both sides, so it may differ at hydration across a minute
+ * boundary. Suppressing the hydration warning accepts that, but React then keeps the server text
+ * and never patches it, since the client string is unchanged on re-render. Keying on the
+ * `useHydrated` flip remounts the element once so the text reflects the client clock.
  */
 export function RelativeTime({ value, className }: RelativeTimeProps) {
   const mounted = useHydrated();
@@ -23,6 +27,8 @@ export function RelativeTime({ value, className }: RelativeTimeProps) {
     <time
       className={className}
       dateTime={date.toISOString()}
+      key={mounted ? 'client' : 'server'}
+      suppressHydrationWarning
       title={
         mounted
           ? new Intl.DateTimeFormat(undefined, {

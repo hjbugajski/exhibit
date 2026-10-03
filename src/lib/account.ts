@@ -114,10 +114,12 @@ export const listMcpConnectionsFn = createServerFn({ method: 'GET' })
   });
 
 /**
- * Unique hosts (with port, so a loopback client reads as `127.0.0.1:8765`) from a client's stored
- * `redirect_uris` — a JSON column, hence `unknown`. Exported for tests. Entries that aren't a
- * parseable URL are dropped: the consent screen presents these as the fact "this is where the
- * authorization code goes", and a string that isn't a URL is not that fact.
+ * Unique destinations from a client's stored `redirect_uris` — a JSON column, hence `unknown`.
+ * Exported for tests. Each entry is the host with its port, so a loopback client reads as
+ * `127.0.0.1:8765`, or the scheme and path for a URI without a host, so a private-use redirect
+ * reads as `com.example.app:/cb`. Entries that aren't a parseable URL are dropped: the consent
+ * screen presents these as the fact "this is where the authorization code goes", and a string that
+ * isn't a URL is not that fact.
  *
  * Rows written by Better Auth's adapter arrive double-encoded: it stringifies the array itself
  * before drizzle's `mode: 'json'` stringifies again, so one parse yields a string holding JSON,
@@ -144,7 +146,9 @@ export function redirectHosts(redirectUris: unknown): string[] {
         }
 
         try {
-          return [new URL(uri).host];
+          const url = new URL(uri);
+
+          return [url.host || `${url.protocol}${url.pathname}`];
         } catch {
           return [];
         }
@@ -189,15 +193,17 @@ export const getConsentClientFn = createServerFn({ method: 'GET' })
 
 const revokeInput = z.object({ clientId: z.string() });
 
+/**
+ * Deletes the client registration, which cascades to its refresh tokens, access-token rows, and
+ * consent (FKs with ON DELETE CASCADE). The client re-registers dynamically if it ever reconnects.
+ * Outstanding access-token JWTs die with the row too: /mcp checks that the `azp` client still
+ * exists on every request (see verifyMcpBearer), so revocation takes effect on the revoked
+ * client's next call.
+ */
 export const revokeMcpConnectionFn = createServerFn({ method: 'POST' })
   .middleware([sessionMiddleware])
   .validator(revokeInput)
   .handler(async ({ data }) => {
-    // Deleting the client registration cascades to its refresh tokens, access-token rows, and
-    // consent (FKs with ON DELETE CASCADE). The client re-registers dynamically if it ever
-    // reconnects. Outstanding access-token JWTs die with the row too: /mcp checks that the `azp`
-    // client still exists on every request (see verifyMcpBearer), so revocation takes effect on the
-    // revoked client's next call.
     db.delete(oauthClient).where(eq(oauthClient.clientId, data.clientId)).run();
 
     return { revoked: true };

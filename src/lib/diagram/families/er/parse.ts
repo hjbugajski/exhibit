@@ -10,11 +10,12 @@
  * leaves no phantom entity behind.
  */
 
-import { StatementError, reportStatementError } from '../../core/diagnostics.ts';
-import { ACC_DESCR_BLOCK, readDescriptionBlock } from '../../core/lex/acc.ts';
+import { StatementError } from '../../core/diagnostics.ts';
+import { readAccText } from '../../core/lex/acc.ts';
 import type { LogicalLine } from '../../core/lex/lines.ts';
 import { readLines, splitHeader } from '../../core/lex/lines.ts';
 import { Scanner } from '../../core/lex/scanner.ts';
+import { readStatements } from '../../core/lex/statements.ts';
 import {
   readDelimited,
   readIdent,
@@ -266,19 +267,6 @@ function entityStatement(draft: Draft, scanner: Scanner, span: Span): void {
   relationshipStatement(draft, scanner, left, span);
 }
 
-function accStatement(draft: Draft, scanner: Scanner, keyword: 'accTitle' | 'accDescr'): void {
-  scanner.skipSpace();
-  scanner.eat(':');
-
-  const value = readRestOfLine(scanner).replace(/\s+/g, ' ');
-
-  if (keyword === 'accTitle') {
-    draft.accTitle = value;
-  } else {
-    draft.accDescr = value;
-  }
-}
-
 function statement(draft: Draft, line: LogicalLine): void {
   const text = line.text;
 
@@ -320,8 +308,11 @@ function statement(draft: Draft, line: LogicalLine): void {
 
   switch (keyword) {
     case 'accTitle':
+      draft.accTitle = readAccText(scanner);
+
+      return;
     case 'accDescr':
-      accStatement(draft, scanner, keyword);
+      draft.accDescr = readAccText(scanner);
 
       return;
     case 'direction':
@@ -373,25 +364,12 @@ export function parseEr(source: string, ctx: ParseContext): ParseResult<ErIR> {
   };
   const before = report.count;
 
-  for (let index = 0; index < statements.length; index += 1) {
-    const line = statements[index] as LogicalLine;
-    const block = ACC_DESCR_BLOCK.exec(line.text);
-
-    if (block) {
-      const read = readDescriptionBlock(statements, index, block[1] ?? '', report);
-
-      draft.accDescr = read.description;
-      index = read.end;
-
-      continue;
-    }
-
-    try {
-      statement(draft, line);
-    } catch (cause) {
-      reportStatementError(report, cause, line.span);
-    }
-  }
+  readStatements(statements, report, {
+    statement: (line) => statement(draft, line),
+    description: (text) => {
+      draft.accDescr = text;
+    },
+  });
 
   if (draft.open) {
     report.warn(

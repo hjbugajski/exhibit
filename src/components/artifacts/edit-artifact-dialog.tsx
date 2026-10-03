@@ -1,6 +1,7 @@
 import { useState, type SubmitEvent } from 'react';
 
 import { useRouter } from '@tanstack/react-router';
+import { XIcon } from 'lucide-react';
 
 import { FormStatus } from '@/components/blocks/form-status';
 import { AlertDialog } from '@/components/ui/alert-dialog';
@@ -11,8 +12,8 @@ import { Form } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import type { Artifact } from '@/database/repository';
-import { normalizeTags } from '@/lib/artifact-metadata';
 import { updateArtifactMetadataFn } from '@/lib/artifacts';
+import { normalizeTags } from '@/lib/normalize-tags';
 import { useFormAction } from '@/lib/use-form-action';
 
 export interface EditArtifactDialogProps {
@@ -86,9 +87,16 @@ export function EditArtifactDialog({ artifact, open, onOpenChange }: EditArtifac
   return (
     <Dialog.Root
       onOpenChange={(next, eventDetails) => {
-        // A dirty draft is only discarded deliberately: an accidental outside press or Escape
-        // routes through the confirm instead of closing. Cancel/X and a successful save close
-        // outright.
+        // Nothing closes the dialog mid-save: a failed save reports inside it. A dirty draft is
+        // only discarded deliberately: an accidental outside press or Escape routes through the
+        // confirm instead of closing. Cancel/X close outright; a successful save calls the
+        // `onOpenChange` prop directly, past this gate.
+        if (!next && pending) {
+          eventDetails.cancel();
+
+          return;
+        }
+
         const isDismissal =
           eventDetails.reason === 'outside-press' || eventDetails.reason === 'escape-key';
 
@@ -111,7 +119,14 @@ export function EditArtifactDialog({ artifact, open, onOpenChange }: EditArtifac
             <Dialog.Description>Update the title, description, and tags.</Dialog.Description>
           </Dialog.Header>
           <Form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-            <Field.Root name="title">
+            <Field.Root
+              name="title"
+              validate={(value) =>
+                typeof value === 'string' && value !== '' && value.trim() === ''
+                  ? 'Title is required.'
+                  : null
+              }
+            >
               <Field.Label>Title</Field.Label>
               <Input
                 maxLength={200}
@@ -120,6 +135,7 @@ export function EditArtifactDialog({ artifact, open, onOpenChange }: EditArtifac
                 value={title}
               />
               <Field.Error match="valueMissing">Title is required.</Field.Error>
+              <Field.Error match="customError">Title is required.</Field.Error>
             </Field.Root>
             <Field.Root name="description">
               <Field.Label>Description</Field.Label>
@@ -173,6 +189,11 @@ export function EditArtifactDialog({ artifact, open, onOpenChange }: EditArtifac
               </AlertDialog.Popup>
             </AlertDialog.Portal>
           </AlertDialog.Root>
+          <Dialog.Action>
+            <Dialog.Close aria-label="Close" render={<Button disabled={pending} variant="ghost" />}>
+              <XIcon data-icon="only" />
+            </Dialog.Close>
+          </Dialog.Action>
         </Dialog.Popup>
       </Dialog.Portal>
     </Dialog.Root>

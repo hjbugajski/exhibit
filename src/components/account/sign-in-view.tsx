@@ -10,13 +10,21 @@ import { Form } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { authClient } from '@/lib/auth-client';
-import { useFormAction } from '@/lib/use-form-action';
+import { sameOriginPath } from '@/lib/same-origin-path';
+import { useFormAction, type ActionStatus } from '@/lib/use-form-action';
+
+const RESET_STATUS: ActionStatus = {
+  kind: 'success',
+  message: 'Password reset. Sign in with your new password.',
+};
 
 export function SignInView({
   redirect,
+  reset,
   resetAvailable,
 }: {
   redirect?: string;
+  reset?: boolean;
   resetAvailable: boolean;
 }) {
   const navigate = useNavigate();
@@ -27,16 +35,20 @@ export function SignInView({
   // the other's status before running).
   const signIn = useFormAction();
   const forgotPassword = useFormAction();
-  const status = signIn.status ?? forgotPassword.status;
+  // A local flag rather than a seeded status: `run` clears status on every call, so a seeded
+  // message would reappear while a later attempt is pending.
+  const [resetNotice, setResetNotice] = useState(reset ?? false);
+  const status = signIn.status ?? forgotPassword.status ?? (resetNotice ? RESET_STATUS : null);
 
   function handleForgotPassword() {
+    setResetNotice(false);
     signIn.setStatus(null);
 
     void forgotPassword.run(async () => {
       if (!email) {
         forgotPassword.setStatus({
           kind: 'error',
-          message: 'Enter your email first, then request a reset link.',
+          message: 'Email is required to request a reset link.',
         });
         return;
       }
@@ -49,7 +61,7 @@ export function SignInView({
       if (error) {
         forgotPassword.setStatus({
           kind: 'error',
-          message: error.message ?? 'Could not request a reset link.',
+          message: error.message ?? 'Could not request a reset link. Try again.',
         });
         return;
       }
@@ -63,17 +75,25 @@ export function SignInView({
 
   function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
+    setResetNotice(false);
     forgotPassword.setStatus(null);
 
     void signIn.run(async () => {
-      const { error } = await authClient.signIn.email({ email, password });
+      const { data, error } = await authClient.signIn.email({ email, password });
 
       if (error) {
         signIn.setStatus({ kind: 'error', message: error.message ?? 'Invalid email or password.' });
         return;
       }
 
-      await navigate({ to: redirect ?? '/' });
+      // Signing in from an OAuth authorize request: the server answers with the next URL and the
+      // auth client is already loading it, so a client navigation would only load the gallery
+      // behind a page that is about to be replaced.
+      if (data.redirect && data.url) {
+        return;
+      }
+
+      await navigate({ to: sameOriginPath(redirect) ?? '/' });
     });
   }
 

@@ -143,6 +143,46 @@ describe('countAnswers', () => {
     expect(countAnswers('markdown', body, null)).toEqual({ answered: 0, total: 0 });
   });
 
+  /**
+   * The renderer shows an error block for a fence that fails catalog validation and drops an
+   * unresolved directive wrapper with its whole subtree (src/components/markdown/catalog-dispatch.tsx),
+   * so none of these asks the owner anything.
+   */
+  it.each([
+    [
+      'a fence that fails catalog validation',
+      ['```exhibit', JSON.stringify({ type: 'Rating', props: { statePath: '/no-label' } }), '```'],
+    ],
+    [
+      'a fence without a string type',
+      ['```exhibit', JSON.stringify({ props: { label: 'Rate', statePath: '/untyped' } }), '```'],
+    ],
+    [
+      'a valid fence inside an unknown wrapper',
+      [
+        '<!-- ::start:Nope -->',
+        '',
+        '```exhibit',
+        JSON.stringify({ type: 'Rating', props: { label: 'Rate', statePath: '/wrapped' } }),
+        '```',
+        '',
+        '<!-- ::end:Nope -->',
+      ],
+    ],
+    [
+      'a valid directive inside an unknown wrapper',
+      [
+        '<!-- ::start:Nope -->',
+        '',
+        '<!-- ::NoteBox label="Notes" statePath="/notes" -->',
+        '',
+        '<!-- ::end:Nope -->',
+      ],
+    ],
+  ])('ignores %s', (_case, lines) => {
+    expect(countAnswers('markdown', lines.join('\n'), null)).toEqual({ answered: 0, total: 0 });
+  });
+
   it('ignores statePath text in prose and in a non-exhibit fence', () => {
     const body = [
       'Every Rating needs a statePath like /ratings/backup.',

@@ -16,7 +16,9 @@ export function Section({ props, children }: { props: Props; children?: ReactNod
   return (
     <section className={flowSection} id={slug || undefined}>
       {props.title ? (
-        <h2 className="text-foreground text-2xl font-semibold tracking-tight">{props.title}</h2>
+        <h2 className="not-prose text-foreground text-2xl font-semibold tracking-tight">
+          {props.title}
+        </h2>
       ) : null}
       {props.subtitle ? <p className="text-foreground-muted mt-2">{props.subtitle}</p> : null}
       {/* Body children space themselves via their own collapsing flow margins (see flow.ts) —

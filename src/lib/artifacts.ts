@@ -18,19 +18,20 @@ import {
   setArtifactArchived,
   setArtifactState,
   softDeleteArtifact,
-  updateMetadata,
+  updateArtifact,
 } from '@/database/repository';
 import type { AnswerCount } from '@/lib/answer-count';
 import { countAnswers } from '@/lib/answer-count';
 import {
   descriptionField,
-  normalizeTags,
   requireArtifact,
   tagField,
   tagsField,
   titleField,
 } from '@/lib/artifact-metadata';
-import { artifactSorts, artifactTypes } from '@/lib/artifact-sorts';
+import { artifactSorts } from '@/lib/artifact-sorts';
+import { artifactTypes } from '@/lib/artifact-types';
+import { normalizeTags } from '@/lib/normalize-tags';
 import { sessionMiddleware } from '@/lib/session-middleware';
 
 /**
@@ -38,13 +39,10 @@ import { sessionMiddleware } from '@/lib/session-middleware';
  * UX-only (see auth-session.ts) - `sessionMiddleware` (src/lib/session-middleware.ts) re-checks the
  * session itself before any handler here touches artifact data.
  *
- * IMPORTANT: each handler below must stay written *inline* inside `.handler(...)`, never delegated
- * to a separately-exported function that calls `db`. The `_authed/index.tsx` route
- * (client-rendered) imports `listArtifactsFn` from this file, so this whole module is part of the
- * client bundle; TanStack Start's build only strips the server-only body (and its
- * `db`/better-sqlite3 dependency chain) out of the client bundle when that body is the literal
- * argument to `.handler()` — anything else ships better-sqlite3 to the browser and crashes
- * hydration.
+ * IMPORTANT: each handler below must stay written inline inside `.handler(...)`. Client routes
+ * import this module, and TanStack Start strips only the literal handler body from the client
+ * bundle. An exported helper that calls `db` keeps `@/database` in the client bundle, and
+ * `pnpm build` fails with an import-protection error.
  */
 
 const listArtifactsInput = z.object({
@@ -58,12 +56,14 @@ const listArtifactsInput = z.object({
   limit: z.number().int().min(1).max(100).optional(),
 });
 
+/**
+ * Always includes answered counts, at a body fetch and a parse per row. The gallery is the only
+ * surface that renders them, so it is the only caller that pays for them.
+ */
 export const listArtifactsFn = createServerFn({ method: 'GET' })
   .middleware([sessionMiddleware])
   .validator(listArtifactsInput)
   .handler(async ({ data }) => {
-    // The gallery is the only surface that renders answered counts, so it is the only caller that
-    // pays for them (a body fetch and a parse per row).
     return listArtifacts(db, { ...data, withAnswers: true });
   });
 
@@ -124,6 +124,7 @@ const artifactDetailInput = z.object({
   version: z.number().int().positive().optional(),
 });
 
+/** Null for an unknown or deleted artifact or a missing version, rather than throwing. */
 export const getArtifactDetailFn = createServerFn({ method: 'GET' })
   .middleware([sessionMiddleware])
   .validator(artifactDetailInput)
@@ -153,22 +154,18 @@ const updateArtifactMetadataInput = z.object({
   tags: tagsField,
 });
 
-/** Throws for unknown ids; a null description clears it. */
+/** Throws for unknown/deleted ids; a null description clears it. */
 export const updateArtifactMetadataFn = createServerFn({ method: 'POST' })
   .middleware([sessionMiddleware])
   .validator(updateArtifactMetadataInput)
   .handler(async ({ data }) => {
-    // updateMetadata doesn't filter soft-deleted rows, so the live-artifact check has to happen
-    // through getArtifact first.
-    requireArtifact(getArtifact(db, data.id));
-
     return requireArtifact(
-      updateMetadata(db, data.id, {
+      updateArtifact(db, data.id, {
         title: data.title,
         description: data.description,
         tags: normalizeTags(data.tags),
       }),
-    );
+    ).artifact;
   });
 
 const jsonValue: z.ZodType<JsonValue> = z.lazy(() =>
@@ -195,9 +192,7 @@ export const saveArtifactStateFn = createServerFn({ method: 'POST' })
       throw new Error('Interaction state exceeds the 64 KB limit.');
     }
 
-    requireArtifact(getArtifact(db, data.id));
-
-    setArtifactState(db, data.id, data.state);
+    requireArtifact(setArtifactState(db, data.id, data.state));
 
     return { saved: true };
   });
@@ -215,11 +210,7 @@ export const revertArtifactVersionFn = createServerFn({ method: 'POST' })
   .middleware([sessionMiddleware])
   .validator(revertArtifactVersionInput)
   .handler(async ({ data }) => {
-    // revertToVersion doesn't filter soft-deleted rows, so the live-artifact check has to happen
-    // through getArtifact first.
-    requireArtifact(getArtifact(db, data.id));
-
-    return requireArtifact(revertToVersion(db, data.id, data.version));
+    return requireArtifact(revertToVersion(db, data.id, data.version)).version;
   });
 
 const setArtifactArchivedInput = z.object({ id: z.string(), archived: z.boolean() });
@@ -229,17 +220,13 @@ export const setArtifactArchivedFn = createServerFn({ method: 'POST' })
   .middleware([sessionMiddleware])
   .validator(setArtifactArchivedInput)
   .handler(async ({ data }) => {
-    // setArtifactArchived doesn't filter soft-deleted rows, so the live-artifact check has to
-    // happen through getArtifact first.
-    requireArtifact(getArtifact(db, data.id));
-
     return requireArtifact(setArtifactArchived(db, data.id, data.archived));
   });
 
 const artifactIdInput = z.object({ id: z.string() });
 
 /**
- * Deliberately unguarded: soft delete is idempotent, so deleting an unknown or already-deleted id
+ * No not-found guard: soft delete is idempotent, so deleting an unknown or already-deleted id
  * succeeds as a no-op rather than throwing (same contract as the MCP `delete_artifact` tool — see
  * its `idempotentHint` note in src/lib/mcp/server.ts).
  */
@@ -263,8 +250,8 @@ export const restoreArtifactFn = createServerFn({ method: 'POST' })
   });
 
 /**
- * Irreversibly removes the artifact, its versions and its interaction state. Unguarded like
- * `deleteArtifactFn`: purging an id that's already gone reports `purged: false` rather than
+ * Irreversibly removes the artifact, its versions and its interaction state. No not-found guard,
+ * like `deleteArtifactFn`: purging an id that's already gone reports `purged: false` rather than
  * throwing, so a stale trash list can't turn a completed purge into an error.
  */
 export const purgeArtifactFn = createServerFn({ method: 'POST' })

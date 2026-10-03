@@ -1,10 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 
 import type { CatalogComponentProps } from '@/catalog/catalog';
 import { MapControls } from '@/components/ui/map/controls';
 import { Map as MapCanvas } from '@/components/ui/map/map';
 import { Marker } from '@/components/ui/map/marker';
-import { resolveTokenColor } from '@/components/ui/map/resolve-token-color';
 import { MapRoute } from '@/components/ui/map/route';
 
 type Props = CatalogComponentProps<'Map'>;
@@ -42,8 +41,6 @@ export function fitOptions(props: Props) {
  * React.lazy, which requires a default export.
  */
 export default function CatalogMapInner({ props }: { props: Props }) {
-  const [routeColor] = useState(() => resolveTokenColor('--color-accent', '#15171c'));
-
   const routes = useMemo(
     () =>
       (props.paths ?? []).map((path) => ({
@@ -62,7 +59,7 @@ export default function CatalogMapInner({ props }: { props: Props }) {
         <MapControls />
         {routes.map((path) => (
           <MapRoute
-            color={routeColor}
+            colorToken="--color-accent"
             coordinates={path.coordinates}
             dashArray={path.dashed ? [2, 2] : undefined}
             interactive={false}

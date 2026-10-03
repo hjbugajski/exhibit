@@ -11,12 +11,13 @@
  * the first `dateFormat` is read in mermaid's default.
  */
 
-import { StatementError, reportStatementError } from '../../core/diagnostics.ts';
-import { ACC_DESCR_BLOCK, readDescriptionBlock } from '../../core/lex/acc.ts';
+import { StatementError } from '../../core/diagnostics.ts';
+import { readAccText } from '../../core/lex/acc.ts';
 import type { LogicalLine } from '../../core/lex/lines.ts';
 import { readLines, splitHeader } from '../../core/lex/lines.ts';
 import { Scanner } from '../../core/lex/scanner.ts';
-import { readRestOfLine } from '../../core/lex/tokens.ts';
+import { readStatements } from '../../core/lex/statements.ts';
+import { normalizeSpace, readRestOfLine } from '../../core/lex/tokens.ts';
 import { labelLines } from '../../core/text/label.ts';
 import type { DiagnosticSink, ParseContext, ParseResult, Span } from '../../types.ts';
 import type {
@@ -50,6 +51,9 @@ export const DEFAULT_AXIS_FORMAT = '%Y-%m-%d';
 const TAGS: ReadonlySet<string> = new Set(['done', 'active', 'crit', 'milestone']);
 
 const DURATION = /^(\d+(?:\.\d+)?)\s*(ms|min|s|m|h|d|w)$/i;
+
+/** At least 10,000 years in every unit; longer is hostile input, not a plan. */
+const MAX_DURATION_MS = 10_000 * 366 * MS_PER_DAY;
 
 const UNITS: Readonly<Record<string, number>> = {
   ms: 1,
@@ -90,10 +94,6 @@ interface Draft {
   accDescr?: string;
 }
 
-function text(raw: string): string {
-  return raw.trim().replace(/\s+/g, ' ');
-}
-
 /** The section a task belongs to, creating the implicit one when the chart declared none yet. */
 function currentSection(draft: Draft, span: Span): number {
   if (draft.sections.length === 0) {
@@ -104,7 +104,7 @@ function currentSection(draft: Draft, span: Span): number {
 }
 
 function sectionStatement(draft: Draft, scanner: Scanner, span: Span): void {
-  const name = text(readRestOfLine(scanner));
+  const name = normalizeSpace(readRestOfLine(scanner));
 
   if (!name) {
     throw new StatementError('expected-section-name', 'Expected a section name.', span, ['a name']);
@@ -114,7 +114,7 @@ function sectionStatement(draft: Draft, scanner: Scanner, span: Span): void {
 }
 
 function dateFormatStatement(draft: Draft, scanner: Scanner, span: Span): void {
-  const raw = text(readRestOfLine(scanner));
+  const raw = normalizeSpace(readRestOfLine(scanner));
 
   if (!raw) {
     throw new StatementError('expected-date-format', 'Expected a date format.', span, [
@@ -139,7 +139,7 @@ function dateFormatStatement(draft: Draft, scanner: Scanner, span: Span): void {
 }
 
 function axisFormatStatement(draft: Draft, scanner: Scanner, span: Span): void {
-  const raw = text(readRestOfLine(scanner));
+  const raw = normalizeSpace(readRestOfLine(scanner));
 
   if (!raw) {
     throw new StatementError('expected-axis-format', 'Expected an axis format.', span, [
@@ -163,7 +163,7 @@ function axisFormatStatement(draft: Draft, scanner: Scanner, span: Span): void {
 }
 
 function excludesStatement(draft: Draft, scanner: Scanner, span: Span): void {
-  const rest = text(readRestOfLine(scanner)).toLowerCase();
+  const rest = normalizeSpace(readRestOfLine(scanner)).toLowerCase();
   const entries = rest
     .split(/[\s,]+/)
     .map((entry) => entry.trim())
@@ -184,7 +184,7 @@ function excludesStatement(draft: Draft, scanner: Scanner, span: Span): void {
 }
 
 function todayMarkerStatement(draft: Draft, scanner: Scanner, span: Span): void {
-  const rest = text(readRestOfLine(scanner)).toLowerCase();
+  const rest = normalizeSpace(readRestOfLine(scanner)).toLowerCase();
 
   if (rest === 'off') {
     draft.todayMarker = false;
@@ -200,19 +200,6 @@ function todayMarkerStatement(draft: Draft, scanner: Scanner, span: Span): void 
   );
 }
 
-function accStatement(draft: Draft, scanner: Scanner, keyword: string): void {
-  scanner.skipSpace();
-  scanner.eat(':');
-
-  const value = text(readRestOfLine(scanner));
-
-  if (keyword === 'acctitle') {
-    draft.accTitle = value;
-  } else {
-    draft.accDescr = value;
-  }
-}
-
 function durationOf(field: string): GanttDuration | null {
   const found = DURATION.exec(field);
 
@@ -223,6 +210,14 @@ function durationOf(field: string): GanttDuration | null {
   const amount = Number(found[1]);
   const unit = (found[2] as string).toLowerCase();
   const ms = amount * (UNITS[unit] as number);
+
+  if (ms > MAX_DURATION_MS) {
+    throw new StatementError(
+      'duration-too-large',
+      `Duration '${field}' is longer than 10,000 years.`,
+    );
+  }
+
   const perDay = unit === 'd' ? 1 : unit === 'w' ? 7 : 0;
   const days = perDay > 0 && Number.isInteger(amount * perDay) ? amount * perDay : null;
 
@@ -275,22 +270,41 @@ function endOf(draft: Draft, field: string): GanttEnd | null {
   return at === null ? null : { kind: 'date', at };
 }
 
-/** A declared id has to be unique: the scene keys rows by it and `after` resolves against it. */
-function idFor(draft: Draft, declared: string | null, span: Span): string {
-  const fallback = `task-${draft.tasks.length}`;
+/** The first free `task-N`, counting up from the task's position so uncontested ids stay stable. */
+function numberedId(draft: Draft): string {
+  let suffix = draft.tasks.length;
 
+  while (draft.ids.has(`task-${suffix}`)) {
+    suffix += 1;
+  }
+
+  const id = `task-${suffix}`;
+
+  draft.ids.add(id);
+
+  return id;
+}
+
+/**
+ * Every returned id is unique across the chart, declared or numbered, because the scene keys rows
+ * by it and `after` resolves against it. A missing id or one already taken gets a numbered id
+ * instead.
+ */
+function idFor(draft: Draft, declared: string | null, span: Span): string {
   if (declared === null || declared === '') {
-    return fallback;
+    return numberedId(draft);
   }
 
   if (draft.ids.has(declared)) {
+    const id = numberedId(draft);
+
     draft.report.warn(
       'duplicate-task-id',
-      `Another task is already called '${declared}'; this one is '${fallback}'.`,
+      `Another task is already called '${declared}'; this one is '${id}'.`,
       span,
     );
 
-    return fallback;
+    return id;
   }
 
   draft.ids.add(declared);
@@ -318,7 +332,7 @@ function taskStatement(draft: Draft, line: LogicalLine): void {
   const fields = line.text
     .slice(colon + 1)
     .split(',')
-    .map((field) => text(field))
+    .map((field) => normalizeSpace(field))
     .filter((field) => field.length > 0);
   const tags: GanttTag[] = [];
 
@@ -472,12 +486,15 @@ function statement(draft: Draft, line: LogicalLine): void {
     case 'title':
       scanner.skipSpace();
       scanner.eat(':');
-      draft.title = text(readRestOfLine(scanner));
+      draft.title = normalizeSpace(readRestOfLine(scanner));
 
       return;
     case 'acctitle':
+      draft.accTitle = readAccText(scanner);
+
+      return;
     case 'accdescr':
-      accStatement(draft, scanner, keyword);
+      draft.accDescr = readAccText(scanner);
 
       return;
   }
@@ -506,34 +523,28 @@ export function parseGantt(source: string, ctx: ParseContext): ParseResult<Gantt
   };
   const before = report.count;
 
-  for (let index = 0; index < statements.length; index += 1) {
-    const line = statements[index] as LogicalLine;
-    const block = ACC_DESCR_BLOCK.exec(line.text);
+  const { stopped } = readStatements(statements, report, {
+    statement: (line) => statement(draft, line),
+    description: (text) => {
+      draft.accDescr = text;
+    },
+    stop: (line) => {
+      if (draft.tasks.length <= ctx.limits.nodes) {
+        return false;
+      }
 
-    if (block) {
-      const read = readDescriptionBlock(statements, index, block[1] ?? '', report);
-
-      draft.accDescr = read.description;
-      index = read.end;
-
-      continue;
-    }
-
-    try {
-      statement(draft, line);
-    } catch (cause) {
-      reportStatementError(report, cause, line.span);
-    }
-
-    if (draft.tasks.length > ctx.limits.nodes) {
       report.error(
         'too-many-nodes',
         `Gantt chart has more than ${ctx.limits.nodes} tasks.`,
         line.span,
       );
 
-      return { ir: null, diagnostics: report.diagnostics };
-    }
+      return true;
+    },
+  });
+
+  if (stopped) {
+    return { ir: null, diagnostics: report.diagnostics };
   }
 
   const failed = report.diagnostics

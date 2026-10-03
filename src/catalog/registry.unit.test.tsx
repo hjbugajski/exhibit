@@ -37,7 +37,7 @@ describe('Renderer with the catalog registry', () => {
     render(<SpecView spec={itineraryFixture} />);
 
     expect(screen.getByText('Kyoto in Three Days')).toBeTruthy();
-    expect(screen.getByText('Day 1 — Saturday')).toBeTruthy();
+    expect(screen.getByText('Day 1: Sunday')).toBeTruthy();
     expect(screen.getByText('Fushimi Inari Shrine')).toBeTruthy();
     expect(consoleError).not.toHaveBeenCalled();
   });

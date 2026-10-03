@@ -49,7 +49,11 @@ export function Card({ props, children }: { props: Props; children?: ReactNode }
     <UiCard.Root className={flowBlock}>
       {hasHeader ? (
         <UiCard.Header>
-          {props.title ? <UiCard.Title level={3}>{props.title}</UiCard.Title> : null}
+          {props.title ? (
+            <UiCard.Title className="not-prose" level={3}>
+              {props.title}
+            </UiCard.Title>
+          ) : null}
           {props.subtitle ? <UiCard.Description>{props.subtitle}</UiCard.Description> : null}
           {props.badge ? (
             <UiCard.Action>

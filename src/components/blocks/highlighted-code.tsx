@@ -1,4 +1,4 @@
-import { Fragment } from 'react';
+import { Fragment, useMemo } from 'react';
 
 import { highlight, resolveHighlightLanguage } from '@/lib/highlight';
 
@@ -23,7 +23,7 @@ export function HighlightedCode({
   className?: string;
 }) {
   const lang = code.length > HIGHLIGHT_MAX_CHARS ? null : resolveHighlightLanguage(language);
-  const lines = lang ? highlight(code, lang) : null;
+  const lines = useMemo(() => (lang ? highlight(code, lang) : null), [code, lang]);
 
   return (
     <pre className={className}>

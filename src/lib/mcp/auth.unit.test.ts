@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 
 import { eq } from 'drizzle-orm';
 import { exportJWK, generateKeyPair, SignJWT } from 'jose';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const BASE_URL = 'http://localhost:3000';
 
@@ -19,7 +19,7 @@ vi.mock('@/lib/auth', () => ({
 
 const { verifyMcpBearer } = await import('@/lib/mcp/auth');
 const { db } = await import('@/database');
-const { oauthAccessToken, oauthClient, user } = await import('@/database/schemas/auth');
+const { oauthAccessToken, oauthClient, session, user } = await import('@/database/schemas/auth');
 
 const KID = 'test-kid';
 
@@ -40,7 +40,44 @@ const publicJwk = await exportJWK(publicKey);
 publicJwk.kid = KID;
 publicJwk.alg = 'RS256';
 
-getJwks.mockResolvedValue({ keys: [publicJwk] });
+beforeEach(() => {
+  getJwks.mockResolvedValue({ keys: [publicJwk] });
+});
+
+/** Inserts an opaque access-token row for `raw`, stored hashed as the provider stores it. */
+function insertOpaqueToken(raw: string, values: { expiresAt: Date; revoked?: Date }): void {
+  db.insert(oauthAccessToken)
+    .values({
+      id: `${raw}-row`,
+      token: createHash('sha256').update(raw).digest('base64url'),
+      clientId: AZP,
+      expiresAt: values.expiresAt,
+      revoked: values.revoked,
+      createdAt: new Date(),
+      scopes: ['openid'],
+    })
+    .run();
+}
+
+/** Inserts a session row for a dedicated user; returns the session id. */
+function insertSession(id: string, expiresAt: Date): string {
+  db.insert(user)
+    .values({ id: `${id}-user`, name: 'Owner', email: `${id}@example.com` })
+    .run();
+  db.insert(session)
+    .values({ id, token: `${id}-token`, userId: `${id}-user`, expiresAt, updatedAt: new Date() })
+    .run();
+
+  return id;
+}
+
+function expectInvalidToken(result: Awaited<ReturnType<typeof verifyMcpBearer>>): void {
+  expect(result.ok).toBe(false);
+  if (!result.ok) {
+    expect(result.status).toBe(401);
+    expect(result.wwwAuthenticate).toContain('error="invalid_token"');
+  }
+}
 
 function request(token?: string): Request {
   const headers = new Headers();
@@ -60,9 +97,13 @@ function mintJwt(
     expirationTime?: number;
     subject?: string;
     azp?: string | null;
+    sid?: string;
   } = {},
 ): Promise<string> {
-  return new SignJWT(overrides.azp === null ? {} : { azp: overrides.azp ?? AZP })
+  return new SignJWT({
+    ...(overrides.azp === null ? {} : { azp: overrides.azp ?? AZP }),
+    ...(overrides.sid === undefined ? {} : { sid: overrides.sid }),
+  })
     .setProtectedHeader({ alg: 'RS256', kid: KID })
     .setSubject(overrides.subject ?? 'user-1')
     .setIssuedAt()
@@ -245,5 +286,52 @@ describe('verifyMcpBearer', () => {
       expect(result.status).toBe(401);
       expect(result.wwwAuthenticate).toContain('error="invalid_token"');
     }
+  });
+  it('rejects an unexpired opaque token that has been revoked', async () => {
+    insertOpaqueToken('revoked-opaque', {
+      expiresAt: new Date(Date.now() + 60_000),
+      revoked: new Date(),
+    });
+
+    expectInvalidToken(await verifyMcpBearer(request('revoked-opaque')));
+  });
+
+  it('rejects an expired opaque token', async () => {
+    insertOpaqueToken('expired-opaque', { expiresAt: new Date(Date.now() - 1000) });
+
+    expectInvalidToken(await verifyMcpBearer(request('expired-opaque')));
+  });
+
+  /**
+   * Sign-out, password change and password reset delete the session row; a JWT minted under that
+   * session must stop working on its next request rather than at its own expiry.
+   */
+  it('rejects a JWT whose sid session has been deleted', async () => {
+    const sid = insertSession('live-session', new Date(Date.now() + 60_000));
+    const token = await mintJwt({ sid });
+
+    expect(await verifyMcpBearer(request(token))).toEqual({ ok: true, subject: 'user-1' });
+
+    db.delete(session).where(eq(session.id, sid)).run();
+
+    expectInvalidToken(await verifyMcpBearer(request(token)));
+  });
+
+  /**
+   * Existence only: refresh grants copy the refresh token's session id into every new access
+   * token, so an expiry check would cut off long-lived `offline_access` clients once the gallery
+   * session lapses.
+   */
+  it('accepts a JWT whose sid session row exists but has expired', async () => {
+    const sid = insertSession('lapsed-session', new Date(Date.now() - 1000));
+    const token = await mintJwt({ sid });
+
+    expect(await verifyMcpBearer(request(token))).toEqual({ ok: true, subject: 'user-1' });
+  });
+
+  it('rejects a JWT whose sid matches no session', async () => {
+    const token = await mintJwt({ sid: 'no-such-session' });
+
+    expectInvalidToken(await verifyMcpBearer(request(token)));
   });
 });

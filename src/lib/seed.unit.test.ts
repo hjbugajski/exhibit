@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { db } = await import('@/database');
 const { user } = await import('@/database/schemas/auth');
@@ -12,6 +12,10 @@ function verifiedFlags(): boolean[] {
     .map((row) => row.emailVerified);
 }
 
+beforeEach(() => {
+  db.delete(user).run();
+});
+
 describe('seedOwner', () => {
   it('creates the owner user then is idempotent on a second call', async () => {
     const first = await seedOwner('owner@example.com', 'correct horse battery staple');
@@ -23,9 +27,7 @@ describe('seedOwner', () => {
 
   it('does not create a second user when a user exists under a different email', async () => {
     // OWNER_EMAIL is a first-seed value: after the owner changes their email in /settings, a reboot
-    // with the stale env email must be a no-op. Make this test self-establishing (not dependent on
-    // the previous test having already created a user in the shared module-level db) by seeding the
-    // first email itself before asserting.
+    // with the stale env email must be a no-op.
     await seedOwner('owner@example.com', 'correct horse battery staple');
 
     const result = await seedOwner('stale-env-email@example.com', 'correct horse battery staple');

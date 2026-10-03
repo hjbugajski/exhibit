@@ -3,7 +3,7 @@ import type { Spec } from '@json-render/core';
 /**
  * Stress-tests the prose-flow margin system: a 1-column Grid root (the catalog's default vertical
  * flow container) with blocks first, last, and adjacent in every rhythm-sensitive combination —
- * heading→prose, prose→table, card edges, nested flow inside Card/Tabs/Section, cell-wrapped
+ * heading→prose, a markdown heading ladder, prose→table, card edges, nested flow inside Card/Tabs/Section, cell-wrapped
  * multi-column Grid, and an Itinerary. The spec opens and closes with plain blocks so the
  * first/last margin resets are visible at the root.
  */
@@ -17,6 +17,7 @@ export const flowFixture: Spec = {
         'opening-prose',
         'title',
         'intro',
+        'markdown-headings',
         'metrics',
         'code-heading',
         'code',
@@ -47,6 +48,14 @@ export const flowFixture: Spec = {
       props: {
         markdown:
           'A heading followed by prose should read tighter than two stacked cards. **Bold**, *italics*, and a [link](https://example.com) confirm markdown rhythm too.\n\nA second paragraph checks intra-prose spacing against inter-block spacing.',
+      },
+      children: [],
+    },
+    'markdown-headings': {
+      type: 'Prose',
+      props: {
+        markdown:
+          '# Markdown depth 1\n\nEach markdown heading renders one rank below its depth; its size matches the catalog Heading of the same tier.\n\n## Markdown depth 2\n\nA paragraph under depth 2.\n\n### Markdown depth 3\n\nA paragraph under depth 3.\n\n#### Markdown depth 4\n\nA paragraph under depth 4.',
       },
       children: [],
     },

@@ -1,10 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useEffectEvent, useState } from 'react';
 
 import { X } from 'lucide-react';
 import type * as MapLibreGL from 'maplibre-gl';
 import { type PopupOptions } from 'maplibre-gl';
-
-import { useLatest } from '@/components/ui/map/map-utils';
 
 export function PopupCloseButton({ onClick }: { onClick: () => void }) {
   return (
@@ -53,23 +51,23 @@ export function usePopupInstance({
 }: UsePopupInstanceOptions) {
   const [container] = useState(() => document.createElement('div'));
   const [popup] = useState(createPopup);
-  const attachRef = useLatest(attach);
-  const onCloseRef = useLatest(onClose);
+  const attachPopup = useEffectEvent(attach);
+  const emitClose = useEffectEvent(() => onClose?.());
 
   useEffect(() => {
     if (!map) {
       return;
     }
 
-    const handleClose = () => onCloseRef.current?.();
+    const handleClose = () => emitClose();
     popup.on('close', handleClose);
-    const cleanup = attachRef.current({ popup, container, map });
+    const cleanup = attachPopup({ popup, container, map });
 
     return () => {
       popup.off('close', handleClose);
       cleanup?.();
     };
-  }, [map, popup, container, attachRef, onCloseRef]);
+  }, [map, popup, container]);
 
   useEffect(() => {
     popup.setOffset(offset ?? 16);

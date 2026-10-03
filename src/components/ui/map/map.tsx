@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useEffectEvent,
   useImperativeHandle,
   useMemo,
   useRef,
@@ -22,7 +23,6 @@ import * as MapLibreGL from 'maplibre-gl';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 
 import { MapContext, type Theme } from '@/components/ui/map/map-context';
-import { useLatest } from '@/components/ui/map/map-utils';
 import { buildProtomapsStyle } from '@/components/ui/map/protomaps-style';
 import { getProtomapsApiKeyFn } from '@/lib/map-config';
 import { cn } from '@/lib/utils';
@@ -273,11 +273,9 @@ export function Map({
     }
   }, [viewport, onViewportChange]);
 
-  const onViewportChangeRef = useLatest(onViewportChange);
-  // Mount effect below only reads projection through this ref so that changing the prop after mount
-  // doesn't get silently reverted on the next style reload by a handler still closing over the
-  // mount-time value.
-  const projectionRef = useLatest(projection);
+  const emitViewportChange = useEffectEvent((next: MapViewport) => onViewportChange?.(next));
+  // A style reload must re-apply the current projection, not the mount-time one.
+  const readProjection = useEffectEvent(() => projection);
 
   const mapStyles = useMemo(() => {
     // Explicit styles win. Otherwise `blank` opts into the transparent tile-less basemap; with
@@ -312,14 +310,14 @@ export function Map({
     }
   }, []);
 
-  // Latest-ref (not a mount-time snapshot): creation can be deferred past first render by
-  // `styleReady`, and the map must be born with the values current at creation time.
-  const initialRef = useLatest({
+  // Creation can be deferred past first render by `styleReady`, so the map must use the values
+  // current at creation, not a mount-time snapshot.
+  const readInitialOptions = useEffectEvent(() => ({
     resolvedTheme,
     mapStyles,
     props,
     initialViewport: viewport ?? defaultViewport,
-  });
+  }));
 
   useEffect(() => {
     if (!containerRef.current || !styleReady) {
@@ -331,7 +329,7 @@ export function Map({
       mapStyles: initialMapStyles,
       props: initialProps,
       initialViewport,
-    } = initialRef.current;
+    } = readInitialOptions();
 
     const initialStyle = initialTheme === 'dark' ? initialMapStyles.dark : initialMapStyles.light;
     currentStyleRef.current = initialStyle;
@@ -355,8 +353,9 @@ export function Map({
       // setStyle. 100ms is empirical - long enough for the burst, short enough to not be visible.
       styleTimeoutRef.current = setTimeout(() => {
         setIsStyleLoaded(true);
-        if (projectionRef.current) {
-          map.setProjection(projectionRef.current);
+        const currentProjection = readProjection();
+        if (currentProjection) {
+          map.setProjection(currentProjection);
         }
       }, 100);
     };
@@ -367,7 +366,7 @@ export function Map({
       if (internalUpdateRef.current) {
         return;
       }
-      onViewportChangeRef.current?.(getViewport(map));
+      emitViewportChange(getViewport(map));
     };
 
     map.on('load', loadHandler);
@@ -385,7 +384,7 @@ export function Map({
       setIsStyleLoaded(false);
       setMapInstance(null);
     };
-  }, [clearStyleTimeout, projectionRef, onViewportChangeRef, initialRef, styleReady]);
+  }, [clearStyleTimeout, styleReady]);
 
   useEffect(() => {
     if (!mapInstance || !isControlled || !viewport) {
@@ -457,7 +456,11 @@ export function Map({
     <MapContext value={contextValue}>
       <div ref={containerRef} className={cn('relative h-full w-full', className)}>
         {(!isLoaded || loading) && <DefaultLoader />}
-        {/* SSR-safe: children render only when map is loaded on client */}
+        {/*
+         * SSR-safe: the MapLibre instance exists only on the client. Children mount once it exists,
+         * before its style loads, so children that touch sources or layers gate on `isLoaded` from
+         * `useMap`.
+         */}
         {mapInstance && children}
       </div>
     </MapContext>

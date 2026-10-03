@@ -1,6 +1,7 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
 
 import { ArtifactDetailView } from '@/components/artifacts/artifact-detail';
+import { loadStateStoreFactory } from '@/components/artifacts/state-store-loader';
 import { getArtifactDetailFn } from '@/lib/artifacts';
 import { parseVersionParam } from '@/lib/parse-version-param';
 
@@ -18,11 +19,19 @@ export const Route = createFileRoute('/_authed/a/$id/v/$n')({
       throw notFound();
     }
 
+    // Same factory preload as the latest-version route.
+    if (detail.artifact.type !== 'html') {
+      await loadStateStoreFactory();
+    }
+
     return detail;
   },
   head: ({ loaderData }) => ({
     meta: [{ title: loaderData ? `${loaderData.artifact.title} · Exhibit` : 'Exhibit' }],
   }),
+  // Uncached for the same reason as the latest-version route: the store must seed from the
+  // server's current state.
+  gcTime: 0,
   component: ArtifactDetailRoute,
 });
 
@@ -30,7 +39,7 @@ function ArtifactDetailRoute() {
   const { id } = Route.useParams();
   const detail = Route.useLoaderData();
 
-  // Same keying as the latest-version route: fresh mount per artifact so the spec state store
-  // re-seeds from the loader.
+  // Same keying as the latest-version route: fresh mount per artifact so the state store re-seeds
+  // from a fresh, uncached load.
   return <ArtifactDetailView detail={detail} id={id} key={id} />;
 }

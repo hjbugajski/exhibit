@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`parseClass > 'accessibility statements' 1`] = `
+exports[`parseClass > accessibility statements 1`] = `
 {
   "accDescr": "Two classes",
   "accTitle": "Domain model",
@@ -16,7 +16,7 @@ exports[`parseClass > 'accessibility statements' 1`] = `
 }
 `;
 
-exports[`parseClass > 'aggregation' 1`] = `
+exports[`parseClass > aggregation 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -32,7 +32,7 @@ exports[`parseClass > 'aggregation' 1`] = `
 }
 `;
 
-exports[`parseClass > 'annotation inside a body' 1`] = `
+exports[`parseClass > annotation inside a body 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -45,7 +45,7 @@ exports[`parseClass > 'annotation inside a body' 1`] = `
 }
 `;
 
-exports[`parseClass > 'association' 1`] = `
+exports[`parseClass > association 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -61,7 +61,7 @@ exports[`parseClass > 'association' 1`] = `
 }
 `;
 
-exports[`parseClass > 'bare class declaration' 1`] = `
+exports[`parseClass > bare class declaration 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -74,7 +74,7 @@ exports[`parseClass > 'bare class declaration' 1`] = `
 }
 `;
 
-exports[`parseClass > 'body block' 1`] = `
+exports[`parseClass > body block 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -87,23 +87,7 @@ exports[`parseClass > 'body block' 1`] = `
 }
 `;
 
-exports[`parseClass > 'cardinalities without spaces' 1`] = `
-{
-  "accDescr": undefined,
-  "accTitle": undefined,
-  "classes": [
-    "A {}",
-    "B {}",
-  ],
-  "direction": "TB",
-  "namespaces": [],
-  "relations": [
-    ""1" A none--arrow "0..*" B",
-  ],
-}
-`;
-
-exports[`parseClass > 'cardinalities' 1`] = `
+exports[`parseClass > cardinalities 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -119,7 +103,23 @@ exports[`parseClass > 'cardinalities' 1`] = `
 }
 `;
 
-exports[`parseClass > 'comments are stripped' 1`] = `
+exports[`parseClass > cardinalities without spaces 1`] = `
+{
+  "accDescr": undefined,
+  "accTitle": undefined,
+  "classes": [
+    "A {}",
+    "B {}",
+  ],
+  "direction": "TB",
+  "namespaces": [],
+  "relations": [
+    ""1" A none--arrow "0..*" B",
+  ],
+}
+`;
+
+exports[`parseClass > comments are stripped 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -135,7 +135,7 @@ exports[`parseClass > 'comments are stripped' 1`] = `
 }
 `;
 
-exports[`parseClass > 'composition' 1`] = `
+exports[`parseClass > composition 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -151,7 +151,7 @@ exports[`parseClass > 'composition' 1`] = `
 }
 `;
 
-exports[`parseClass > 'dependency' 1`] = `
+exports[`parseClass > dependency 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -167,7 +167,7 @@ exports[`parseClass > 'dependency' 1`] = `
 }
 `;
 
-exports[`parseClass > 'direction LR' 1`] = `
+exports[`parseClass > direction LR 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -183,7 +183,7 @@ exports[`parseClass > 'direction LR' 1`] = `
 }
 `;
 
-exports[`parseClass > 'direction TD maps to TB' 1`] = `
+exports[`parseClass > direction TD maps to TB 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -199,7 +199,7 @@ exports[`parseClass > 'direction TD maps to TB' 1`] = `
 }
 `;
 
-exports[`parseClass > 'dotted link' 1`] = `
+exports[`parseClass > dotted link 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -215,7 +215,7 @@ exports[`parseClass > 'dotted link' 1`] = `
 }
 `;
 
-exports[`parseClass > 'empty body' 1`] = `
+exports[`parseClass > empty body 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -228,7 +228,7 @@ exports[`parseClass > 'empty body' 1`] = `
 }
 `;
 
-exports[`parseClass > 'entities in a label' 1`] = `
+exports[`parseClass > entities in a label 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -244,7 +244,7 @@ exports[`parseClass > 'entities in a label' 1`] = `
 }
 `;
 
-exports[`parseClass > 'every visibility marker' 1`] = `
+exports[`parseClass > every visibility marker 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -257,7 +257,7 @@ exports[`parseClass > 'every visibility marker' 1`] = `
 }
 `;
 
-exports[`parseClass > 'generic class' 1`] = `
+exports[`parseClass > generic class 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -270,7 +270,7 @@ exports[`parseClass > 'generic class' 1`] = `
 }
 `;
 
-exports[`parseClass > 'generic member type' 1`] = `
+exports[`parseClass > generic member type 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -283,7 +283,7 @@ exports[`parseClass > 'generic member type' 1`] = `
 }
 `;
 
-exports[`parseClass > 'header only' 1`] = `
+exports[`parseClass > header only 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -294,7 +294,7 @@ exports[`parseClass > 'header only' 1`] = `
 }
 `;
 
-exports[`parseClass > 'inheritance' 1`] = `
+exports[`parseClass > inheritance 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -310,7 +310,7 @@ exports[`parseClass > 'inheritance' 1`] = `
 }
 `;
 
-exports[`parseClass > 'long line' 1`] = `
+exports[`parseClass > long line 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -326,7 +326,7 @@ exports[`parseClass > 'long line' 1`] = `
 }
 `;
 
-exports[`parseClass > 'member line' 1`] = `
+exports[`parseClass > member line 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -339,7 +339,7 @@ exports[`parseClass > 'member line' 1`] = `
 }
 `;
 
-exports[`parseClass > 'method member' 1`] = `
+exports[`parseClass > method member 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -352,7 +352,7 @@ exports[`parseClass > 'method member' 1`] = `
 }
 `;
 
-exports[`parseClass > 'namespace' 1`] = `
+exports[`parseClass > namespace 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -367,7 +367,7 @@ exports[`parseClass > 'namespace' 1`] = `
 }
 `;
 
-exports[`parseClass > 'plain link' 1`] = `
+exports[`parseClass > plain link 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -383,7 +383,7 @@ exports[`parseClass > 'plain link' 1`] = `
 }
 `;
 
-exports[`parseClass > 'quoted label' 1`] = `
+exports[`parseClass > quoted label 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -396,7 +396,7 @@ exports[`parseClass > 'quoted label' 1`] = `
 }
 `;
 
-exports[`parseClass > 'realization' 1`] = `
+exports[`parseClass > realization 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -412,7 +412,7 @@ exports[`parseClass > 'realization' 1`] = `
 }
 `;
 
-exports[`parseClass > 'relation label' 1`] = `
+exports[`parseClass > relation label 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -428,7 +428,7 @@ exports[`parseClass > 'relation label' 1`] = `
 }
 `;
 
-exports[`parseClass > 'reversed inheritance' 1`] = `
+exports[`parseClass > reversed inheritance 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -444,7 +444,7 @@ exports[`parseClass > 'reversed inheritance' 1`] = `
 }
 `;
 
-exports[`parseClass > 'self relation' 1`] = `
+exports[`parseClass > self relation 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -459,7 +459,7 @@ exports[`parseClass > 'self relation' 1`] = `
 }
 `;
 
-exports[`parseClass > 'semicolon separated statements' 1`] = `
+exports[`parseClass > semicolon separated statements 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -477,7 +477,7 @@ exports[`parseClass > 'semicolon separated statements' 1`] = `
 }
 `;
 
-exports[`parseClass > 'single line body' 1`] = `
+exports[`parseClass > single line body 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -490,7 +490,7 @@ exports[`parseClass > 'single line body' 1`] = `
 }
 `;
 
-exports[`parseClass > 'standalone annotation' 1`] = `
+exports[`parseClass > standalone annotation 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -503,7 +503,7 @@ exports[`parseClass > 'standalone annotation' 1`] = `
 }
 `;
 
-exports[`parseClass > 'two way association' 1`] = `
+exports[`parseClass > two way association 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,
@@ -519,7 +519,7 @@ exports[`parseClass > 'two way association' 1`] = `
 }
 `;
 
-exports[`parseClass > 'v2 header' 1`] = `
+exports[`parseClass > v2 header 1`] = `
 {
   "accDescr": undefined,
   "accTitle": undefined,

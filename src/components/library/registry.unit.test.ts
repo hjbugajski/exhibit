@@ -13,7 +13,6 @@ const SLUG_ALIASES: Record<string, string> = {
   field: 'forms',
   form: 'forms',
   input: 'forms',
-  label: 'forms',
   textarea: 'forms',
 };
 
@@ -38,11 +37,13 @@ describe('library registry', () => {
     // Built from the module path string; happy-dom's global URL class breaks fileURLToPath.
     const uiDir = join(dirname(fileURLToPath(import.meta.url)), '../ui');
     const expected = new Set(
-      readdirSync(uiDir, { withFileTypes: true }).map((entry) => {
-        const name = entry.isDirectory() ? entry.name : entry.name.replace(/\.tsx$/, '');
+      readdirSync(uiDir, { withFileTypes: true })
+        .filter((entry) => !entry.name.includes('.test.'))
+        .map((entry) => {
+          const name = entry.isDirectory() ? entry.name : entry.name.replace(/\.tsx$/, '');
 
-        return SLUG_ALIASES[name] ?? name;
-      }),
+          return SLUG_ALIASES[name] ?? name;
+        }),
     );
     const slugs = new Set(libraryDemos.map((demo) => demo.slug));
     const missing = [...expected].filter((slug) => !slugs.has(slug));

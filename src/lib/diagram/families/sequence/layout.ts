@@ -194,8 +194,6 @@ export function layoutSequence(
     return { scene: null, diagnostics: report.diagnostics };
   }
 
-  // ------------------------------------------------------------------- measurement
-
   const columns: Column[] = ir.participants.map((participant) => {
     const label = wrap(participant.label);
 
@@ -246,8 +244,6 @@ export function layoutSequence(
       ? wrap(event.label)
       : EMPTY_LABEL;
   });
-
-  // --------------------------------------------------------------- frame structure
 
   const frames: FrameWork[] = [];
   const structure: FrameWork[] = [];
@@ -316,8 +312,6 @@ export function layoutSequence(
       frame.last = columns.length - 1;
     }
   }
-
-  // ------------------------------------------------------------------ x constraints
 
   const x: number[] = [];
 
@@ -409,8 +403,6 @@ export function layoutSequence(
         (x[k] as number) + step * Math.min(k - requirement.from, requirement.to - requirement.from);
     }
   }
-
-  // -------------------------------------------------------------------- the y walk
 
   const openFrames: FrameWork[] = [];
   const openActivations = new Map<string, ActivationWork[]>();
@@ -701,8 +693,6 @@ export function layoutSequence(
     frame.bottom = lifelineBottom;
   }
 
-  // ------------------------------------------------------------------- frame boxes
-
   const framed: SceneFrame[] = frames.map((frame) => {
     const pad = m.clusterPadding + m.strokeWidth * 2 * frame.height;
     const left = Math.min(frame.contentX1, x[frame.first] as number) - pad;
@@ -760,8 +750,6 @@ export function layoutSequence(
 
     return built;
   });
-
-  // ------------------------------------------------------------------------- emit
 
   const dx = m.padding - minX;
   const footerTop = lifelineBottom;

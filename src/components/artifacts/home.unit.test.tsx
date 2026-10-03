@@ -40,7 +40,6 @@ afterEach(() => {
   cleanup();
   vi.useRealTimers();
   vi.restoreAllMocks();
-  tagListRenders.mockClear();
   localStorage.clear();
 });
 
@@ -121,7 +120,7 @@ function renderHome(initialEntry = '/', items: Artifact[] = []) {
  */
 async function mountHome(initialEntry?: string, items?: Artifact[]) {
   const harness = renderHome(initialEntry, items);
-  const input = await screen.findByLabelText<HTMLInputElement>('Search by title');
+  const input = await screen.findByLabelText<HTMLInputElement>('Search artifacts');
 
   vi.useFakeTimers();
 
@@ -232,7 +231,7 @@ describe('Home trash view', () => {
     const user = userEvent.setup();
     const { router } = renderHome();
 
-    fireEvent.click(await screen.findByLabelText('Filter'));
+    fireEvent.click(await screen.findByRole('button', { name: /^Filter/ }));
     await user.click(await screen.findByRole('checkbox', { name: 'Archived only' }));
     await waitFor(() => expect(router.state.location.search).toEqual({ archived: true }));
 
@@ -244,7 +243,7 @@ describe('Home trash view', () => {
     const user = userEvent.setup();
     const { router } = renderHome('/?deleted=true');
 
-    fireEvent.click(await screen.findByLabelText('Filter'));
+    fireEvent.click(await screen.findByRole('button', { name: /^Filter/ }));
     await user.click(await screen.findByRole('checkbox', { name: 'Archived only' }));
 
     await waitFor(() => expect(router.state.location.search).toEqual({ archived: true }));

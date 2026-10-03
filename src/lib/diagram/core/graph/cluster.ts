@@ -219,7 +219,7 @@ export function titleBand(m: DiagramMetrics, title: Size): number {
  * Padding on the side a title band sits on: half a padding in from the border, the band, then a
  * whole padding below it.
  *
- * Splitting one padding either side of the band, which is what this used to be, leaves half a
+ * The obvious alternative, one padding split either side of the band, fails: it leaves half a
  * padding underneath — and half a padding is not a gap. An edge entering the cluster from that side
  * ends there, under a title plate that is opaque by design, and the whole tail of the stroke is
  * masked out from under its own arrowhead.

@@ -3,15 +3,17 @@ import { createFileRoute, redirect } from '@tanstack/react-router';
 import { SignInView } from '@/components/account/sign-in-view';
 import { passwordResetAvailableFn } from '@/lib/account';
 import { getServerSession } from '@/lib/auth-session';
+import { sameOriginPath } from '@/lib/same-origin-path';
 
 export const Route = createFileRoute('/sign-in')({
-  // Only same-origin paths: reject absolute URLs and protocol-relative `//`.
-  validateSearch: (search: Record<string, unknown>): { redirect?: string } =>
-    typeof search.redirect === 'string' &&
-    search.redirect.startsWith('/') &&
-    !search.redirect.startsWith('//')
-      ? { redirect: search.redirect }
-      : {},
+  validateSearch: (search: Record<string, unknown>): { redirect?: string; reset?: true } => {
+    const redirect = sameOriginPath(search.redirect);
+
+    return {
+      ...(redirect ? { redirect } : {}),
+      ...(search.reset === true ? { reset: true } : {}),
+    };
+  },
   beforeLoad: async ({ search }) => {
     const session = await getServerSession();
 
@@ -25,8 +27,8 @@ export const Route = createFileRoute('/sign-in')({
 });
 
 function SignInRoute() {
-  const { redirect } = Route.useSearch();
+  const { redirect, reset } = Route.useSearch();
   const resetAvailable = Route.useLoaderData();
 
-  return <SignInView redirect={redirect} resetAvailable={resetAvailable} />;
+  return <SignInView redirect={redirect} reset={reset} resetAvailable={resetAvailable} />;
 }

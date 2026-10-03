@@ -23,7 +23,8 @@
  * Beyond security, the map is also what keeps markdown speaking the catalog's visual language:
  * fences render as the catalog CodeBlock, GFM tables as the house Table parts, and task-list
  * checkboxes as the house Checkbox — typography's generic defaults never show where a house
- * equivalent exists.
+ * equivalent exists. Content headings rank one below the page title, which is the artifact page's
+ * only `<h1>`.
  */
 import type { ReactNode } from 'react';
 
@@ -85,6 +86,15 @@ function MarkdownImage({ src, alt }: MarkdownComponentProps<'img'>) {
 }
 
 /**
+ * Markdown depth d renders `h{d+1}` (capped at h6) so a body's `#` ranks below the page title.
+ * `data-md-heading` keeps the source depth for styles.css, which keys the heading scale on it
+ * rather than on the shifted tag, and keeps `#####` and `######` distinct.
+ */
+function rankedHeading(depth: number, Tag: 'h2' | 'h3' | 'h4' | 'h5' | 'h6') {
+  return (props: MarkdownComponentProps<'h1'>) => <Tag data-md-heading={depth} {...props} />;
+}
+
+/**
  * `renderFence` overrides how fenced blocks render (artifact bodies intercept the `exhibit`
  * language); everything else is the fixed house policy.
  */
@@ -94,6 +104,12 @@ export function createMarkdownComponents(
   return {
     a: MarkdownLink,
     img: MarkdownImage,
+    h1: rankedHeading(1, 'h2'),
+    h2: rankedHeading(2, 'h3'),
+    h3: rankedHeading(3, 'h4'),
+    h4: rankedHeading(4, 'h5'),
+    h5: rankedHeading(5, 'h6'),
+    h6: rankedHeading(6, 'h6'),
     // The renderer wraps every fence in its own <pre>; unwrap it so the fence renderer owns the
     // whole block (CodeBlock brings its own container).
     pre: ({ children }: MarkdownComponentProps<'pre'>) => <>{children}</>,

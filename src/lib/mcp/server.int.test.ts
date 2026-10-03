@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { comparisonFixture } from '@/catalog/fixtures/comparison';
 import { itineraryFixture } from '@/catalog/fixtures/itinerary';
 import type { Db } from '@/database/repository';
-import { setArtifactArchived, setArtifactState } from '@/database/repository';
+import { getLatestVersion, setArtifactArchived, setArtifactState } from '@/database/repository';
 import { buildMcpServer } from '@/lib/mcp/server';
 import { MCP_TOOL_NAMES } from '@/lib/mcp/tool-names';
 import { createTestDb } from '@testing/db';
@@ -166,6 +166,15 @@ describe('publish_html', () => {
   });
 });
 
+/** A Rating at `/feedback` and a NoteBox under it: a write to either erases the other. */
+const overlappingStatePathsMarkdown = [
+  '<!-- ::Rating label="How was it?" statePath="/feedback" -->',
+  '',
+  '```exhibit',
+  JSON.stringify({ type: 'NoteBox', props: { label: 'Notes', statePath: '/feedback/note' } }),
+  '```',
+].join('\n');
+
 describe('publish_markdown', () => {
   it('round trips a markdown body byte for byte', async () => {
     // Trailing newline, CRLF, tabs and a directive: nothing may be normalized on the way through.
@@ -183,9 +192,7 @@ describe('publish_markdown', () => {
     expect(getResult.structuredContent?.type).toBe('markdown');
   });
 
-  // Markdown is arbitrary prose: unlike spec and html bodies there is nothing to validate beyond
-  // its size, and content that looks like an attack must still store verbatim (it is escaped at
-  // render time, not on the way in).
+  // Raw HTML in markdown must store verbatim: it is escaped at render time, not on the way in.
   it('stores markdown containing raw HTML without rejecting or rewriting it', async () => {
     const markdown = '<script>alert(1)</script>\n\n<img src=x onerror=alert(1)>\n';
     const result = await callTool(client, 'publish_markdown', { title: 'Hostile', markdown });
@@ -206,6 +213,28 @@ describe('publish_markdown', () => {
 
     expect(result.isError).toBe(true);
     expect(textOf(result)).toContain('1 MB');
+  });
+
+  it('rejects a whitespace-only markdown body', async () => {
+    const result = await callTool(client, 'publish_markdown', {
+      title: 'Blank',
+      markdown: '  \n',
+    });
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain('no content');
+  });
+
+  it('rejects a body whose statePaths overlap by prefix', async () => {
+    const result = await callTool(client, 'publish_markdown', {
+      title: 'Feedback',
+      markdown: overlappingStatePathsMarkdown,
+    });
+
+    expect(result.isError).toBe(true);
+    expect(result.structuredContent?.errors).toEqual([
+      expect.objectContaining({ path: 'statePath', element: null }),
+    ]);
   });
 });
 
@@ -317,6 +346,107 @@ describe('update_artifact', () => {
     const getResult = await callTool(client, 'get_artifact', { id });
     expect(getResult.structuredContent?.versions).toEqual([1]);
   });
+
+  it.each(['', '  \n\t'])('rejects an empty markdown body update (%j)', async (markdown) => {
+    const published = await callTool(client, 'publish_markdown', {
+      title: 'Notes',
+      markdown: '# v1',
+    });
+    const id = published.structuredContent?.id as string;
+
+    const updated = await callTool(client, 'update_artifact', { id, markdown });
+
+    expect(updated.isError).toBe(true);
+    expect(textOf(updated)).toContain('no content');
+
+    const getResult = await callTool(client, 'get_artifact', { id });
+    expect(getResult.structuredContent?.versions).toEqual([1]);
+  });
+
+  it('rejects an html body update missing an <html> tag', async () => {
+    const published = await callTool(client, 'publish_html', {
+      title: 'Page',
+      html: '<html><body>v1</body></html>',
+    });
+    const id = published.structuredContent?.id as string;
+
+    const updated = await callTool(client, 'update_artifact', { id, html: '<div>hi</div>' });
+
+    expect(updated.isError).toBe(true);
+    expect(textOf(updated)).toContain('<html>');
+  });
+
+  it('rejects an invalid spec body update with a structured error list', async () => {
+    const published = await callTool(client, 'publish_spec', {
+      title: 'Doc',
+      spec: itineraryFixture,
+    });
+    const id = published.structuredContent?.id as string;
+
+    const updated = await callTool(client, 'update_artifact', { id, spec: invalidFixture });
+
+    expect(updated.isError).toBe(true);
+    const errors = updated.structuredContent?.errors as unknown[];
+    expect(Array.isArray(errors)).toBe(true);
+    expect(errors.length).toBeGreaterThan(0);
+  });
+
+  it('rejects a markdown body update over the 1 MB cap', async () => {
+    const published = await callTool(client, 'publish_markdown', {
+      title: 'Notes',
+      markdown: '# v1',
+    });
+    const id = published.structuredContent?.id as string;
+
+    const updated = await callTool(client, 'update_artifact', {
+      id,
+      markdown: 'x'.repeat(1_100_000),
+    });
+
+    expect(updated.isError).toBe(true);
+    expect(textOf(updated)).toContain('1 MB');
+  });
+
+  it('rejects a markdown body update whose statePaths overlap by prefix', async () => {
+    const published = await callTool(client, 'publish_markdown', {
+      title: 'Notes',
+      markdown: '# v1',
+    });
+    const id = published.structuredContent?.id as string;
+
+    const updated = await callTool(client, 'update_artifact', {
+      id,
+      markdown: overlappingStatePathsMarkdown,
+    });
+
+    expect(updated.isError).toBe(true);
+    expect(updated.structuredContent?.errors).toEqual([
+      expect.objectContaining({ path: 'statePath' }),
+    ]);
+
+    const getResult = await callTool(client, 'get_artifact', { id });
+    expect(getResult.structuredContent?.versions).toEqual([1]);
+  });
+
+  it('reports not-found for a deleted artifact and writes nothing', async () => {
+    const published = await callTool(client, 'publish_markdown', {
+      title: 'Notes',
+      markdown: '# v1',
+    });
+    const id = published.structuredContent?.id as string;
+
+    await callTool(client, 'delete_artifact', { id });
+
+    const updated = await callTool(client, 'update_artifact', {
+      id,
+      markdown: '# v2',
+      title: 'Renamed',
+    });
+
+    expect(updated.isError).toBe(true);
+    expect(textOf(updated)).toContain('list_artifacts');
+    expect(getLatestVersion(db, id)?.version).toBe(1);
+  });
 });
 
 describe('restore_version', () => {
@@ -374,6 +504,19 @@ describe('restore_version', () => {
     const latest = await callTool(client, 'get_artifact', { id });
     expect(latest.structuredContent?.versions).toEqual([1]);
   });
+
+  it('reports not-found for a deleted artifact, not a missing version', async () => {
+    const published = await callTool(client, 'publish_markdown', { title: 'Notes', markdown: '#' });
+    const id = published.structuredContent?.id as string;
+
+    await callTool(client, 'delete_artifact', { id });
+
+    const restored = await callTool(client, 'restore_version', { id, version: 1 });
+
+    expect(restored.isError).toBe(true);
+    expect(textOf(restored)).toContain('list_artifacts');
+    expect(textOf(restored)).not.toContain('no version');
+  });
 });
 
 describe('list_artifacts', () => {
@@ -405,6 +548,20 @@ describe('list_artifacts', () => {
     });
     const items2 = page2.structuredContent?.items as { title: string }[];
     expect(items2).toHaveLength(1);
+  });
+
+  it('matches query against the description', async () => {
+    await callTool(client, 'publish_html', {
+      title: 'Planning notes',
+      description: 'weekend trip to Kyoto',
+      html: '<html>a</html>',
+    });
+    await callTool(client, 'publish_html', { title: 'Budget', html: '<html>b</html>' });
+
+    const result = await callTool(client, 'list_artifacts', { query: 'kyoto' });
+    const items = result.structuredContent?.items as { title: string }[];
+
+    expect(items.map((item) => item.title)).toEqual(['Planning notes']);
   });
 
   it('sorts alphabetically by title when sort is title-asc', async () => {
@@ -556,6 +713,33 @@ describe('list_artifacts', () => {
     const after = await callTool(client, 'list_artifacts', {});
     const afterItems = after.structuredContent?.items as { id: string; stateUpdatedAt: unknown }[];
     expect(afterItems.find((item) => item.id === id)?.stateUpdatedAt).toEqual(expect.any(Number));
+  });
+
+  it('lists only answered artifacts, newest response first, with the state sort', async () => {
+    await callTool(client, 'publish_spec', { title: 'First', spec: itineraryFixture });
+    const second = await callTool(client, 'publish_spec', {
+      title: 'Second',
+      spec: comparisonFixture,
+    });
+    const id = second.structuredContent?.id as string;
+
+    setArtifactState(db, id, { done: true });
+
+    const result = await callTool(client, 'list_artifacts', {
+      sort: 'state-updated-desc',
+      hasState: true,
+    });
+    const items = result.structuredContent?.items as { id: string }[];
+
+    expect(result.isError).toBeFalsy();
+    expect(items.map((item) => item.id)).toEqual([id]);
+  });
+
+  it('rejects a negative stateSince', async () => {
+    const result = await callTool(client, 'list_artifacts', { stateSince: -1 });
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain('stateSince');
   });
 });
 
@@ -861,6 +1045,21 @@ describe('set_artifact_archived', () => {
     expect(result.isError).toBe(true);
     expect(textOf(result)).toContain('list_artifacts');
   });
+
+  it('reports not-found for a deleted artifact', async () => {
+    const published = await callTool(client, 'publish_spec', {
+      title: 'Doc',
+      spec: itineraryFixture,
+    });
+    const id = published.structuredContent?.id as string;
+
+    await callTool(client, 'delete_artifact', { id });
+
+    const result = await callTool(client, 'set_artifact_archived', { id, archived: true });
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain('list_artifacts');
+  });
 });
 
 describe('delete_artifact', () => {
@@ -897,5 +1096,55 @@ describe('delete_artifact', () => {
     const result = await callTool(client, 'delete_artifact', { id: 'does-not-exist' });
 
     expect(result.isError).toBe(true);
+  });
+});
+
+describe('metadata bounds', () => {
+  const tagList = (count: number) => Array.from({ length: count }, (_, index) => `tag-${index}`);
+
+  const BOUND_VIOLATIONS: [string, Record<string, unknown>][] = [
+    ['an empty title', { title: '' }],
+    ['a 201-character title', { title: 'x'.repeat(201) }],
+    ['a 2001-character description', { description: 'x'.repeat(2001) }],
+    ['21 tags', { tags: tagList(21) }],
+    ['a 51-character tag', { tags: ['x'.repeat(51)] }],
+  ];
+
+  it.each(BOUND_VIOLATIONS)('publish_spec rejects %s and stores nothing', async (_, metadata) => {
+    const result = await callTool(client, 'publish_spec', {
+      title: 'Doc',
+      spec: itineraryFixture,
+      ...metadata,
+    });
+
+    expect(result.isError).toBe(true);
+    expect((await callTool(client, 'list_artifacts', {})).structuredContent?.items).toEqual([]);
+  });
+
+  it.each(BOUND_VIOLATIONS)(
+    'update_artifact rejects %s and keeps the title',
+    async (_, metadata) => {
+      const published = await callTool(client, 'publish_spec', {
+        title: 'Doc',
+        spec: itineraryFixture,
+      });
+      const id = published.structuredContent?.id as string;
+
+      const updated = await callTool(client, 'update_artifact', { id, ...metadata });
+
+      expect(updated.isError).toBe(true);
+      expect((await callTool(client, 'get_artifact', { id })).structuredContent?.title).toBe('Doc');
+    },
+  );
+
+  it('publish_spec accepts metadata at every limit', async () => {
+    const result = await callTool(client, 'publish_spec', {
+      title: 'x'.repeat(200),
+      description: 'x'.repeat(2000),
+      tags: [...tagList(19), 'x'.repeat(50)],
+      spec: itineraryFixture,
+    });
+
+    expect(result.isError).toBeFalsy();
   });
 });

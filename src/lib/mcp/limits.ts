@@ -1,4 +1,4 @@
-/** Shared 1 MB cap on spec/html body payloads submitted through MCP tools. */
+/** Shared 1 MB cap on every artifact body (spec, HTML, markdown) submitted through MCP tools. */
 export const MAX_BODY_BYTES = 1_000_000;
 
 /**
@@ -12,5 +12,5 @@ export function checkBodySize(serialized: string, label: string): string | null 
     return null;
   }
 
-  return `${label} is ${bytes.toLocaleString()} bytes, which exceeds the ${MAX_BODY_BYTES.toLocaleString()}-byte (1 MB) limit.`;
+  return `The ${label} body is ${bytes.toLocaleString()} bytes, which exceeds the ${MAX_BODY_BYTES.toLocaleString()}-byte (1 MB) limit. Shorten the body, or split the content across several artifacts.`;
 }

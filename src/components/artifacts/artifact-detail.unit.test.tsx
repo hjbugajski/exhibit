@@ -2,8 +2,9 @@
 import { useEffect, useState } from 'react';
 
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
+import type * as StateStoreLoader from '@/components/artifacts/state-store-loader';
 import type { ArtifactDetail } from '@/lib/artifacts';
 import { makeArtifact, makeVersion } from '@testing/factories';
 import { renderWithRouter } from '@testing/router';
@@ -21,7 +22,19 @@ vi.mock('@/lib/artifacts', () => ({
   updateArtifactMetadataFn: vi.fn(() => Promise.resolve()),
 }));
 
+/** Spied, not stubbed: the store must still come from json-render's real factory. */
+vi.mock('@/components/artifacts/state-store-loader', async (importOriginal) => {
+  const actual = await importOriginal<typeof StateStoreLoader>();
+
+  return {
+    loadStateStoreFactory: vi.fn(actual.loadStateStoreFactory),
+    peekStateStoreFactory: vi.fn(actual.peekStateStoreFactory),
+  };
+});
+
 const { saveArtifactStateFn } = await import('@/lib/artifacts');
+const { loadStateStoreFactory, peekStateStoreFactory } =
+  await import('@/components/artifacts/state-store-loader');
 const { ArtifactDetailView } = await import('@/components/artifacts/artifact-detail');
 
 /** Two interactive checklist items - the smallest spec that exercises a persisted statePath. */
@@ -86,12 +99,19 @@ async function mountChecklist(detail: ArtifactDetail) {
   vi.useFakeTimers();
 }
 
+/**
+ * SpecView and MarkdownView are lazy chunks that evaluate the whole catalog, and under a loaded
+ * parallel suite that cold import can outlast a query's 1s default. Loading both once here, on the
+ * hook's budget, keeps the cost off whichever test happens to run first.
+ */
+beforeAll(async () => {
+  await Promise.all([import('@/catalog/registry'), import('@/components/markdown/markdown-view')]);
+});
+
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
   vi.restoreAllMocks();
-  vi.mocked(saveArtifactStateFn).mockReset();
-  vi.mocked(saveArtifactStateFn).mockResolvedValue(undefined as never);
 });
 
 describe('ArtifactDetailView', () => {
@@ -110,15 +130,13 @@ describe('ArtifactDetailView', () => {
       initialEntry: '/a/fixture-id',
     });
 
-    /*
-     * The spec body sits behind SpecView's lazy chunk, which now evaluates the whole catalog —
-     * diagram engine included. Under a loaded parallel suite that import can outlast the 1s
-     * default, so the first lazy-content wait gets a real timeout.
-     */
-    expect(
-      await screen.findByText('Kyoto in Three Days', undefined, { timeout: 10_000 }),
-    ).toBeTruthy();
-    expect(screen.getByText('Day 1 — Saturday')).toBeTruthy();
+    expect(await screen.findByText('Kyoto in Three Days')).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Day 1: Sunday' })).toBeTruthy();
+
+    const panel = screen.getByRole('tabpanel');
+    expect(screen.getByRole('tab', { name: 'Rendered' }).getAttribute('aria-controls')).toBe(
+      panel.id,
+    );
   });
 
   it('lists all versions in the version dropdown, newest first, marking the latest and showing when each was created', async () => {
@@ -236,15 +254,28 @@ describe('ArtifactDetailView', () => {
       initialEntry: '/a/fixture-id',
     });
 
-    // Base UI's Button with nativeButton={false} renders the anchor with role="button", so query by
-    // its text instead of the link role.
-    const open = (await screen.findByText('Open')).closest('a');
+    const open = await screen.findByRole('link', { name: 'Open' });
 
-    expect(open?.getAttribute('href')).toBe('/render/fixture-id/1');
-    expect(open?.getAttribute('target')).toBe('_blank');
-    expect(open?.getAttribute('rel')).toBe('noopener noreferrer');
+    expect(open.getAttribute('href')).toBe('/render/fixture-id/1');
+    expect(open.getAttribute('target')).toBe('_blank');
+    expect(open.getAttribute('rel')).toBe('noopener noreferrer');
     expect(document.querySelector('iframe')).toBeNull();
     expect(document.querySelector('code')?.textContent).toBe('<html><body>hi</body></html>');
+  });
+
+  it('never loads the state store factory for an html artifact', async () => {
+    vi.mocked(loadStateStoreFactory).mockClear();
+    renderDetail({
+      artifact: makeArtifact({ type: 'html' }),
+      version: makeVersion({ body: '<html><body>hi</body></html>' }),
+      versions: [{ version: 1, createdAt: 1000 }],
+      state: null,
+      answers: { answered: 0, total: 0 },
+    });
+
+    await screen.findByText('Open');
+
+    expect(loadStateStoreFactory).not.toHaveBeenCalled();
   });
 
   it('renders a markdown artifact inline, and shows its raw body in the Source view', async () => {
@@ -259,10 +290,9 @@ describe('ArtifactDetailView', () => {
 
     renderDetail(detail);
 
-    // Same lazy-chunk wait as the spec fixture above, for MarkdownView.
-    expect((await screen.findByText('Trip notes', undefined, { timeout: 10_000 })).tagName).toBe(
-      'H1',
-    );
+    // The body's `#` ranks below the page title.
+    expect((await screen.findByText('Trip notes')).tagName).toBe('H2');
+    expect(document.querySelectorAll('h1')).toHaveLength(1);
     expect(screen.getByText('train').closest('a')?.getAttribute('href')).toBe(
       'https://example.com',
     );
@@ -289,6 +319,25 @@ describe('ArtifactDetailView', () => {
 });
 
 describe('ArtifactDetailView interaction state', () => {
+  it('loads the state store factory for a spec artifact and saves a checklist toggle', async () => {
+    // Earlier tests memoized the factory; hiding it forces the cold path, where the view suspends
+    // on the load itself.
+    vi.mocked(peekStateStoreFactory).mockReturnValue(undefined);
+    vi.mocked(loadStateStoreFactory).mockClear();
+
+    await mountChecklist(makeChecklistDetail());
+
+    toggle('Order cabinets');
+    await act(async () => {
+      vi.advanceTimersByTime(600);
+    });
+
+    expect(loadStateStoreFactory).toHaveBeenCalled();
+    expect(saveArtifactStateFn).toHaveBeenCalledWith({
+      data: { id: 'fixture-id', state: { tasks: { cabinets: true } } },
+    });
+  });
+
   it('coalesces rapid toggles into a single save of the final state', async () => {
     await mountChecklist(makeChecklistDetail());
 
@@ -332,6 +381,48 @@ describe('ArtifactDetailView interaction state', () => {
     expect(saveArtifactStateFn).toHaveBeenCalledTimes(1);
     expect(saveArtifactStateFn).toHaveBeenCalledWith({
       data: { id: 'fixture-id', state: { tasks: { cabinets: true } } },
+    });
+  });
+
+  it('saves a still-debounced change before switching versions', async () => {
+    let resolveSave: (() => void) | undefined;
+
+    vi.mocked(saveArtifactStateFn).mockImplementation(
+      (() =>
+        new Promise<void>((resolve) => {
+          resolveSave = resolve;
+        })) as never,
+    );
+
+    await mountChecklist(makeChecklistDetail({ version: 2 }));
+
+    toggle('Order cabinets');
+    act(() => {
+      vi.advanceTimersByTime(100);
+    });
+    fireEvent.click(screen.getByRole('combobox', { name: 'Version' }));
+
+    // Base UI commits a mouse click on an item only after a pointerdown on that item.
+    const v1 = screen.getByRole('option', { name: /^v1/ });
+
+    fireEvent.pointerDown(v1);
+    await act(async () => {
+      fireEvent.click(v1);
+    });
+
+    // The next version's loader reads state, so the edit must land before the router navigates.
+    expect(saveArtifactStateFn).toHaveBeenCalledWith({
+      data: { id: 'fixture-id', state: { tasks: { cabinets: true } } },
+    });
+    expect(screen.getByRole('checkbox', { name: 'Order cabinets' })).toBeTruthy();
+
+    vi.useRealTimers();
+    await act(async () => {
+      resolveSave?.();
+    });
+
+    await vi.waitFor(() => {
+      expect(screen.queryByRole('checkbox', { name: 'Order cabinets' })).toBeNull();
     });
   });
 
@@ -380,7 +471,26 @@ describe('ArtifactDetailView interaction state', () => {
       vi.advanceTimersByTime(600);
     });
 
-    expect(screen.getByText('Could not save your changes. Try again.')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe('Your latest changes are not saved.');
+  });
+
+  it('clears the save error once a later save succeeds', async () => {
+    vi.mocked(saveArtifactStateFn).mockRejectedValueOnce(new Error('offline'));
+    await mountChecklist(makeChecklistDetail());
+
+    toggle('Order cabinets');
+    await act(async () => {
+      vi.advanceTimersByTime(600);
+    });
+    expect(screen.getByRole('alert')).toBeTruthy();
+
+    toggle('Book the plumber');
+    await act(async () => {
+      vi.advanceTimersByTime(600);
+    });
+
+    expect(saveArtifactStateFn).toHaveBeenCalledTimes(2);
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 
   it('reseeds the store from the new version when the version changes', async () => {

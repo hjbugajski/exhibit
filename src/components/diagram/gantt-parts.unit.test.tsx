@@ -1,12 +1,11 @@
 // @vitest-environment happy-dom
 /*
  * The gantt view. Rendered directly against a laid-out scene rather than through `Diagram.Root`,
- * because the family is not registered yet: `Root` builds its own scene from a source, and until
- * `builtinFamilies` knows about gantt there is nothing for it to build. The config context is the
- * only thing the parts need from `Root`, so the test provides exactly that.
+ * so the test controls the scene the parts draw. The config context is the only thing the parts
+ * need from `Root`, so the test provides exactly that.
  *
- * What matters here is the part vocabulary, the draw order and the paint rule — the same three
- * things `styling-contract.unit.test.tsx` will enforce over the corpus once the family is wired.
+ * What matters here is the part vocabulary, the draw order and the paint rule.
+ * `styling-contract.unit.test.tsx` enforces the paint rule over the whole corpus.
  */
 
 import { cleanup, render } from '@testing-library/react';
@@ -20,7 +19,7 @@ import { parseGantt } from '@/lib/diagram/families/gantt/parse';
 import { resolveMetrics } from '@/lib/diagram/metrics';
 import type { GanttScene } from '@/lib/diagram/types';
 
-import { DiagramConfigProvider } from './diagram-context';
+import { DiagramConfigContext } from './diagram-context';
 import { GanttView } from './gantt-parts';
 
 afterEach(() => {
@@ -49,7 +48,7 @@ function draw(source = GANTT) {
   const scene = scenery(source);
 
   return render(
-    <DiagramConfigProvider
+    <DiagramConfigContext
       value={{
         metrics: resolveMetrics(),
         components: {},
@@ -61,7 +60,7 @@ function draw(source = GANTT) {
       <svg data-part="svg" viewBox={`0 0 ${scene.size.width} ${scene.size.height}`}>
         <GanttView scene={scene} />
       </svg>
-    </DiagramConfigProvider>,
+    </DiagramConfigContext>,
   );
 }
 

@@ -1,3 +1,4 @@
+import { ALLOWED_FAMILIES } from '@/catalog/mermaid-schema';
 import { catalogDemo } from '@/components/library/catalog-demo';
 
 /*
@@ -58,8 +59,7 @@ const kinds = Object.keys(samples) as (keyof typeof samples)[];
 export const catalogMermaidDemo = catalogDemo({
   slug: 'catalog-mermaid',
   title: 'Mermaid',
-  description:
-    'Mermaid diagram source: flowchart, sequence, state, class, ER, pie and gantt draw in the house engine; every other diagram type keeps its source on screen with the reason it was not drawn.',
+  description: `Mermaid diagram source: ${ALLOWED_FAMILIES} draw in the house engine; every other diagram type keeps its source on screen with the reason it was not drawn.`,
   controls: {
     sample: { kind: 'select', label: 'Sample', options: kinds, defaultValue: 'flowchart (house)' },
   },

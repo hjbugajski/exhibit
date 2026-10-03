@@ -49,8 +49,6 @@ export const account = sqliteTable(
   'account',
   {
     id: text('id').primaryKey(),
-    // 1.7 scopes account identity by issuer; credential accounts use the literal 'local:credential'.
-    issuer: text('issuer').notNull(),
     accountId: text('account_id').notNull(),
     providerId: text('provider_id').notNull(),
     userId: text('user_id')
@@ -74,10 +72,7 @@ export const account = sqliteTable(
       .$onUpdate(() => /* @__PURE__ */ new Date())
       .notNull(),
   },
-  (table) => [
-    index('account_userId_idx').on(table.userId),
-    uniqueIndex('account_issuer_accountId_idx').on(table.issuer, table.accountId),
-  ],
+  (table) => [index('account_userId_idx').on(table.userId)],
 );
 
 export const verification = sqliteTable(

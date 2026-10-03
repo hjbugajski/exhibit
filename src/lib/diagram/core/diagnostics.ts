@@ -1,6 +1,6 @@
 /*
- * Diagnostics are values, not exceptions: `parseDiagram` / `layoutDiagram` / `buildDiagram` never
- * throw. `StatementError` is the one internal exception, thrown by a parser to unwind the current
+ * Diagnostics are values, not exceptions: `parseDiagram`, `layoutDiagram`, `resolveLayoutOptions`,
+ * and `buildDiagram` never throw. `StatementError` is the one internal exception, thrown by a parser to unwind the current
  * logical line and caught by the line driver, which turns it into one diagnostic and moves on.
  */
 

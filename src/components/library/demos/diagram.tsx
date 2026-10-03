@@ -11,6 +11,7 @@
 import { useRef, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 
+import { ALLOWED_FAMILIES } from '@/catalog/mermaid-schema';
 import { HighlightedCode } from '@/components/blocks/highlighted-code';
 import { Diagram } from '@/components/diagram/diagram';
 import type { DiagramRootProps } from '@/components/diagram/diagram';
@@ -35,8 +36,6 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 function vars(entries: Record<string, string>): CSSProperties {
   return entries as CSSProperties;
 }
-
-// -------------------------------------------------------------------------------------- sources
 
 const sources = {
   directionTd: `flowchart TD
@@ -191,8 +190,6 @@ const sources = {
   Render --> Report[Report the error]`,
 } as const;
 
-// ------------------------------------------------------------------------------------- scaffold
-
 function Story({ title, note, children }: { title: string; note: string; children: ReactNode }) {
   return (
     <section className="flex flex-col gap-4">
@@ -248,9 +245,7 @@ function Figure({ className, ...props }: DiagramRootProps) {
   );
 }
 
-// -------------------------------------------------------------------------------- composability
-
-/** Paints inside the box the layout already reserved (C29) and delegates everything else. */
+/** Paints inside the box the layout already reserved and delegates everything else. */
 const badgeComponents: DiagramComponents = {
   NodeShape: ({ datum, Default }) =>
     datum.classes.includes('hot') ? (
@@ -304,8 +299,6 @@ const reskinClassNames: DiagramClassNames = {
   edgeArrow: '[--diagram-arrow-fill:var(--color-accent)]',
 };
 
-// -------------------------------------------------------------------------------------- theming
-
 /** Tier 0: every paint role back to `currentColor`/`transparent` — the unstyled honesty check. */
 const tier0 = vars({
   '--diagram-node-fill': 'transparent',
@@ -354,8 +347,6 @@ const blueprint = vars({
   '--diagram-arrow-stroke': 'var(--color-info)',
   '--diagram-marker-fill': 'var(--color-info)',
 });
-
-// ---------------------------------------------------------------------- font-metrics generator
 
 const GLYPH_FIRST = 0x20;
 const GLYPH_LAST = 0x7e;
@@ -475,8 +466,6 @@ function FontMetricsPanel() {
     </div>
   );
 }
-
-// -------------------------------------------------------------------------- measurement audit
 
 interface AuditRow {
   text: string;
@@ -611,8 +600,6 @@ function AuditPanel() {
     </div>
   );
 }
-
-// ------------------------------------------------------------------------------------ the page
 
 function DiagramDemo() {
   return (
@@ -772,8 +759,7 @@ function DiagramDemo() {
 export const diagramDemo: LibraryDemo = {
   slug: 'diagram',
   title: 'Diagram',
-  description:
-    'The mermaid-syntax diagram library: flowchart, sequence, state, class, ER, pie and gantt, drawn by the in-repo layout engine with every paint decision left to the design system.',
+  description: `The mermaid-syntax diagram library: ${ALLOWED_FAMILIES}, drawn by the in-repo layout engine with every paint decision left to the design system.`,
   group: 'Examples',
   render: () => <DiagramDemo />,
 };

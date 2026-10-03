@@ -66,8 +66,6 @@ export interface DiagramLimits {
 export type EdgeShape = 'ortho' | 'smooth' | 'straight';
 export type ClusterMode = 'recursive' | 'ignore';
 
-// ---------------------------------------------------------------------------- text measurement
-
 export interface TextStyle {
   fontSize: number;
   /** Only used to key measurer caches and to build the canvas font shorthand. */
@@ -95,8 +93,6 @@ export interface LabelBox {
   lineHeight: number;
   baseline: number;
 }
-
-// ------------------------------------------------------------------------------------- shapes
 
 export interface ShapeDef {
   /** Outer box for a measured label; the shape owns its own padding. */
@@ -127,8 +123,6 @@ export interface ShapeDef {
 
 export type ShapeRegistry = Readonly<Record<string, ShapeDef>>;
 
-// ----------------------------------------------------------------------------------------- IR
-
 /**
  * Base of every family IR. `kind` is the family id, which is what `layoutDiagram` dispatches on.
  */
@@ -138,8 +132,6 @@ export interface DiagramIR {
   accTitle?: string;
   accDescr?: string;
 }
-
-// -------------------------------------------------------------------------------------- scene
 
 export type ArrowKind = 'none' | 'arrow' | 'circle' | 'cross';
 /** `invisible` is flowchart's `~~~`: the edge constrains layout and is never drawn. */
@@ -268,8 +260,6 @@ export interface PieScene extends SceneBase {
   showData: boolean;
 }
 
-// ----------------------------------------------------------------------------------- sequence
-
 /**
  * Sequence message head. Mermaid's `->` draws no head at all, `->>` a filled arrow, `-x` a cross and
  * `-)` the open half arrow that means "async".
@@ -359,8 +349,6 @@ export interface SequenceScene extends SceneBase {
   frames: readonly SceneFrame[];
 }
 
-// -------------------------------------------------------------------------------------- gantt
-
 /**
  * What a bar means, as author intent rather than paint. `crit` is orthogonal in mermaid — a task may
  * be `crit, active` — so it rides beside the state instead of inside it.
@@ -418,8 +406,6 @@ export interface GanttScene extends SceneBase {
 
 export type Scene = GraphScene | PieScene | SequenceScene | GanttScene;
 
-// ------------------------------------------------------------------------------------ families
-
 export interface ParseContext {
   /** Diagnostics sink for the whole parse; the family returns `report.diagnostics`. */
   report: DiagnosticSink;
@@ -435,12 +421,12 @@ export interface DiagnosticSink {
 }
 
 export interface ParseResult<T extends DiagramIR = DiagramIR> {
-  /** Null only when no header matched or every statement failed. */
+  /** Null is the fatal signal; at least one `error` diagnostic then carries the reason. */
   ir: T | null;
   diagnostics: readonly Diagnostic[];
 }
 
-/** Fully resolved layout inputs — `buildDiagram` fills every field before a family sees it. */
+/** Fully resolved layout inputs: `resolveLayoutOptions` fills every field before a family sees it. */
 export interface LayoutOptions {
   measurer: TextMeasurer;
   metrics: DiagramMetrics;

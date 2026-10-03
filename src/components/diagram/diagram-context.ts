@@ -13,13 +13,13 @@
  * used, and the default renderer itself, so "special-case one node, delegate the rest" is
  * `datum.id === 'x' ? <mine/> : <Default/>`.
  *
- * Override safety (C29): anything that changes a node's size is a shape or a metric, never a
+ * Override safety: anything that changes a node's size is a shape or a metric, never a
  * component. Layout is already finished by the time an override runs — edges are clipped to the
  * outline the shape produced and arrows are trimmed against it — so a renderer that draws outside
  * its reserved box gets edges pointing at nothing. Paint inside the box; resize through `shapes`.
  */
 
-import { createContext, createElement, useContext } from 'react';
+import { createContext, createElement, use } from 'react';
 import type { ComponentProps, ComponentType, ElementType, ReactElement } from 'react';
 
 import type { SceneDescription } from '@/lib/diagram/describe';
@@ -161,16 +161,13 @@ export interface DiagramSceneValue {
   accessibleName: string;
 }
 
-const ConfigContext = createContext<DiagramConfigValue | null>(null);
-const SceneContext = createContext<DiagramSceneValue | null>(null);
-
-export const DiagramConfigProvider = ConfigContext.Provider;
-export const DiagramSceneProvider = SceneContext.Provider;
+export const DiagramConfigContext = createContext<DiagramConfigValue | null>(null);
+export const DiagramSceneContext = createContext<DiagramSceneValue | null>(null);
 
 const OUTSIDE = 'Diagram parts must be rendered inside <Diagram.Root>.';
 
 export function useDiagramConfig(): DiagramConfigValue {
-  const value = useContext(ConfigContext);
+  const value = use(DiagramConfigContext);
 
   if (!value) {
     throw new Error(OUTSIDE);
@@ -180,7 +177,7 @@ export function useDiagramConfig(): DiagramConfigValue {
 }
 
 export function useDiagramScene(): DiagramSceneValue {
-  const value = useContext(SceneContext);
+  const value = use(DiagramSceneContext);
 
   if (!value) {
     throw new Error(OUTSIDE);
@@ -213,7 +210,7 @@ function defaultFor<Datum, Props extends object>(
 
   const Default = (props: Partial<Props>) =>
     createElement(Base, {
-      ...(useContext(BasePropsContext) as { datum: Datum } & Props),
+      ...(use(BasePropsContext) as { datum: Datum } & Props),
       ...props,
     });
 
@@ -241,7 +238,7 @@ export function renderPart<Datum, Props extends object>(
   }
 
   return createElement(
-    BasePropsContext.Provider,
+    BasePropsContext,
     { key, value: baseProps },
     createElement(Override, { datum, defaultProps, Default: defaultFor<Datum, Props>(Base) }),
   );

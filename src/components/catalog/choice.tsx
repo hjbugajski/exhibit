@@ -18,7 +18,7 @@ export function Choice({ props }: { props: Props }) {
 
   return (
     <QuestionCard
-      cardClassName={cn('px-4', flowBlock)}
+      cardClassName={cn('px-card', flowBlock)}
       contentClassName="flex flex-col gap-3"
       label={props.label}
     >

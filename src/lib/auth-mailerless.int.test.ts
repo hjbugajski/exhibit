@@ -3,8 +3,9 @@
  * configured — the deployment shape that runs without RESEND_API_KEY/EMAIL_FROM.
  *
  * Which of Better Auth's three change-email flows is reachable is decided by config AND by the
- * owner row's `emailVerified` (better-auth 1.6.25, dist/api/routes/update-user.mjs:449-455):
- * `updateEmailWithoutVerification` applies only to an UNVERIFIED user. So marking the owner
+ * owner row's `emailVerified` (`canUpdateWithoutVerification` in better-auth's
+ * `dist/api/routes/update-user.mjs`): `updateEmailWithoutVerification` applies only to an
+ * UNVERIFIED user. So marking the owner
  * verified — which is right when a mailer exists, since it buys the confirm-to-the-old-address flow
  * — would 400 every email change here instead. src/lib/seed.ts gates the flag on the mailer for
  * exactly that reason, and this suite is the pin on it.
@@ -49,6 +50,13 @@ function authFetch(
   );
 }
 
+async function getSessionUserEmail(cookie: string): Promise<string | null> {
+  const response = await authFetch('/get-session', { cookie });
+  const session = (await response.json()) as { user?: { email: string } } | null;
+
+  return session?.user?.email ?? null;
+}
+
 beforeAll(async () => {
   const { seedOwner } = await import('@/lib/seed');
 
@@ -84,8 +92,6 @@ describe('with no mailer configured', () => {
   });
 
   it('applies an email change immediately instead of 400ing for a missing verification email', async () => {
-    const { db } = await import('@/database');
-
     const signInResponse = await authFetch('/sign-in/email', {
       body: { email: OWNER_EMAIL, password: OWNER_PASSWORD },
       ip: '203.0.113.10',
@@ -93,18 +99,13 @@ describe('with no mailer configured', () => {
 
     expect(signInResponse.status).toBe(200);
 
+    const cookie = cookieHeader(signInResponse);
     const changeResponse = await authFetch('/change-email', {
-      cookie: cookieHeader(signInResponse),
+      cookie,
       body: { newEmail: MOVED_EMAIL, callbackURL: '/' },
     });
 
     expect(changeResponse.status).toBe(200);
-    expect(
-      db
-        .select()
-        .from(user)
-        .all()
-        .map((row) => row.email),
-    ).toEqual([MOVED_EMAIL]);
+    expect(await getSessionUserEmail(cookie)).toBe(MOVED_EMAIL);
   });
 });

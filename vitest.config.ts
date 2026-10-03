@@ -10,6 +10,7 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/**/*.test.{ts,tsx}'],
+    mockReset: true,
     // Threads over the default forks pool: consistently ~1s faster on this suite from cheaper
     // worker startup. Worker threads copy process.env per thread, so the int files' env mutation
     // stays isolated exactly as it did under forks.

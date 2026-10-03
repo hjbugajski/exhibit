@@ -79,7 +79,6 @@ interface Case {
 const UNSUPPORTED = 'info:unsupported-construct';
 
 const cases: Case[] = [
-  // ------------------------------------------------------------------------------- shapes
   { name: 'shape rect', source: 'flowchart TD\n A[Rect]' },
   { name: 'shape round', source: 'flowchart TD\n A(Round)' },
   { name: 'shape stadium', source: 'flowchart TD\n A([Stadium])' },
@@ -104,7 +103,6 @@ const cases: Case[] = [
     source: 'flowchart TD\n A[[sub]] --> B[(db)] --> C([sta])',
   },
 
-  // ------------------------------------------------------------------------------- labels
   { name: 'quoted label keeps a bracket', source: 'flowchart TD\n A["closes ] here"]' },
   { name: 'entities decode', source: 'flowchart TD\n A["#quot;q#quot; #35; #colon; #59;"]' },
   { name: 'numeric entity decodes', source: 'flowchart TD\n A["#8594; go"]' },
@@ -118,7 +116,6 @@ const cases: Case[] = [
     codes: [UNSUPPORTED],
   },
 
-  // -------------------------------------------------------------------------------- edges
   { name: 'edge arrow', source: 'flowchart TD\n A --> B' },
   { name: 'edge open', source: 'flowchart TD\n A --- B' },
   { name: 'edge dotted arrow', source: 'flowchart TD\n A -.-> B' },
@@ -154,7 +151,6 @@ const cases: Case[] = [
   { name: 'fan group inside a chain', source: 'flowchart TD\n A --> B & C --> D' },
   { name: 'shapes declared inside a fan group', source: 'flowchart TD\n A[One] & B(Two) --> C' },
 
-  // ---------------------------------------------------------------------------- subgraphs
   { name: 'bare subgraph titles itself', source: 'flowchart TD\n subgraph One\n  A --> B\n end' },
   {
     name: 'subgraph with an id and a title',
@@ -193,7 +189,6 @@ const cases: Case[] = [
     source: 'flowchart LR\n subgraph a\n  A --> B\n end\n subgraph b\n  C --> D\n end\n B --> C',
   },
 
-  // ------------------------------------------------------------------------------ classes
   {
     name: 'classDef registers the name only',
     source: 'flowchart TD\n classDef danger fill:#f00,stroke:#900\n A',
@@ -204,7 +199,6 @@ const cases: Case[] = [
   { name: 'triple colon after a shape', source: 'flowchart TD\n A[Text]:::danger' },
   { name: 'class names accumulate', source: 'flowchart TD\n A:::one\n class A two' },
 
-  // --------------------------------------------------------------------------- directions
   { name: 'header graph LR', source: 'graph LR\n A --> B' },
   { name: 'header TD maps to TB', source: 'flowchart TD\n A' },
   { name: 'header BT', source: 'flowchart BT\n A --> B' },
@@ -222,7 +216,6 @@ const cases: Case[] = [
     codes: [UNSUPPORTED],
   },
 
-  // ------------------------------------------------------------------ recognized but ignored
   {
     name: 'init directive is ignored',
     source: 'flowchart TD\n %%{init: {"theme":"dark"}}%%\n A --> B',
@@ -254,7 +247,6 @@ const cases: Case[] = [
     codes: [UNSUPPORTED],
   },
 
-  // ---------------------------------------------------------------------------------- a11y
   { name: 'accTitle', source: 'flowchart TD\n accTitle: Publish flow\n A --> B' },
   { name: 'accDescr on one line', source: 'flowchart TD\n accDescr: How a draft ships\n A --> B' },
   {
@@ -267,7 +259,6 @@ const cases: Case[] = [
     codes: ['warning:unclosed-block'],
   },
 
-  // ------------------------------------------------------------------------------ recovery
   {
     name: 'one bad line among five leaves the rest',
     source: 'flowchart TD\n A --> B\n B ??? C\n B --> C\n C --> D\n D --> E',
@@ -351,6 +342,15 @@ describe('parseFlowchart', () => {
     ]);
   });
 
+  it('collapses whitespace in one-line accTitle and accDescr values', () => {
+    const { ir } = parse(
+      'flowchart TD\n accTitle:  Publish   flow \n accDescr: How   it ships\n A --> B',
+    );
+
+    expect(ir?.accTitle).toBe('Publish flow');
+    expect(ir?.accDescr).toBe('How it ships');
+  });
+
   it('keeps declaration order for nodes and edges', () => {
     const ir = parse('flowchart TD\n C --> A\n A --> B\n B --> C').ir;
 
@@ -380,5 +380,52 @@ describe('parseFlowchart', () => {
     for (const mutated of mutations(seed, 400, 11)) {
       expect(() => parse(mutated)).not.toThrow();
     }
+  });
+});
+
+describe('parseFlowchart edge limit', () => {
+  function parseWith(
+    source: string,
+    edges: number,
+  ): { ir: FlowchartIR | null; errors: Diagnostic[] } {
+    const report = new Reporter();
+    const result = parseFlowchart(source, { report, limits: { ...defaultLimits, edges } });
+
+    return {
+      ir: result.ir,
+      errors: result.diagnostics.filter((entry) => entry.severity === 'error'),
+    };
+  }
+
+  it('rejects a fan-out group past the limit on its line', () => {
+    const { ir, errors } = parseWith('flowchart TD\na & b & c --> d & e', 5);
+
+    expect(ir).toBeNull();
+    expect(errors.map((entry) => entry.code)).toEqual(['too-many-edges']);
+    expect(errors[0]?.span?.line).toBe(2);
+    expect(errors[0]?.message).toBe('Flowchart has more than 5 edges.');
+  });
+
+  it('counts edges accumulated across lines', () => {
+    const { ir, errors } = parseWith('flowchart TD\na --> b --> c --> d\ne --> f --> g --> h', 5);
+
+    expect(ir).toBeNull();
+    expect(errors.map((entry) => entry.code)).toEqual(['too-many-edges']);
+    expect(errors[0]?.span?.line).toBe(3);
+  });
+
+  it('accepts exactly the limit', () => {
+    const { ir, errors } = parseWith('flowchart TD\na --> b --> c --> d --> e --> f', 5);
+
+    expect(errors).toEqual([]);
+    expect(ir?.edges).toHaveLength(5);
+  });
+
+  it('stops a large fan-out at the default limit', () => {
+    const side = (prefix: string) =>
+      Array.from({ length: 100 }, (_, index) => `${prefix}${index}`).join(' & ');
+    const { codes } = parse(`flowchart TD\n${side('a')} --> ${side('b')}`);
+
+    expect(codes).toEqual(['error:too-many-edges']);
   });
 });

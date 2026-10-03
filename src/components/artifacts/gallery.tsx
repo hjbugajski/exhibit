@@ -19,9 +19,10 @@ import { Popover } from '@/components/ui/popover';
 import { RadioGroup } from '@/components/ui/radio-group';
 import { Spinner } from '@/components/ui/spinner';
 import { Table as TablePrimitive } from '@/components/ui/table';
-import { Tabs } from '@/components/ui/tabs';
-import type { ArtifactListItem, ArtifactType } from '@/database/repository';
+import { ToggleGroup } from '@/components/ui/toggle-group';
+import type { ArtifactListItem } from '@/database/repository';
 import type { ArtifactSort } from '@/lib/artifact-sorts';
+import type { ArtifactType } from '@/lib/artifact-types';
 import { cn } from '@/lib/utils';
 
 export type TypeFilter = ArtifactType | 'all';
@@ -43,6 +44,7 @@ const sortLabels: Record<ArtifactSort, string> = {
   'created-asc': 'Oldest',
   'title-asc': 'Title A–Z',
   'title-desc': 'Title Z–A',
+  'state-updated-desc': 'Recently answered',
 };
 
 const sortOptions = Object.keys(sortLabels) as ArtifactSort[];
@@ -120,10 +122,10 @@ function Search() {
 
   return (
     <Input
-      aria-label="Search by title"
+      aria-label="Search artifacts"
       className="min-w-48 flex-1"
       onChange={(event) => setQuery(event.target.value)}
-      placeholder="Search by title…"
+      placeholder="Search titles and descriptions"
       type="search"
       value={query}
     />
@@ -171,8 +173,8 @@ export interface GalleryFiltersProps {
 }
 
 /*
- * Dedicated filter popover: type and tags together behind one fixed-label trigger; the badge shows
- * how many filters are active.
+ * Dedicated filter popover: type and tags together behind one trigger; the badge shows how many
+ * filters are active, and the trigger's accessible name carries the same count.
  */
 function Filters({ availableTags }: GalleryFiltersProps) {
   const {
@@ -188,7 +190,10 @@ function Filters({ availableTags }: GalleryFiltersProps) {
 
   return (
     <Popover.Root>
-      <Popover.Trigger aria-label="Filter" render={<Button variant="outline" />}>
+      <Popover.Trigger
+        aria-label={activeCount > 0 ? `Filter, ${activeCount} active` : 'Filter'}
+        render={<Button variant="outline" />}
+      >
         <ListFilter data-icon="inline-start" />
         Filter
         {activeCount > 0 ? <Badge>{activeCount}</Badge> : null}
@@ -269,18 +274,25 @@ function ViewToggle() {
   } = useGalleryContext();
 
   return (
-    <Tabs.Root onValueChange={(value) => setView(value as GalleryView)} value={view}>
-      {/* Icon-only triggers: 32px is fine for a mouse, so the 44px touch target is coarse-only.
-          The list's own height is a group-data variant, hence the important flag. */}
-      <Tabs.List className="pointer-coarse:h-11!">
-        <Tabs.Trigger aria-label="Grid view" className="w-8 pointer-coarse:w-11" value="grid">
-          <LayoutGrid />
-        </Tabs.Trigger>
-        <Tabs.Trigger aria-label="Table view" className="w-8 pointer-coarse:w-11" value="table">
-          <List />
-        </Tabs.Trigger>
-      </Tabs.List>
-    </Tabs.Root>
+    // Icon-only items: 32px is fine for a mouse, so the 44px touch target is coarse-only.
+    <ToggleGroup.Root<GalleryView>
+      aria-label="View"
+      className="pointer-coarse:h-11"
+      // Single-select emits [] when the pressed item is pressed again; the view is never empty.
+      onValueChange={([next]) => {
+        if (next) {
+          setView(next);
+        }
+      }}
+      value={[view]}
+    >
+      <ToggleGroup.Item aria-label="Grid view" className="w-8 pointer-coarse:w-11" value="grid">
+        <LayoutGrid />
+      </ToggleGroup.Item>
+      <ToggleGroup.Item aria-label="Table view" className="w-8 pointer-coarse:w-11" value="table">
+        <List />
+      </ToggleGroup.Item>
+    </ToggleGroup.Root>
   );
 }
 
@@ -337,8 +349,8 @@ function Empty() {
           </EmptyPrimitive.Media>
           <EmptyPrimitive.Title>No artifacts yet</EmptyPrimitive.Title>
           <EmptyPrimitive.Description>
-            Publish one from Claude via MCP: connect it to this app’s <code>/mcp</code> endpoint and
-            use the <code>publish_spec</code>, <code>publish_markdown</code>, or{' '}
+            Publish one from Claude through MCP: connect it to this app’s <code>/mcp</code> endpoint
+            and use the <code>publish_spec</code>, <code>publish_markdown</code>, or{' '}
             <code>publish_html</code> tool.
           </EmptyPrimitive.Description>
         </EmptyPrimitive.Header>

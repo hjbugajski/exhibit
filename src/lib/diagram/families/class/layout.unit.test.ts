@@ -1,7 +1,7 @@
 /*
  * End to end for the class family: real sources through the parser, `to-graph.ts` and the shared
- * layered engine. The family is not in `builtinFamilies` yet, so this drives `classFamily` directly
- * with the options `buildDiagram` would have resolved rather than going through it.
+ * layered engine. This drives `classFamily` directly with the options `resolveLayoutOptions`
+ * produces, rather than going through `buildDiagram`.
  */
 
 import { describe, expect, it } from 'vitest';

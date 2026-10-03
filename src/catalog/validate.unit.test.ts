@@ -5,8 +5,13 @@ import { explainerFixture } from '@/catalog/fixtures/explainer';
 import { flowFixture } from '@/catalog/fixtures/flow';
 import { itineraryFixture } from '@/catalog/fixtures/itinerary';
 import { kitchenSinkFixture } from '@/catalog/fixtures/kitchen-sink';
-import { validateArtifactSpec } from '@/catalog/validate';
+import { findStatePathConflicts, validateArtifactSpec } from '@/catalog/validate';
 import { invalidFixture } from '@testing/fixtures/invalid';
+
+import { decisionMemoExample } from '../../scripts/examples/decision-memo';
+import { researchSummaryExample } from '../../scripts/examples/research-summary';
+import { roadTripExample } from '../../scripts/examples/road-trip';
+import { statusReportExample } from '../../scripts/examples/status-report';
 
 describe('validateArtifactSpec', () => {
   it.each([
@@ -15,6 +20,10 @@ describe('validateArtifactSpec', () => {
     ['comparison', comparisonFixture],
     ['kitchen-sink', kitchenSinkFixture],
     ['flow', flowFixture],
+    ['decision-memo example', decisionMemoExample.spec],
+    ['research-summary example', researchSummaryExample.spec],
+    ['road-trip example', roadTripExample.spec],
+    ['status-report example', statusReportExample.spec],
   ])('accepts the %s fixture', (_name, fixture) => {
     const result = validateArtifactSpec(fixture);
 
@@ -615,5 +624,394 @@ describe('validateArtifactSpec', () => {
         message: expect.stringContaining('does-not-exist'),
       }),
     );
+  });
+});
+
+describe('validateArtifactSpec statePath overlaps', () => {
+  /** A write to a parent path replaces the whole subtree, so overlapping paths erase each other. */
+  it('flags a statePath that is a segment prefix of another element’s', () => {
+    const result = validateArtifactSpec({
+      root: 'root',
+      elements: {
+        root: { type: 'Section', props: {}, children: ['rating', 'note'] },
+        rating: { type: 'Rating', props: { label: 'Rate', statePath: '/feedback' }, children: [] },
+        note: { type: 'NoteBox', props: { label: 'Notes', statePath: '/feedback/note' } },
+      },
+    });
+
+    expect(result.valid).toBe(false);
+    if (result.valid) {
+      throw new Error('expected invalid result');
+    }
+
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({
+        path: 'statePath',
+        message: expect.stringMatching(/"\/feedback".*"\/feedback\/note"/),
+      }),
+    );
+  });
+
+  it('accepts paths that share only a string prefix, not a segment', () => {
+    const result = validateArtifactSpec({
+      root: 'root',
+      elements: {
+        root: { type: 'Section', props: {}, children: ['a', 'b'] },
+        a: { type: 'Rating', props: { label: 'A', statePath: '/feedback/backup' } },
+        b: { type: 'NoteBox', props: { label: 'B', statePath: '/feedback/backup-decision' } },
+      },
+    });
+
+    expect(result.valid).toBe(true);
+  });
+
+  it('flags overlapping paths within one Checklist', () => {
+    const result = validateArtifactSpec({
+      root: 'list',
+      elements: {
+        list: {
+          type: 'Checklist',
+          props: {
+            items: [
+              { id: 'a', text: 'Parent', statePath: '/a' },
+              { id: 'b', text: 'Child', statePath: '/a/b' },
+            ],
+          },
+        },
+      },
+    });
+
+    expect(result.valid).toBe(false);
+    if (result.valid) {
+      throw new Error('expected invalid result');
+    }
+
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({ element: 'list', component: 'Checklist', path: 'statePath' }),
+    );
+  });
+});
+
+describe('findStatePathConflicts', () => {
+  it('reports exact duplicates first, then prefix pairs in first-use order', () => {
+    const conflicts = findStatePathConflicts([
+      { key: 'a', path: '/x/y' },
+      { key: 'b', path: '/x' },
+      { key: 'c', path: '/x/y' },
+      { key: 'd', path: '/feedback/backup' },
+      { key: 'e', path: '/feedback/backup-decision' },
+      { key: 'f', path: '/x/y/z' },
+      { key: 'g', path: '/feedback' },
+    ]);
+
+    expect(conflicts.map(({ paths, keys }) => ({ paths, keys }))).toEqual([
+      { paths: ['/x/y'], keys: ['a', 'c'] },
+      { paths: ['/x', '/x/y'], keys: ['b', 'a'] },
+      { paths: ['/x/y', '/x/y/z'], keys: ['a', 'f'] },
+      { paths: ['/x', '/x/y/z'], keys: ['b', 'f'] },
+      { paths: ['/feedback', '/feedback/backup'], keys: ['g', 'd'] },
+      { paths: ['/feedback', '/feedback/backup-decision'], keys: ['g', 'e'] },
+    ]);
+    expect(conflicts[0]?.message).toBe(
+      'statePath "/x/y" is used by 2 elements (a, c). They share one saved state. Give each interactive element a unique statePath.',
+    );
+    expect(conflicts[1]?.message).toBe(
+      'statePath "/x" (b) contains "/x/y" (a). A write to "/x" replaces the value at "/x/y". Give each interactive element a statePath that is not a prefix of another.',
+    );
+  });
+
+  /** About 25,000 paths fit in the 1 MB body cap; a pairwise comparison of 20,000 took 20 s. */
+  it('checks 20,000 distinct paths in work linear in the path count', () => {
+    let pathReads = 0;
+    const entries = Array.from({ length: 20_000 }, (_, i) => {
+      const path = `/section-${i % 100}/item-${i}/answer`;
+
+      return {
+        key: `element-${i}`,
+        get path() {
+          pathReads += 1;
+
+          return path;
+        },
+      };
+    });
+
+    const started = performance.now();
+    const conflicts = findStatePathConflicts(entries);
+    const elapsed = performance.now() - started;
+
+    expect(conflicts).toEqual([]);
+    expect(pathReads).toBeLessThanOrEqual(4 * entries.length);
+    expect(elapsed).toBeLessThan(500);
+  });
+});
+
+describe('validateArtifactSpec element tree', () => {
+  function errorsOf(spec: unknown) {
+    const result = validateArtifactSpec(spec);
+
+    return result.valid ? [] : result.errors;
+  }
+
+  const divider = { type: 'Divider' };
+
+  it('rejects an element listed in the children of two parents', () => {
+    const errors = errorsOf({
+      root: 'root',
+      elements: {
+        root: { type: 'Section', props: {}, children: ['a', 'b'] },
+        a: { type: 'Section', props: {}, children: ['shared'] },
+        b: { type: 'Section', props: {}, children: ['shared'] },
+        shared: divider,
+      },
+    });
+
+    expect(errors).toContainEqual({
+      element: 'b',
+      component: 'Section',
+      path: 'elements.b.children.0',
+      message:
+        'Element "shared" is a child of both "a" and "b". Each element has at most one parent.',
+    });
+  });
+
+  it('rejects an element listed twice in one children list', () => {
+    const errors = errorsOf({
+      root: 'root',
+      elements: {
+        root: { type: 'Section', props: {}, children: ['a', 'a'] },
+        a: divider,
+      },
+    });
+
+    expect(errors).toContainEqual({
+      element: 'root',
+      component: 'Section',
+      path: 'elements.root.children.1',
+      message: 'Element "a" is listed more than once in the children of "root".',
+    });
+  });
+
+  it('rejects an element that contains itself', () => {
+    const errors = errorsOf({
+      root: 'root',
+      elements: {
+        root: { type: 'Section', props: {}, children: ['a'] },
+        a: { type: 'Section', props: {}, children: ['root'] },
+      },
+    });
+
+    expect(errors).toContainEqual({
+      element: 'root',
+      component: 'Section',
+      path: 'elements.root.children.0',
+      message: 'Element "a" is its own descendant through the children of "root".',
+    });
+  });
+
+  it('rejects an element that lists itself as a child', () => {
+    const errors = errorsOf({
+      root: 'root',
+      elements: { root: { type: 'Section', props: {}, children: ['root'] } },
+    });
+
+    expect(errors).toContainEqual({
+      element: 'root',
+      component: 'Section',
+      path: 'elements.root.children.0',
+      message: 'Element "root" is its own descendant through the children of "root".',
+    });
+  });
+
+  /**
+   * The reviewer's shape: 200 Itineraries share one Section of 500 Days, and every Day lists one
+   * shared Section of 1,000 Stops. A walk per Itinerary and per Day visited 10^8 elements (5 s).
+   */
+  it('validates a shared-subtree spec in work linear in its size', () => {
+    const itineraries = 200;
+    const days = 500;
+    const stops = 1_000;
+    const raw: Record<string, unknown> = {
+      root: {
+        type: 'Section',
+        props: {},
+        children: Array.from({ length: itineraries }, (_, i) => `trip-${i}`),
+      },
+      days: {
+        type: 'Section',
+        props: {},
+        children: Array.from({ length: days }, (_, i) => `day-${i}`),
+      },
+      shared: {
+        type: 'Section',
+        props: {},
+        children: Array.from({ length: stops }, (_, i) => `stop-${i}`),
+      },
+    };
+
+    for (let i = 0; i < itineraries; i += 1) {
+      raw[`trip-${i}`] = { type: 'Itinerary', props: {}, children: ['days'] };
+    }
+
+    for (let i = 0; i < days; i += 1) {
+      raw[`day-${i}`] = { type: 'Day', props: { label: `Day ${i}` }, children: ['shared'] };
+    }
+
+    for (let i = 0; i < stops; i += 1) {
+      raw[`stop-${i}`] = {
+        type: 'Stop',
+        props: { title: `Stop ${i}`, coordinates: { lat: 0, lng: 0 } },
+      };
+    }
+
+    const size = Object.keys(raw).length + itineraries + itineraries + days + days + stops;
+    let reads = 0;
+    const elements = new Proxy(raw, {
+      get(target, key, receiver) {
+        reads += 1;
+
+        return Reflect.get(target, key, receiver);
+      },
+    });
+
+    const started = performance.now();
+    const errors = errorsOf({ root: 'root', elements });
+    const elapsed = performance.now() - started;
+
+    expect(errors).toContainEqual(
+      expect.objectContaining({
+        path: 'elements.trip-1.children.0',
+        message:
+          'Element "days" is a child of both "trip-0" and "trip-1". Each element has at most one parent.',
+      }),
+    );
+    expect(errors).not.toContainEqual(
+      expect.objectContaining({ component: 'Day', path: 'elements.day-0.children' }),
+    );
+    expect(reads).toBeLessThan(20 * size);
+    expect(elapsed).toBeLessThan(500);
+  });
+
+  /** Each Day's walk stops at a nested Day, so a chain of Days is walked once. */
+  it('validates nested Days in work linear in their size', () => {
+    const depth = 60;
+    const leaves = Array.from({ length: 20_000 }, (_, i) => `divider-${i}`);
+    const raw: Record<string, unknown> = Object.fromEntries(
+      leaves.map((key) => [key, { type: 'Divider' }]),
+    );
+
+    for (let i = 0; i < depth; i += 1) {
+      raw[`day-${i}`] = {
+        type: 'Day',
+        props: { label: `Day ${i}` },
+        children: i + 1 < depth ? [`day-${i + 1}`] : leaves,
+      };
+    }
+
+    let reads = 0;
+    const elements = new Proxy(raw, {
+      get(target, key, receiver) {
+        reads += 1;
+
+        return Reflect.get(target, key, receiver);
+      },
+    });
+
+    expect(errorsOf({ root: 'day-0', elements })).toEqual([]);
+    expect(reads).toBeLessThan(40 * (depth + leaves.length));
+  });
+});
+
+describe('validateArtifactSpec nesting depth', () => {
+  /** A chain of `depth` Sections, `section-0` outermost, linked through `link`. */
+  function chain(depth: number, link: 'children' | 'slots' = 'children') {
+    const elements: Record<string, unknown> = {};
+
+    for (let i = 0; i < depth; i += 1) {
+      const next = i + 1 < depth ? [`section-${i + 1}`] : [];
+      elements[`section-${i}`] = {
+        type: 'Section',
+        props: {},
+        ...(link === 'children' ? { children: next } : { slots: { default: next } }),
+      };
+    }
+
+    return { root: 'section-0', elements };
+  }
+
+  function errorsOf(spec: unknown) {
+    const result = validateArtifactSpec(spec);
+
+    return result.valid ? [] : result.errors;
+  }
+
+  it('accepts a spec nested 64 levels deep', () => {
+    expect(errorsOf(chain(64))).toEqual([]);
+  });
+
+  it('rejects a spec nested 65 levels deep at its deepest element', () => {
+    expect(errorsOf(chain(65))).toEqual([
+      {
+        element: 'section-64',
+        component: 'Section',
+        path: 'elements.section-64',
+        message: 'Element "section-64" is nested 65 levels deep; a spec nests at most 64 levels.',
+      },
+    ]);
+  });
+
+  /** The recursive structural validator in @json-render/core overflowed the stack at this depth. */
+  it('returns an error for a 5,000-deep chain instead of throwing', () => {
+    let result: ReturnType<typeof validateArtifactSpec> | undefined;
+
+    expect(() => {
+      result = validateArtifactSpec(chain(5_000));
+    }).not.toThrow();
+    expect(result?.valid ? [] : result?.errors).toContainEqual(
+      expect.objectContaining({
+        path: 'elements.section-4999',
+        message: expect.stringContaining('nested 5000 levels deep'),
+      }),
+    );
+  });
+
+  it('counts slot references as nesting', () => {
+    let result: ReturnType<typeof validateArtifactSpec> | undefined;
+
+    expect(() => {
+      result = validateArtifactSpec(chain(5_000, 'slots'));
+    }).not.toThrow();
+    expect(result?.valid ? [] : result?.errors).toContainEqual(
+      expect.objectContaining({ path: 'elements.section-4999' }),
+    );
+  });
+
+  it('accepts a wide, shallow spec', () => {
+    const leaves = Array.from({ length: 20_000 }, (_, i) => `divider-${i}`);
+
+    expect(
+      errorsOf({
+        root: 'root',
+        elements: {
+          root: { type: 'Section', props: {}, children: leaves },
+          ...Object.fromEntries(leaves.map((key) => [key, { type: 'Divider' }])),
+        },
+      }),
+    ).toEqual([]);
+  });
+
+  it('returns a result for props nested 100,000 levels deep instead of throwing', () => {
+    let nested: unknown = { statePath: '/deep' };
+
+    for (let i = 0; i < 100_000; i += 1) {
+      nested = { nested };
+    }
+
+    expect(() =>
+      validateArtifactSpec({
+        root: 'root',
+        elements: { root: { type: 'Section', props: { nested } } },
+      }),
+    ).not.toThrow();
   });
 });

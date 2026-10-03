@@ -74,4 +74,3 @@ function Content({ className, ...props }: TabsContentProps) {
 }
 
 export const Tabs = { Root, List, Trigger, Content };
-export { tabsListVariants };

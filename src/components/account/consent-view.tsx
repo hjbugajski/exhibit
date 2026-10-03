@@ -47,7 +47,11 @@ export function ConsentView({ client, clientId, scope }: ConsentViewProps) {
       });
 
       if (error || !data?.url) {
-        setStatus({ kind: 'error', message: error?.message ?? 'Could not process consent.' });
+        setStatus({
+          kind: 'error',
+          message:
+            error?.message ?? 'Could not process consent. Start the connection again from Claude.',
+        });
         return;
       }
 
@@ -60,7 +64,7 @@ export function ConsentView({ client, clientId, scope }: ConsentViewProps) {
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-2">
           <p className="text-sm">
-            <strong className="font-semibold">
+            <strong className="font-semibold wrap-anywhere">
               {client?.name ?? clientId ?? 'This application'}
             </strong>{' '}
             is requesting access to your account.
@@ -69,7 +73,7 @@ export function ConsentView({ client, clientId, scope }: ConsentViewProps) {
             {hosts.length > 0 ? (
               <>
                 It receives the authorization code at{' '}
-                <strong className="font-semibold">{hosts.join(', ')}</strong>.
+                <strong className="font-semibold wrap-anywhere">{hosts.join(', ')}</strong>.
               </>
             ) : (
               'No redirect host is on record for this client.'
@@ -88,8 +92,8 @@ export function ConsentView({ client, clientId, scope }: ConsentViewProps) {
               )}
             </Alert.Title>
             <Alert.Description>
-              This is the first time you are seeing this client. Allow it only if you just started
-              connecting one yourself.
+              This is the first time you are seeing this client. Allow it only if you started
+              connecting a client yourself in the last few minutes.
             </Alert.Description>
           </Alert.Root>
         ) : null}

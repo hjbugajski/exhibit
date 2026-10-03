@@ -1,17 +1,19 @@
-import { useEffect, useId, useMemo } from 'react';
+import { useEffect, useEffectEvent, useId } from 'react';
 
 import type * as MapLibreGL from 'maplibre-gl';
 
 import { useMap } from '@/components/ui/map/map-context';
-import { removeMapLayers, useLatest } from '@/components/ui/map/map-utils';
+import { removeMapLayers } from '@/components/ui/map/map-utils';
 import { resolveTokenColor } from '@/components/ui/map/resolve-token-color';
 
 export interface MapRouteProps {
   id?: string;
   /** [longitude, latitude] pairs. */
   coordinates: [number, number][];
-  /** CSS color (default: the theme's `--color-info` token). */
+  /** Literal CSS color; overrides `colorToken` and does not follow the theme. */
   color?: string;
+  /** Theme token the line color follows across scheme changes (default: `--color-info`). */
+  colorToken?: `--color-${string}`;
   /** Pixels (default: 3). */
   width?: number;
   /** 0 to 1 (default: 0.8). */
@@ -35,6 +37,7 @@ export function MapRoute({
   id: propId,
   coordinates,
   color: colorProp,
+  colorToken = '--color-info',
   width = 3,
   opacity = 0.8,
   dashArray,
@@ -50,21 +53,21 @@ export function MapRoute({
   const sourceId = `route-source-${id}`;
   const layerId = `route-layer-${id}`;
 
-  const color = useMemo(
-    () => colorProp ?? resolveTokenColor('--color-info', '#3366d9'),
-    [colorProp],
-  );
+  /**
+   * Not memoized: the map context re-renders this component on every scheme change, so each render
+   * must read the token's current value.
+   */
+  const color = colorProp ?? resolveTokenColor(colorToken, '#3366d9');
 
-  const colorRef = useLatest(color);
-  const widthRef = useLatest(width);
-  const opacityRef = useLatest(opacity);
-  const dashArrayRef = useLatest(dashArray);
-  const beforeIdRef = useLatest(beforeId);
+  const readPaint = useEffectEvent(() => ({ color, width, opacity, dashArray, beforeId }));
+  const readHandlers = useEffectEvent(() => ({ onClick, onMouseEnter, onMouseLeave }));
 
   useEffect(() => {
     if (!isLoaded || !map) {
       return;
     }
+
+    const paint = readPaint();
 
     map.addSource(sourceId, {
       type: 'geojson',
@@ -82,17 +85,17 @@ export function MapRoute({
         source: sourceId,
         layout: { 'line-join': 'round', 'line-cap': 'round' },
         paint: {
-          'line-color': colorRef.current,
-          'line-width': widthRef.current,
-          'line-opacity': opacityRef.current,
-          ...(dashArrayRef.current && { 'line-dasharray': dashArrayRef.current }),
+          'line-color': paint.color,
+          'line-width': paint.width,
+          'line-opacity': paint.opacity,
+          ...(paint.dashArray && { 'line-dasharray': paint.dashArray }),
         },
       },
-      beforeIdRef.current,
+      paint.beforeId,
     );
 
     return () => removeMapLayers(map, [layerId], sourceId);
-  }, [isLoaded, map, sourceId, layerId, colorRef, widthRef, opacityRef, dashArrayRef, beforeIdRef]);
+  }, [isLoaded, map, sourceId, layerId]);
 
   // Re-order the layer when beforeId changes after mount.
   useEffect(() => {
@@ -135,15 +138,15 @@ export function MapRoute({
     }
 
     const handleClick = () => {
-      onClick?.();
+      readHandlers().onClick?.();
     };
     const handleMouseEnter = () => {
       map.getCanvas().style.cursor = 'pointer';
-      onMouseEnter?.();
+      readHandlers().onMouseEnter?.();
     };
     const handleMouseLeave = () => {
       map.getCanvas().style.cursor = '';
-      onMouseLeave?.();
+      readHandlers().onMouseLeave?.();
     };
 
     map.on('click', layerId, handleClick);
@@ -155,7 +158,7 @@ export function MapRoute({
       map.off('mouseenter', layerId, handleMouseEnter);
       map.off('mouseleave', layerId, handleMouseLeave);
     };
-  }, [isLoaded, map, layerId, onClick, onMouseEnter, onMouseLeave, interactive]);
+  }, [isLoaded, map, layerId, interactive]);
 
   return null;
 }

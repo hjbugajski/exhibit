@@ -1,14 +1,14 @@
 import { useMemo } from 'react';
 
 import { areaY, barY, defineChart, dot, lineY } from '@tanstack/charts';
-import type { ChartPoint } from '@tanstack/charts';
-import { scaleBand } from '@tanstack/charts-scales/band';
-import { scaleLinear } from '@tanstack/charts-scales/linear';
-import { scalePoint } from '@tanstack/charts-scales/point';
+import type { ChannelAccessorContext, ChartPoint } from '@tanstack/charts';
 import { d3Curve } from '@tanstack/charts/d3/shape';
 import { polar, radialArc } from '@tanstack/charts/polar';
+import { Chart } from '@tanstack/charts/react';
+import { scaleBand } from '@tanstack/charts/scales/band';
+import { scaleLinear } from '@tanstack/charts/scales/linear';
+import { scalePoint } from '@tanstack/charts/scales/point';
 import { tooltip } from '@tanstack/charts/tooltip';
-import { Chart } from '@tanstack/react-charts';
 import { curveMonotoneX, pie } from 'd3-shape';
 import type { PieArcDatum } from 'd3-shape';
 
@@ -68,44 +68,44 @@ function CartesianChart({
       },
     };
     const y = { scale: scaleLinear, nice: true, grid: true };
-    /* Categories sit on a point scale for every mark that plots a position rather than a band. */
-    const x = { scale: () => scalePoint<string>() };
+    /* x is the point's index, not its label: labels may repeat (Q1 of two years) and a
+       label-keyed scale would stack repeats in one slot. The axis prints the label back. Marks
+       that plot a position rather than a band sit on a point scale. */
+    const byIndex = (_: Point, { index }: ChannelAccessorContext<Point>) => index;
+    const axis = { ticks: { format: (index: number) => data[index]?.label ?? '' } };
+    const x = { scale: () => scalePoint<number>(), axis };
     const curve = d3Curve(curveMonotoneX);
 
     switch (kind) {
       case 'bar':
         return defineChart({
           marks: [
-            // Uniform radius: per-corner rounding is not expressible yet (TanStack/charts#28).
-            barY(data, { x: 'label', y: 'value', radius: 2 }),
+            // Rounds all four corners alike; `BarRadius` also takes per-corner or value-end radii.
+            barY(data, { x: byIndex, y: 'value', radius: 2 }),
           ],
-          x: { scale: () => scaleBand<string>().padding(0.18) },
-          y,
+          scales: { x: { scale: () => scaleBand<number>().padding(0.18), axis }, y },
           tooltip: tooltipSpec,
         });
       case 'area':
         return defineChart({
           // areaY fills at 0.2 opacity and draws no edge, so the line rides on top of it.
           marks: [
-            areaY(data, { x: 'label', y: 'value', curve }),
-            lineY(data, { x: 'label', y: 'value', curve, strokeWidth: 2 }),
+            areaY(data, { x: byIndex, y: 'value', curve }),
+            lineY(data, { x: byIndex, y: 'value', curve, strokeWidth: 2 }),
           ],
-          x,
-          y,
+          scales: { x, y },
           tooltip: tooltipSpec,
         });
       case 'scatter':
         return defineChart({
-          marks: [dot(data, { x: 'label', y: 'value', r: 3.5 })],
-          x,
-          y,
+          marks: [dot(data, { x: byIndex, y: 'value', r: 3.5 })],
+          scales: { x, y },
           tooltip: tooltipSpec,
         });
       default:
         return defineChart({
-          marks: [lineY(data, { x: 'label', y: 'value', curve, strokeWidth: 2 })],
-          x,
-          y,
+          marks: [lineY(data, { x: byIndex, y: 'value', curve, strokeWidth: 2 })],
+          scales: { x, y },
           tooltip: tooltipSpec,
         });
     }
@@ -132,13 +132,16 @@ function DonutChart({ data, label, seriesName }: KindChartProps) {
             radialArc(slices, {
               innerRadius: ({ radius }) => radius * 0.58,
               cornerRadius: 2,
-              color: (slice) => slice.data.label,
-              key: (slice) => slice.data.label,
+              // Keyed by position so slices that share a label still get their own color.
+              color: (slice) => slice.index,
+              key: (slice) => slice.index,
             }),
           ],
+          scales: { angle: null, radius: null },
         }),
       ],
       guides: false,
+      scales: { x: null, y: null },
       theme: { palette: SLICE_PALETTE },
       tooltip: {
         use: tooltip,

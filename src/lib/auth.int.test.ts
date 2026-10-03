@@ -35,6 +35,10 @@ const ORIGIN = 'http://localhost:3000';
  */
 const TRUSTED_PROXY = '10.0.0.1';
 const OWNER_EMAIL = 'owner@example.com';
+/**
+ * Between cases the owner's password is `OWNER_PASSWORD`: the change-password case restores it
+ * before it ends, so every case passes alone and in any order.
+ */
 const OWNER_PASSWORD = 'correct horse battery staple';
 const NEW_PASSWORD = 'a different correct horse battery staple';
 
@@ -139,7 +143,7 @@ afterAll(async () => {
 });
 
 describe('changing the password', () => {
-  it('revokes the other sessions and leaves the caller signed in', async () => {
+  it('revokes the other sessions, keeps the caller signed in, and accepts only the new password', async () => {
     const first = await signIn(OWNER_PASSWORD, '203.0.113.1');
     const second = await signIn(OWNER_PASSWORD, '203.0.113.2');
 
@@ -168,9 +172,7 @@ describe('changing the password', () => {
     expect(await getSessionUserEmail(cookieHeader(changeResponse) || firstCookie)).toBe(
       OWNER_EMAIL,
     );
-  });
 
-  it('accepts only the new password afterwards', async () => {
     const withOld = await signIn(OWNER_PASSWORD, '203.0.113.3');
 
     expect(withOld.ok).toBe(false);
@@ -178,7 +180,17 @@ describe('changing the password', () => {
     const withNew = await signIn(NEW_PASSWORD, '203.0.113.4');
 
     expect(withNew.status).toBe(200);
-    expect(cookieHeader(withNew).length).toBeGreaterThan(0);
+
+    const restoreResponse = await authFetch('/change-password', {
+      cookie: cookieHeader(withNew),
+      body: {
+        currentPassword: NEW_PASSWORD,
+        newPassword: OWNER_PASSWORD,
+        revokeOtherSessions: false,
+      },
+    });
+
+    expect(restoreResponse.status).toBe(200);
   });
 });
 
@@ -201,18 +213,19 @@ describe('with a mailer configured', () => {
 
   /**
    * Which of Better Auth's three change-email flows runs is decided by config
-   * (better-auth 1.6.25, dist/api/routes/update-user.mjs:449-455), and two of the three are wrong
-   * for this app: without `emailVerification.sendVerificationEmail` the endpoint 400s outright,
-   * and with it but an unverified owner row it verifies the NEW address - which, for someone who
-   * has stolen the session, is an address they chose. Only the seeded-verified owner reaches the
-   * flow asserted here. That makes this test the pin on both halves of the fix.
+   * (`canUpdateWithoutVerification` in better-auth's `dist/api/routes/update-user.mjs`), and two of
+   * the three are wrong for this app: without `emailVerification.sendVerificationEmail` the
+   * endpoint 400s outright, and with it but an unverified owner row it verifies the NEW address -
+   * which, for someone who has stolen the session, is an address they chose. Only the
+   * seeded-verified owner reaches the flow asserted here. That makes this test the pin on both
+   * halves of the fix.
    */
   it('sends the change-email confirmation to the OLD address and applies nothing until it is followed', async () => {
     const { db } = await import('@/database');
 
     sentEmails = [];
 
-    const signInResponse = await signIn(NEW_PASSWORD, '203.0.113.5');
+    const signInResponse = await signIn(OWNER_PASSWORD, '203.0.113.5');
 
     expect(signInResponse.status).toBe(200);
 

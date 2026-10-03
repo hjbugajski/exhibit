@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
 
 import { getRouteApi, useRouter, useRouterState } from '@tanstack/react-router';
 
@@ -61,29 +61,23 @@ export function Home() {
   // value into the URL, which reruns the loader (listArtifactsFn).
   const debouncedQuery = useDebouncedValue(queryInput, 300);
 
-  // A ref, not an effect dependency: the navigate effect must react only to settled debounce
-  // values. Re-running it on URL changes would fire it with a stale debouncedQuery right after an
-  // external navigation and bounce the URL back to the old query. Declared before that effect so
-  // the sync runs first each commit.
-  const urlQuery = useRef(search.query);
-  useEffect(() => {
-    urlQuery.current = search.query;
-  });
-
-  useEffect(() => {
-    const next = debouncedQuery || undefined;
-
+  // The write reacts only to settled debounce values and reads the URL at write time. Re-running it
+  // on URL changes would fire it with a stale debouncedQuery right after an external navigation and
+  // bounce the URL back to the old query.
+  const pushQuery = useEffectEvent((next: string | undefined) => {
     // Skip only when the URL AND our last write both already say `next` — on mount, and after one
     // of our own writes lands. Checking the URL alone deadlocks a fast clear: with "ab" still in
     // flight, next=undefined matches the stale URL, the write is skipped, and the URL keeps
     // filtering by "ab" under an empty search box.
-    if (next === urlQuery.current && next === pushedQuery.current) {
+    if (next === search.query && next === pushedQuery.current) {
       return;
     }
 
     pushedQuery.current = next;
     void navigate({ search: (prev) => ({ ...prev, query: next }), replace: true });
-  }, [debouncedQuery, navigate]);
+  });
+
+  useEffect(() => pushQuery(debouncedQuery || undefined), [debouncedQuery]);
 
   const handleTypeChange = useCallback(
     (type: TypeFilter) => {

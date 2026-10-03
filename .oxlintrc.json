@@ -5,6 +5,7 @@
     "eslint",
     "import",
     "jsx-a11y",
+    "node",
     "oxc",
     "promise",
     "react",
@@ -31,9 +32,13 @@
     "eslint/no-var": "error",
     "eslint/prefer-const": "error",
     "import/no-cycle": "error",
-    "jsx-a11y/label-has-associated-control": ["warn", { "controlComponents": ["Checkbox"] }],
+    "jsx-a11y/label-has-associated-control": [
+      "warn",
+      { "controlComponents": ["Checkbox", "RadioGroup.Item"] }
+    ],
     "import/no-duplicates": "error",
     "import/no-self-import": "error",
+    "node/no-process-env": "error",
     "promise/no-new-statics": "error",
     "react/exhaustive-deps": "error",
     "react/no-danger": "error",
@@ -61,6 +66,22 @@
     {
       "files": ["scripts/**", "src/lib/seed-plugin.ts"],
       "rules": { "eslint/no-console": "off" }
+    },
+    {
+      "files": [
+        "src/lib/env.ts",
+        "drizzle.config.ts",
+        "nitro.config.ts",
+        "scripts/dev-publish.ts",
+        "testing/**",
+        "**/*.test.ts",
+        "**/*.test.tsx"
+      ],
+      "rules": { "node/no-process-env": "off" }
+    },
+    {
+      "files": ["src/components/diagram/diagram.tsx"],
+      "rules": { "jsx-a11y/prefer-tag-over-role": "off" }
     }
   ]
 }

@@ -13,12 +13,13 @@
  * set, so it is matched as one pattern with two optional ends instead of enumerated.
  */
 
-import { StatementError, reportStatementError } from '../../core/diagnostics.ts';
+import { StatementError } from '../../core/diagnostics.ts';
 import type { Direction } from '../../core/graph/model.ts';
-import { ACC_DESCR_BLOCK, readDescriptionBlock } from '../../core/lex/acc.ts';
+import { readAccText } from '../../core/lex/acc.ts';
 import type { LogicalLine } from '../../core/lex/lines.ts';
 import { readLines, splitHeader } from '../../core/lex/lines.ts';
 import { Scanner } from '../../core/lex/scanner.ts';
+import { readStatements } from '../../core/lex/statements.ts';
 import { readDelimited, readQuotedString, readRestOfLine } from '../../core/lex/tokens.ts';
 import { labelLines } from '../../core/text/label.ts';
 import type { DiagnosticSink, ParseContext, ParseResult, Span } from '../../types.ts';
@@ -296,19 +297,6 @@ function annotationStatement(draft: Draft, scanner: Scanner, span: Span): void {
   annotate(draft, id, annotation.trim(), span);
 }
 
-function accStatement(draft: Draft, scanner: Scanner, keyword: 'accTitle' | 'accDescr'): void {
-  scanner.skipSpace();
-  scanner.eat(':');
-
-  const value = readRestOfLine(scanner).replace(/\s+/g, ' ');
-
-  if (keyword === 'accTitle') {
-    draft.accTitle = value;
-  } else {
-    draft.accDescr = value;
-  }
-}
-
 function noteStatement(draft: Draft, scanner: Scanner, span: Span): void {
   scanner.skipSpace();
   scanner.match(FOR);
@@ -499,8 +487,11 @@ function statement(draft: Draft, line: LogicalLine): void {
 
       return;
     case 'accTitle':
+      draft.accTitle = readAccText(scanner);
+
+      return;
     case 'accDescr':
-      accStatement(draft, scanner, keyword);
+      draft.accDescr = readAccText(scanner);
 
       return;
     case 'classDef':
@@ -544,25 +535,12 @@ export function parseClass(source: string, ctx: ParseContext): ParseResult<Class
   };
   const before = report.count;
 
-  for (let index = 0; index < statements.length; index += 1) {
-    const line = statements[index] as LogicalLine;
-    const block = ACC_DESCR_BLOCK.exec(line.text);
-
-    if (block) {
-      const read = readDescriptionBlock(statements, index, block[1] ?? '', report);
-
-      draft.accDescr = read.description;
-      index = read.end;
-
-      continue;
-    }
-
-    try {
-      statement(draft, line);
-    } catch (cause) {
-      reportStatementError(report, cause, line.span);
-    }
-  }
+  readStatements(statements, report, {
+    statement: (line) => statement(draft, line),
+    description: (text) => {
+      draft.accDescr = text;
+    },
+  });
 
   for (const open of draft.stack) {
     report.warn(

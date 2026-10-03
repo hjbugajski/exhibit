@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 
-import type { ArtifactType } from '@/database/repository';
+import type { ArtifactType } from '@/lib/artifact-types';
 import { requestLog } from '@/lib/request-log';
 import { resolveArtifactVersion } from '@/lib/resolve-artifact-version';
 import { slugify } from '@/lib/slugify';
@@ -25,6 +25,14 @@ const downloadFormats: Record<
   html: { ext: 'html', contentType: 'text/html; charset=utf-8' },
   markdown: { ext: 'md', contentType: 'text/markdown; charset=utf-8' },
 };
+
+/**
+ * `Content-Disposition: attachment` is the primary control: the browser saves the file and never
+ * renders it. This CSP applies only if a client renders the response inline instead, and then the
+ * hostile body runs no script, gets an opaque origin, and loads no subresources. A route CSP
+ * replaces the security-headers plugin baseline, so `frame-ancestors 'none'` restates it.
+ */
+const DOWNLOAD_CSP = "sandbox; default-src 'none'; frame-ancestors 'none'";
 
 async function handleGet({
   request,
@@ -52,8 +60,9 @@ async function handleGet({
       'Content-Type': format.contentType,
       'Content-Disposition': `attachment; filename="${filename}"`,
       'X-Content-Type-Options': 'nosniff',
-      // Belt-and-braces mirror of /render's header: an attachment never becomes a document, so
-      // this is inert today, but the two artifact-serving routes stay header-identical.
+      'Content-Security-Policy': DOWNLOAD_CSP,
+      // Like the CSP, this matters only if a client renders the response inline: the document then
+      // does not leak the gallery URL to the remote hosts its markup references.
       'Referrer-Policy': 'no-referrer',
     },
   });

@@ -1,4 +1,4 @@
-import { createContext, useContext, type ComponentProps } from 'react';
+import { createContext, use, type ComponentProps } from 'react';
 
 import { mergeProps } from '@base-ui/react/merge-props';
 import { useRender } from '@base-ui/react/use-render';
@@ -47,11 +47,7 @@ function Root({ className, render, variant = 'default', ...props }: AlertRootPro
     state: { slot: 'alert' },
   });
 
-  return (
-    <AlertVariantContext.Provider value={variant ?? 'default'}>
-      {element}
-    </AlertVariantContext.Provider>
-  );
+  return <AlertVariantContext value={variant ?? 'default'}>{element}</AlertVariantContext>;
 }
 
 export type AlertTitleProps = ComponentProps<'div'>;
@@ -82,7 +78,7 @@ const descriptionVariantClassName: Record<AlertVariant, string> = {
 export type AlertDescriptionProps = ComponentProps<'div'>;
 
 function Description({ className, ...props }: AlertDescriptionProps) {
-  const variant = useContext(AlertVariantContext);
+  const variant = use(AlertVariantContext);
 
   return (
     <div
@@ -116,7 +112,7 @@ const actionVariantClassName: Record<AlertVariant, string | undefined> = {
 export type AlertActionProps = ComponentProps<'div'>;
 
 function Action({ className, ...props }: AlertActionProps) {
-  const variant = useContext(AlertVariantContext);
+  const variant = use(AlertVariantContext);
 
   return (
     <div

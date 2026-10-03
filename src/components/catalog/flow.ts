@@ -11,9 +11,9 @@
  *   4  (16px) — tight offsets: flowTight (Day body, Stop rhythm), heading mb,
  *               tab panel
  *   6  (24px) — base rhythm between sibling blocks: flowBlock, column gaps
- *   8  (32px) — standouts: flowStandout (Divider, Day), h3 mt,
+ *   8  (32px) — standouts: flowStandout (Divider, Day), Heading level 3 mt,
  *               Section/Itinerary header-to-body
- *   12 (48px) — chapters: flowSection, h1/h2 mt
+ *   12 (48px) — chapters: flowSection, Heading level 1/2 mt
  */
 
 /** Tightest rhythm — nested runs that read as one unit (Day body, Stop). */

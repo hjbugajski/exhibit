@@ -1,10 +1,11 @@
 /*
- * The three public entry points. None of them throws: a family that blows up becomes an
- * `internal-error` diagnostic and a null scene, which is the single fatal signal the caller
- * renders a source fallback for.
+ * The public entry points. None of them throws: a family that throws becomes an `internal-error`
+ * diagnostic plus a null result, which is the single fatal signal the caller renders a source
+ * fallback for.
  *
- * `buildDiagram` also owns option resolution — families and the layout engine always see a fully
- * resolved `LayoutOptions`, never a partial.
+ * `resolveLayoutOptions` owns option resolution, so families and the layout engine always see a
+ * fully resolved `LayoutOptions`, never a partial. `buildDiagram` composes parse, resolve, and
+ * layout in one call.
  */
 
 import { Reporter } from './core/diagnostics.ts';
@@ -49,6 +50,7 @@ function merge(report: Reporter, diagnostics: readonly Diagnostic[]): readonly D
   return report.diagnostics;
 }
 
+/** Returns the IR, or null with at least one `error` diagnostic giving the reason. */
 export function parseDiagram(source: string, options: ParseOptions = {}): ParseResult {
   const report = new Reporter();
   const families = options.families ?? builtinFamilies;
@@ -99,6 +101,7 @@ export function parseDiagram(source: string, options: ParseOptions = {}): ParseR
   }
 }
 
+/** Returns a scene, or null for an unregistered kind or a failed layout. */
 export function layoutDiagram(
   ir: DiagramIR,
   options: LayoutOptions,
@@ -124,6 +127,7 @@ export function layoutDiagram(
   }
 }
 
+/** Fills every `LayoutOptions` field, taking defaults for any option left unset. */
 export function resolveLayoutOptions(options: BuildOptions): LayoutOptions {
   return {
     measurer: options.measurer,
@@ -136,6 +140,7 @@ export function resolveLayoutOptions(options: BuildOptions): LayoutOptions {
   };
 }
 
+/** Parses, resolves options, and lays out in one call; also reports the detected family id. */
 export function buildDiagram(source: string, options: BuildOptions): BuildResult {
   const families = options.families ?? builtinFamilies;
   const parsed = parseDiagram(source, { families, limits: options.limits });

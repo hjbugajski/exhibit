@@ -714,40 +714,99 @@
 /*
  * Markdown heading scale, overriding typography's oversized defaults (h1 at
  * 2.25em/800 outranks the page chrome, whose artifact title is text-3xl).
- * Matches the catalog components: h1 = Section/Heading-1 tier (1.5em ≙
+ * Headings render one rank below their source depth (markdown-policy.tsx), so
+ * the scale keys on `data-md-heading` (the source depth), not on the tag.
+ * Matches the catalog components: depth 1 = Section/Heading-1 tier (1.5em ≙
  * text-2xl), stepping down from there; weight/tracking match the app's
  * semibold tracking-tight headings. Sizes are em so prose-sm/prose-lg
- * contexts (Callout, Quote, Stop…) scale proportionally.
+ * contexts (Callout, Quote, Stop…) scale proportionally. Depths 5 and 6 stay
+ * unstyled.
+ *
+ * Line-heights pair with the house scale (24/32, 20/28, 18/28, 16/24). The
+ * margins are typography's values for the source depth's own tag (h1 for
+ * depth 1, and so on) per prose size: typography keys them on the rendered
+ * tag, which is now one rank lower.
  */
-.prose h1,
-.prose h2,
-.prose h3,
-.prose h4 {
+.prose [data-md-heading='1'],
+.prose [data-md-heading='2'],
+.prose [data-md-heading='3'],
+.prose [data-md-heading='4'] {
   font-weight: 600;
   letter-spacing: -0.01em;
 }
 
-/* Line-heights pair with the house scale (24/32, 20/28, 18/28, 16/24) — without them,
-   typography's leadings for its original oversized fonts stay behind and h1/h2 collapse to the
-   same computed line box. */
-.prose h1 {
+.prose [data-md-heading='1'] {
   font-size: 1.5em;
   line-height: calc(4 / 3);
+  margin-top: 0;
+  margin-bottom: 0.8888889em;
 }
 
-.prose h2 {
+.prose [data-md-heading='2'] {
   font-size: 1.25em;
   line-height: 1.4;
+  margin-top: 2em;
+  margin-bottom: 1em;
 }
 
-.prose h3 {
+.prose [data-md-heading='3'] {
   font-size: 1.125em;
   line-height: calc(28 / 18);
+  margin-top: 1.6em;
+  margin-bottom: 0.6em;
 }
 
-.prose h4 {
+.prose [data-md-heading='4'] {
   font-size: 1em;
   line-height: 1.5;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+}
+
+.prose-sm [data-md-heading='1'] {
+  margin-bottom: 0.8em;
+}
+
+.prose-sm [data-md-heading='2'] {
+  margin-top: 1.6em;
+  margin-bottom: 0.8em;
+}
+
+.prose-sm [data-md-heading='3'] {
+  margin-top: 1.5555556em;
+  margin-bottom: 0.4444444em;
+}
+
+.prose-sm [data-md-heading='4'] {
+  margin-top: 1.4285714em;
+  margin-bottom: 0.5714286em;
+}
+
+.prose-lg [data-md-heading='1'] {
+  margin-bottom: 0.8333333em;
+}
+
+.prose-lg [data-md-heading='2'] {
+  margin-top: 1.8666667em;
+  margin-bottom: 1.0666667em;
+}
+
+.prose-lg [data-md-heading='3'] {
+  margin-top: 1.6666667em;
+  margin-bottom: 0.6666667em;
+}
+
+.prose-lg [data-md-heading='4'] {
+  margin-top: 1.7777778em;
+  margin-bottom: 0.4444444em;
+}
+
+/* Typography zeroes the top margin after h2–h4; depth 4 renders h5, which it
+   has no rule for. */
+.prose [data-md-heading='2'] + *,
+.prose [data-md-heading='3'] + *,
+.prose [data-md-heading='4'] + * {
+  margin-top: 0;
 }
 
 /*

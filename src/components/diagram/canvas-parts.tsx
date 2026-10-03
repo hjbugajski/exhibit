@@ -20,7 +20,7 @@ import { useRender } from '@base-ui/react/use-render';
 
 import { cn } from '@/lib/utils';
 
-import { DiagramCanvasProvider, useDiagramCanvas } from './canvas-context';
+import { DiagramCanvasContext, useDiagramCanvas } from './canvas-context';
 import { ZOOM_STEP } from './canvas-transform';
 import type { PartProps } from './diagram-context';
 import { useDiagramConfig, useDiagramScene } from './diagram-context';
@@ -28,8 +28,6 @@ import { useCanvas } from './use-canvas';
 
 const DEFAULT_LABEL =
   'Diagram canvas. Drag to pan. Hold Ctrl or Command and scroll to zoom. Arrow keys pan, plus and minus zoom, zero fits the diagram.';
-
-// -------------------------------------------------------------------------------------- glyphs
 
 /** 16-unit box, 1.5 stroke, all of it declared in CSS — an icon here owns geometry only. */
 function Glyph({ children }: { children: ReactNode }) {
@@ -58,8 +56,6 @@ const FitIcon = () => (
   </Glyph>
 );
 
-// ------------------------------------------------------------------------------------ controls
-
 interface ControlProps extends ComponentProps<'button'> {
   action: string;
 }
@@ -78,7 +74,7 @@ function Control({ action, className, ...props }: ControlProps) {
   );
 }
 
-export type DiagramCanvasControlsProps = ComponentProps<'div'>;
+export type DiagramCanvasControlsProps = ComponentProps<'fieldset'>;
 
 /**
  * Never disabled at the zoom limits: clamping already makes the press a no-op, and disabling the
@@ -89,11 +85,9 @@ export function CanvasControls({ className, children, ...props }: DiagramCanvasC
   const { fit, reset, zoomBy, zoomPercent } = useDiagramCanvas();
 
   return (
-    <div
+    <fieldset
       aria-label="Diagram view"
       data-part="canvas-controls"
-      // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
-      role="group"
       className={cn(classNames.canvasControls, className)}
       {...props}
     >
@@ -120,11 +114,9 @@ export function CanvasControls({ className, children, ...props }: DiagramCanvasC
           </Control>
         </>
       )}
-    </div>
+    </fieldset>
   );
 }
-
-// -------------------------------------------------------------------------------------- canvas
 
 export interface DiagramCanvasProps extends useRender.ComponentProps<'div'> {
   /** Replaces the control cluster, or removes it with `false`. Rendered outside the transform. */
@@ -159,12 +151,12 @@ export function Canvas({
     style: canvas.style,
     ...canvas.handlers,
     children: (
-      <DiagramCanvasProvider value={canvas.context}>
+      <DiagramCanvasContext value={canvas.context}>
         <div className={classNames.canvasScene} data-part="canvas-scene">
           {children}
         </div>
         {controls === false ? null : (controls ?? <CanvasControls />)}
-      </DiagramCanvasProvider>
+      </DiagramCanvasContext>
     ),
   };
 

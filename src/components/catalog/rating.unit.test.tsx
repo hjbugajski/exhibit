@@ -60,8 +60,8 @@ describe('Rating', () => {
       </StateProvider>,
     );
 
-    // The visible star, not the 1px radio — this is the element a pointer user actually hits.
-    const fourthStar = document.querySelectorAll('label svg')[3] as Element;
+    // The visible star icon — the element a pointer user actually hits.
+    const fourthStar = document.querySelectorAll('[role="radio"] svg')[3] as Element;
 
     await user.click(fourthStar);
     expect(store.getSnapshot()).toEqual({ ratings: { 'draft-1': 4 } });

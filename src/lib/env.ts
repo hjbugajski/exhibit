@@ -1,3 +1,4 @@
+import '@tanstack/react-start/server-only';
 import { z } from 'zod';
 
 /**
@@ -25,7 +26,10 @@ const envSchema = z
     OWNER_PASSWORD: z.string().min(1).optional(),
     /** Enables the house-styled Protomaps basemap; unset falls back to Carto's stock styles. */
     PROTOMAPS_API_KEY: z.string().min(1).optional(),
-    /** Comma-separated IPs/CIDRs; unset trusts single-value X-Forwarded-For verbatim. */
+    /**
+     * Comma-separated IPs/CIDRs. Unset ignores X-Forwarded-For: every client shares one rate-limit
+     * bucket (see auth.ts).
+     */
     TRUSTED_PROXIES: z
       .string()
       .transform((value) =>

@@ -94,6 +94,11 @@ export function readDelimited(scanner: Scanner, open: string, close: string): st
   return null;
 }
 
+/** Trims `raw` and collapses each internal whitespace run to one space. */
+export function normalizeSpace(raw: string): string {
+  return raw.trim().replace(/\s+/g, ' ');
+}
+
 /** Consumes the remainder of the line and returns it trimmed. */
 export function readRestOfLine(scanner: Scanner): string {
   const rest = scanner.rest();

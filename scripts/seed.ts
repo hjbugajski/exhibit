@@ -1,7 +1,7 @@
 /**
  * Creates the single owner user from OWNER_EMAIL/OWNER_PASSWORD env vars.
  *
- * Run with: pnpm seed  (or: node scripts/seed.ts)
+ * Run with: pnpm seed. Loads .env when present; variables already set in the shell take precedence.
  *
  * Idempotent: if any user already exists, exits 0 without making changes (not keyed on OWNER_EMAIL
  * — see src/lib/seed.ts for why). See src/lib/seed.ts for the (tested) implementation.

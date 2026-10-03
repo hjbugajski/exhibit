@@ -25,6 +25,7 @@ import {
   pkcePair,
   registerClient,
   signIn,
+  signOut,
   submitConsent,
 } from '@testing/oauth-client';
 
@@ -598,6 +599,59 @@ describe('MCP OAuth flow (DCR -> PKCE authorize -> consent -> token -> /mcp)', (
     expect(refreshResponse.ok).toBe(false);
     const refreshJson = (await refreshResponse.json()) as { access_token?: string };
     expect(refreshJson.access_token).toBeUndefined();
+  });
+
+  /**
+   * Proves on the installed provider that sign-out ends MCP access: it stamps `revoked` on the
+   * session's opaque tokens, and JWTs carry the session as `sid`. A dedicated session keeps the
+   * shared `ownerCookie` alive for the other cases.
+   */
+  it('rejects both a JWT and an opaque access token once the session that minted them signs out', async () => {
+    const cookie = await signIn({ baseURL, email: OWNER_EMAIL, password: OWNER_PASSWORD });
+    const clientId = await getSharedClientId();
+
+    async function mintAccessToken(resource: boolean): Promise<string> {
+      const { verifier, consentUrl } = await authorizeToConsent({
+        baseURL,
+        clientId,
+        cookie,
+        redirectUri: REDIRECT_URI,
+        prompt: 'consent',
+      });
+      const redirectUrl = await submitConsent({ baseURL, cookie, consentUrl, accept: true });
+      const tokenResponse = await fetch(`${baseURL}/api/auth/oauth2/token`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'authorization_code',
+          code: redirectUrl.searchParams.get('code') ?? '',
+          redirect_uri: REDIRECT_URI,
+          client_id: clientId,
+          code_verifier: verifier,
+          ...(resource ? { resource: `${baseURL}/mcp` } : {}),
+        }).toString(),
+      });
+
+      expect(tokenResponse.status).toBe(200);
+
+      return ((await tokenResponse.json()) as { access_token: string }).access_token;
+    }
+
+    const jwt = await mintAccessToken(true);
+    const opaque = await mintAccessToken(false);
+
+    expect(jwt.split('.')).toHaveLength(3);
+    expect(opaque.split('.')).not.toHaveLength(3);
+
+    const toolsList = { jsonrpc: '2.0', id: 1, method: 'tools/list' };
+
+    expect((await mcpCall(jwt, toolsList)).status).toBe(200);
+    expect((await mcpCall(opaque, toolsList)).status).toBe(200);
+
+    await signOut({ baseURL, cookie });
+
+    expect((await mcpCall(jwt, toolsList)).status).toBe(401);
+    expect((await mcpCall(opaque, toolsList)).status).toBe(401);
   });
 
   it('refuses to exchange an authorization code a second time', async () => {

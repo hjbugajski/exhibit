@@ -10,13 +10,13 @@ export const itineraryFixture: Spec = {
   elements: {
     itinerary: {
       type: 'Itinerary',
-      props: { title: 'Kyoto in Three Days', dateRange: 'May 3 – May 5, 2026' },
+      props: { title: 'Kyoto in Three Days', dateRange: 'May 3 to 5, 2026' },
       children: ['day-1', 'day-2'],
     },
     'day-1': {
       type: 'Day',
       props: {
-        label: 'Day 1 — Saturday',
+        label: 'Day 1: Sunday',
         date: 'May 3, 2026',
         summary: 'Eastern Kyoto temples and tea.',
       },
@@ -62,7 +62,7 @@ export const itineraryFixture: Spec = {
     },
     'day-2': {
       type: 'Day',
-      props: { label: 'Day 2 — Sunday', date: 'May 4, 2026' },
+      props: { label: 'Day 2: Monday', date: 'May 4, 2026' },
       children: ['stop-2a', 'stop-2b'],
     },
     'stop-2a': {

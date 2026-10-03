@@ -3,7 +3,6 @@ import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
-  appendVersion,
   createArtifact,
   getArtifact,
   getArtifactState,
@@ -20,14 +19,13 @@ import {
   setArtifactArchived,
   setArtifactState,
   softDeleteArtifact,
-  updateMetadata,
+  updateArtifact,
 } from '@/database/repository';
-import type { ArtifactType, Db } from '@/database/repository';
-import { artifacts } from '@/database/schemas/artifact';
+import type { Db } from '@/database/repository';
 import { artifactStates } from '@/database/schemas/artifact-state';
 import { artifactVersions } from '@/database/schemas/artifact-version';
-import { normalizeTags } from '@/lib/artifact-metadata';
-import { artifactTypes } from '@/lib/artifact-sorts';
+import { artifactTypes, type ArtifactType } from '@/lib/artifact-types';
+import { normalizeTags } from '@/lib/normalize-tags';
 import { createTestDb } from '@testing/db';
 
 let sqlite: Database.Database;
@@ -75,26 +73,75 @@ describe('createArtifact', () => {
   });
 });
 
-describe('appendVersion', () => {
-  it('increments version numbers', () => {
+describe('updateArtifact', () => {
+  it('refuses a soft-deleted artifact and writes nothing', () => {
     const { artifact } = createArtifact(db, { title: 'Widget', type: 'html', body: 'v1' });
 
-    const v2 = appendVersion(db, artifact.id, 'v2');
-    const v3 = appendVersion(db, artifact.id, 'v3');
+    softDeleteArtifact(db, artifact.id);
 
-    expect(v2.version).toBe(2);
-    expect(v3.version).toBe(3);
+    expect(updateArtifact(db, artifact.id, { body: 'v2', title: 'Renamed' })).toBeUndefined();
+    expect(getLatestVersion(db, artifact.id)?.version).toBe(1);
+    expect(listArtifacts(db, { deleted: true }).items.map((item) => item.title)).toEqual([
+      'Widget',
+    ]);
+  });
 
-    const latest = getLatestVersion(db, artifact.id);
+  it('returns undefined for an unknown artifact', () => {
+    expect(updateArtifact(db, 'missing', { body: 'v2' })).toBeUndefined();
+  });
 
-    expect(latest?.version).toBe(3);
-    expect(latest?.body).toBe('v3');
+  it("appends the next version for a body and bumps the artifact's updatedAt", () => {
+    vi.spyOn(Date, 'now').mockImplementation(() => 1000);
+    const { artifact } = createArtifact(db, { title: 'Widget', type: 'html', body: 'v1' });
+
+    vi.spyOn(Date, 'now').mockImplementation(() => 2000);
+    const v2 = updateArtifact(db, artifact.id, { body: 'v2' });
+    const v3 = updateArtifact(db, artifact.id, { body: 'v3' });
+
+    expect(v2?.version.version).toBe(2);
+    expect(v3?.version).toMatchObject({ version: 3, body: 'v3' });
+    expect(v3?.artifact.updatedAt).toBe(2000);
+    expect(v3?.artifact.title).toBe('Widget');
+    expect(getLatestVersion(db, artifact.id)).toMatchObject({ version: 3, body: 'v3' });
+  });
+
+  it('updates metadata alone without adding a version', () => {
+    const { artifact } = createArtifact(db, { title: 'Old', type: 'spec', body: 'v1' });
+
+    const updated = updateArtifact(db, artifact.id, {
+      title: 'New',
+      description: 'desc',
+      tags: ['x'],
+    });
+
+    expect(updated?.artifact).toMatchObject({ title: 'New', description: 'desc', tags: ['x'] });
+    expect(updated?.version).toMatchObject({ version: 1, body: 'v1' });
+    expect(listVersions(db, artifact.id)).toHaveLength(1);
+  });
+
+  it('applies a body and metadata together as exactly one new version', () => {
+    const { artifact } = createArtifact(db, { title: 'Old', type: 'spec', body: 'v1' });
+
+    const updated = updateArtifact(db, artifact.id, { body: 'v2', title: 'New', tags: ['x'] });
+
+    expect(updated?.artifact).toMatchObject({ title: 'New', tags: ['x'] });
+    expect(updated?.version).toMatchObject({ version: 2, body: 'v2' });
+    expect(listVersions(db, artifact.id).map((v) => v.version)).toEqual([1, 2]);
+  });
+
+  it('rolls back the appended version when the metadata write fails', () => {
+    const { artifact } = createArtifact(db, { title: 'Widget', type: 'html', body: 'v1' });
+
+    expect(() =>
+      updateArtifact(db, artifact.id, { body: 'v2', title: null as unknown as string }),
+    ).toThrow();
+    expect(listVersions(db, artifact.id).map((v) => v.version)).toEqual([1]);
   });
 
   it('enforces unique (artifact_id, version)', () => {
     const { artifact } = createArtifact(db, { title: 'Widget', type: 'html', body: 'v1' });
 
-    expect(() => appendVersion(db, artifact.id, 'dup')).not.toThrow();
+    expect(() => updateArtifact(db, artifact.id, { body: 'dup' })).not.toThrow();
 
     // Directly forcing a duplicate version insert should fail the unique constraint.
     expect(() =>
@@ -111,12 +158,12 @@ describe('revertToVersion', () => {
     const body = '{"root":"a","weird":"  <tab>\\t & \\u00e9 \\n"}';
     const { artifact } = createArtifact(db, { title: 'Widget', type: 'spec', body });
 
-    appendVersion(db, artifact.id, '{"root":"b"}');
+    updateArtifact(db, artifact.id, { body: '{"root":"b"}' });
 
     const restored = revertToVersion(db, artifact.id, 1);
 
-    expect(restored?.version).toBe(3);
-    expect(restored?.body).toBe(body);
+    expect(restored?.version.version).toBe(3);
+    expect(restored?.version.body).toBe(body);
     expect(getLatestVersion(db, artifact.id)?.body).toBe(body);
     // Append-only: the older versions are still there, unchanged.
     expect(listVersions(db, artifact.id).map((v) => v.version)).toEqual([1, 2, 3]);
@@ -127,18 +174,18 @@ describe('revertToVersion', () => {
     const { artifact } = createArtifact(db, { title: 'Widget', type: 'html', body: 'v1' });
 
     vi.spyOn(Date, 'now').mockImplementation(() => 2000);
-    appendVersion(db, artifact.id, 'v2');
+    updateArtifact(db, artifact.id, { body: 'v2' });
 
     vi.spyOn(Date, 'now').mockImplementation(() => 3000);
-    revertToVersion(db, artifact.id, 1);
 
+    expect(revertToVersion(db, artifact.id, 1)?.artifact.updatedAt).toBe(3000);
     expect(getArtifact(db, artifact.id)?.artifact.updatedAt).toBe(3000);
   });
 
   it('appends a copy when the requested version is already the latest', () => {
     const { artifact } = createArtifact(db, { title: 'Widget', type: 'html', body: 'v1' });
 
-    expect(revertToVersion(db, artifact.id, 1)).toMatchObject({ version: 2, body: 'v1' });
+    expect(revertToVersion(db, artifact.id, 1)?.version).toMatchObject({ version: 2, body: 'v1' });
   });
 
   it('returns undefined for a version the artifact does not have', () => {
@@ -151,6 +198,15 @@ describe('revertToVersion', () => {
   it('returns undefined for an unknown artifact', () => {
     expect(revertToVersion(db, 'nope', 1)).toBeUndefined();
   });
+
+  it('refuses a soft-deleted artifact and writes nothing', () => {
+    const { artifact } = createArtifact(db, { title: 'Widget', type: 'html', body: 'v1' });
+
+    softDeleteArtifact(db, artifact.id);
+
+    expect(revertToVersion(db, artifact.id, 1)).toBeUndefined();
+    expect(listVersions(db, artifact.id)).toHaveLength(1);
+  });
 });
 
 describe('listVersions', () => {
@@ -159,9 +215,9 @@ describe('listVersions', () => {
     const { artifact } = createArtifact(db, { title: 'Widget', type: 'spec', body: 'v1' });
 
     vi.spyOn(Date, 'now').mockImplementation(() => 2000);
-    appendVersion(db, artifact.id, 'v2');
+    updateArtifact(db, artifact.id, { body: 'v2' });
     vi.spyOn(Date, 'now').mockImplementation(() => 3000);
-    appendVersion(db, artifact.id, 'v3');
+    updateArtifact(db, artifact.id, { body: 'v3' });
 
     expect(listVersions(db, artifact.id)).toEqual([
       { version: 1, createdAt: 1000 },
@@ -171,27 +227,11 @@ describe('listVersions', () => {
   });
 });
 
-describe('updateMetadata', () => {
-  it('updates title, description, and tags', () => {
-    const { artifact } = createArtifact(db, { title: 'Old', type: 'spec', body: 'v1' });
-
-    const updated = updateMetadata(db, artifact.id, {
-      title: 'New',
-      description: 'desc',
-      tags: ['x'],
-    });
-
-    expect(updated?.title).toBe('New');
-    expect(updated?.description).toBe('desc');
-    expect(updated?.tags).toEqual(['x']);
-  });
-});
-
 describe('getArtifact', () => {
   it('fetches latest version by default', () => {
     const { artifact } = createArtifact(db, { title: 'Widget', type: 'spec', body: 'v1' });
 
-    appendVersion(db, artifact.id, 'v2');
+    updateArtifact(db, artifact.id, { body: 'v2' });
 
     const result = getArtifact(db, artifact.id);
 
@@ -202,7 +242,7 @@ describe('getArtifact', () => {
   it('fetches a specific version', () => {
     const { artifact } = createArtifact(db, { title: 'Widget', type: 'spec', body: 'v1' });
 
-    appendVersion(db, artifact.id, 'v2');
+    updateArtifact(db, artifact.id, { body: 'v2' });
 
     const result = getArtifact(db, artifact.id, 1);
 
@@ -285,6 +325,51 @@ describe('listArtifacts', () => {
     const result = listArtifacts(db, { query: '100%' });
 
     expect(result.items.map((item) => item.title)).toEqual(['100% Done']);
+  });
+
+  it('matches a query that appears only in the description', () => {
+    createArtifact(db, {
+      title: 'Notes',
+      description: 'Weekend trip to Kyoto',
+      type: 'markdown',
+      body: '# hi',
+    });
+    createArtifact(db, { title: 'Other', description: 'Budget', type: 'spec', body: 'v1' });
+
+    const result = listArtifacts(db, { query: 'kyoto' });
+
+    expect(result.items.map((item) => item.title)).toEqual(['Notes']);
+  });
+
+  it('excludes a null-description row whose title misses, and keeps a title match', () => {
+    createArtifact(db, { title: 'Kyoto plan', type: 'spec', body: 'v1' });
+    createArtifact(db, { title: 'Unrelated', type: 'spec', body: 'v1' });
+
+    const result = listArtifacts(db, { query: 'kyoto' });
+
+    expect(result.items.map((item) => item.title)).toEqual(['Kyoto plan']);
+  });
+
+  it('treats a literal % in a description query as a literal character', () => {
+    createArtifact(db, { title: 'A', description: '100% done', type: 'spec', body: 'v1' });
+    createArtifact(db, { title: 'B', description: '100X done', type: 'spec', body: 'v1' });
+
+    const result = listArtifacts(db, { query: '100%' });
+
+    expect(result.items.map((item) => item.title)).toEqual(['A']);
+  });
+
+  it('keeps a soft-deleted description match out of the live listing', () => {
+    const { artifact } = createArtifact(db, {
+      title: 'Gone',
+      description: 'Kyoto',
+      type: 'spec',
+      body: 'v1',
+    });
+    softDeleteArtifact(db, artifact.id);
+
+    expect(listArtifacts(db, { query: 'kyoto' }).items).toEqual([]);
+    expect(listArtifacts(db, { query: 'kyoto', deleted: true }).items).toHaveLength(1);
   });
 
   it('treats a literal % in a tag filter as a literal character, not a wildcard', () => {
@@ -530,6 +615,82 @@ describe('listArtifacts', () => {
     expect(items.find((item) => item.title === 'Untouched')?.stateUpdatedAt).toBeNull();
   });
 
+  describe('owner-response sort and filters', () => {
+    /**
+     * Four artifacts updated a→d, so updated-desc is d, c, b, a. The owner answers a at 10000 and b
+     * at 9000, so state-updated-desc disagrees: a, b, then the untouched pair tied at 0, which falls
+     * back to id desc.
+     */
+    function seedAnswered() {
+      let now = 1000;
+
+      vi.spyOn(Date, 'now').mockImplementation(() => now);
+
+      const [a, b, c, d] = ['a', 'b', 'c', 'd'].map((title) => {
+        const { artifact } = createArtifact(db, { title, type: 'spec', body: 'v1' });
+
+        now += 1000;
+
+        return artifact.id;
+      }) as [string, string, string, string];
+
+      now = 10_000;
+      setArtifactState(db, a, { done: true });
+      now = 9000;
+      setArtifactState(db, b, { done: true });
+
+      return { touched: [a, b], untouched: [c, d].sort().reverse() };
+    }
+
+    it('orders touched artifacts by state time, newest first, then untouched artifacts', () => {
+      const { touched, untouched } = seedAnswered();
+
+      const items = listArtifacts(db, { sort: 'state-updated-desc' }).items;
+
+      expect(items.map((item) => item.id)).toEqual([...touched, ...untouched]);
+    });
+
+    it('paginates across the boundary between touched and untouched artifacts', () => {
+      const { touched, untouched } = seedAnswered();
+
+      const page1 = listArtifacts(db, { sort: 'state-updated-desc', limit: 2 });
+
+      expect(page1.items.map((item) => item.id)).toEqual(touched);
+      expect(page1.nextCursor).not.toBeNull();
+
+      const page2 = listArtifacts(db, {
+        sort: 'state-updated-desc',
+        limit: 2,
+        cursor: page1.nextCursor ?? undefined,
+      });
+
+      expect(page2.items.map((item) => item.id)).toEqual(untouched);
+      expect(page2.nextCursor).toBeNull();
+    });
+
+    it('filters by hasState in both directions', () => {
+      const { touched, untouched } = seedAnswered();
+
+      const withState = listArtifacts(db, { sort: 'state-updated-desc', hasState: true }).items;
+      const withoutState = listArtifacts(db, { sort: 'state-updated-desc', hasState: false }).items;
+
+      expect(withState.map((item) => item.id)).toEqual(touched);
+      expect(withoutState.map((item) => item.id)).toEqual(untouched);
+    });
+
+    it('treats stateSince as inclusive and never matches untouched artifacts', () => {
+      const { touched } = seedAnswered();
+
+      const atB = listArtifacts(db, { sort: 'state-updated-desc', stateSince: 9000 }).items;
+      const afterB = listArtifacts(db, { sort: 'state-updated-desc', stateSince: 9001 }).items;
+      const fromZero = listArtifacts(db, { sort: 'state-updated-desc', stateSince: 0 }).items;
+
+      expect(atB.map((item) => item.id)).toEqual(touched);
+      expect(afterB.map((item) => item.id)).toEqual([touched[0]]);
+      expect(fromZero.map((item) => item.id)).toEqual(touched);
+    });
+  });
+
   it('counts the latest version’s questions against the saved state', () => {
     const { artifact } = createArtifact(db, {
       title: 'Sign-off',
@@ -537,7 +698,7 @@ describe('listArtifacts', () => {
       body: JSON.stringify({ root: 'a', elements: { a: { type: 'Section', props: {} } } }),
     });
 
-    appendVersion(db, artifact.id, answerSpecBody);
+    updateArtifact(db, artifact.id, { body: answerSpecBody });
     setArtifactState(db, artifact.id, { prep: { size: true } });
 
     expect(listArtifacts(db, { withAnswers: true }).items[0]?.answers).toEqual({
@@ -626,6 +787,18 @@ describe('setArtifactArchived', () => {
     expect(setArtifactArchived(db, 'missing', true)).toBeUndefined();
   });
 
+  it('refuses a soft-deleted artifact and writes nothing', () => {
+    const { artifact } = createArtifact(db, { title: 'Widget', type: 'spec', body: 'v1' });
+
+    softDeleteArtifact(db, artifact.id);
+
+    expect(setArtifactArchived(db, artifact.id, true)).toBeUndefined();
+
+    restoreArtifact(db, artifact.id);
+
+    expect(getArtifact(db, artifact.id)?.artifact.archivedAt).toBeNull();
+  });
+
   it('does not affect getArtifact — archived artifacts still resolve', () => {
     const { artifact } = createArtifact(db, { title: 'Widget', type: 'spec', body: 'v1' });
 
@@ -680,7 +853,7 @@ describe('purgeArtifact', () => {
     const { artifact } = createArtifact(db, { title: 'Widget', type: 'spec', body: 'v1' });
     const { artifact: survivor } = createArtifact(db, { title: 'Other', type: 'spec', body: 'v1' });
 
-    appendVersion(db, artifact.id, 'v2');
+    updateArtifact(db, artifact.id, { body: 'v2' });
     setArtifactState(db, artifact.id, { checked: true });
     setArtifactState(db, survivor.id, { checked: false });
     softDeleteArtifact(db, artifact.id);
@@ -756,9 +929,8 @@ describe('listTagsWithCounts', () => {
 });
 
 describe('renameTag / removeTag', () => {
-  function tagsOf(id: string): string[] | null | undefined {
-    return db.select({ tags: artifacts.tags }).from(artifacts).where(eq(artifacts.id, id)).get()
-      ?.tags;
+  function tagsOf(id: string): string[] | undefined {
+    return getArtifact(db, id)?.artifact.tags;
   }
 
   it('renames a tag across every artifact carrying it', () => {
@@ -843,10 +1015,10 @@ describe('renameTag / removeTag', () => {
 
     expect(renameTag(db, 'trips', 'travel')).toBe(2);
 
-    expect(tagsOf(deleted.id)).toEqual(['travel']);
     expect(tagsOf(archived.id)).toEqual(['travel']);
 
     restoreArtifact(db, deleted.id);
+    expect(tagsOf(deleted.id)).toEqual(['travel']);
     expect(listTags(db)).toEqual(['travel']);
   });
 
@@ -882,6 +1054,19 @@ describe('renameTag / removeTag', () => {
 });
 
 describe('artifact state', () => {
+  it('refuses a soft-deleted artifact and writes nothing', () => {
+    const { artifact } = createArtifact(db, { title: 'A', type: 'spec', body: '{}' });
+
+    softDeleteArtifact(db, artifact.id);
+
+    expect(setArtifactState(db, artifact.id, { done: true })).toBeUndefined();
+    expect(getArtifactState(db, artifact.id)).toBeNull();
+  });
+
+  it('returns undefined for an unknown artifact', () => {
+    expect(setArtifactState(db, 'missing', { done: true })).toBeUndefined();
+  });
+
   it('returns null before any state is saved', () => {
     const { artifact } = createArtifact(db, { title: 'A', type: 'spec', body: '{}' });
 
@@ -902,7 +1087,9 @@ describe('artifact state', () => {
     });
 
     now = 2000;
-    setArtifactState(db, artifact.id, { tasks: { 'order-cabinets': false, demo: true } });
+    expect(
+      setArtifactState(db, artifact.id, { tasks: { 'order-cabinets': false, demo: true } }),
+    ).toEqual({ updatedAt: now });
     expect(getArtifactState(db, artifact.id)).toEqual({
       state: { tasks: { 'order-cabinets': false, demo: true } },
       updatedAt: now,

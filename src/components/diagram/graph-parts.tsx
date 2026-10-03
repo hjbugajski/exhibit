@@ -27,8 +27,6 @@ function translate(x: number, y: number): { transform: string } {
   return { transform: `translate(${round2(x)}px, ${round2(y)}px)` };
 }
 
-// -------------------------------------------------------------------------------------- nodes
-
 function NodeShapeBase({ datum: _datum, ...props }: { datum: SceneNode } & PartProps<'path'>) {
   return <path {...props} />;
 }
@@ -94,8 +92,6 @@ function Nodes({ nodes }: { nodes: readonly SceneNode[] }) {
     </g>
   );
 }
-
-// -------------------------------------------------------------------------------------- edges
 
 function EdgePathBase({ datum: _datum, ...props }: { datum: SceneEdge } & PartProps<'path'>) {
   return <path {...props} />;
@@ -203,8 +199,6 @@ function Edges({ edges }: { edges: readonly SceneEdge[] }) {
   );
 }
 
-// ----------------------------------------------------------------------------------- clusters
-
 /**
  * Cluster geometry is absolute, so nesting groups is free — no transform to compound — and the DOM
  * keeps the containment the source declared. The title is not drawn here: it belongs to the label
@@ -268,8 +262,6 @@ function Clusters({ clusters }: { clusters: readonly SceneCluster[] }) {
     </g>
   );
 }
-
-// ------------------------------------------------------------------------------------- labels
 
 /** Cluster titles, outermost first — the drawing order the tree already encodes. */
 function titledClusters(clusters: readonly SceneCluster[], into: SceneCluster[]): SceneCluster[] {

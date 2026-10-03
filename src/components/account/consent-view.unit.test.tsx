@@ -66,6 +66,18 @@ describe('ConsentView', () => {
     expect(screen.getByText('claude.ai, 127.0.0.1:8765')).toBeTruthy();
   });
 
+  it('lets a long client name and a long dotted host wrap inside the card', async () => {
+    const host = `${Array.from({ length: 40 }, (_, index) => `label${index}`).join('.')}.example`;
+    renderWithRouter(
+      <ConsentView client={client({ redirectHosts: [host] })} clientId="client-1" />,
+    );
+
+    expect(host.length).toBeGreaterThan(200);
+    expect((await screen.findByText('Claude Code')).className).toContain('wrap-anywhere');
+    expect(screen.getByText(host).tagName).toBe('STRONG');
+    expect(screen.getByText(host).className).toContain('wrap-anywhere');
+  });
+
   it('does not warn about an established registration', async () => {
     renderWithRouter(<ConsentView client={client()} clientId="client-1" />);
 

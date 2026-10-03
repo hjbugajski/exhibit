@@ -1,3 +1,4 @@
+import '@tanstack/react-start/server-only';
 import { Resend } from 'resend';
 
 import { env } from './env.ts';
